@@ -13,9 +13,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Oracle.ManagedDataAccess.Client;
+using System.Configuration;
 //using NepaliDateConverter.Net;
-
-
 
 namespace NeoErp.Distribution.Service.Service.Mobile
 {
@@ -26,6 +26,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         private IMessageService _MessageService;
         private readonly string UploadPath = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath + @"Areas\NeoErp.Distribution\Images";
 
+        public NeoErpCoreEntity _objectEntity = new NeoErpCoreEntity();
         public MobileService(IMessageService messageService)
         {
             _MessageService = messageService;
@@ -189,54 +190,54 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 
             //imei validation
             var companyName = dbContext.SqlQuery<string>($"SELECT COMPANY_EDESC FROM COMPANY_SETUP WHERE COMPANY_CODE='{result.COMPANY_CODE}'").FirstOrDefault();
-            if (!companyName.Equals("JGI Distribution Pvt. Ltd."))
-            {
-                List<string> SavedImei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE USERID='{result.USER_ID}' AND APPROVED_FLAG='Y' AND ACTIVE='Y'").ToList();
-                var imei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE IMEI_NO='{model.Imei}' ").ToList();
-                if (SavedImei.Count == 0)
-                {
-                    if (imei.Count > 0 && model.Imei != "EMPTY")
-                        throw new Exception("Device already in use by another user");
-                    string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APPROVED_FLAG,ACTIVE,APP_VERSION,FIREBASE_ID,CURRENT_LOGIN)
-                VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','Y','Y','{model.App_Version}','{model.Firebase_key}','Y')";
-                    var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
-                }
-                else if (!SavedImei.Contains(model.Imei.Trim()))
-                {
+            //if (!companyName.Equals("JGI Distribution Pvt. Ltd."))
+            //{
+            //    List<string> SavedImei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE USERID='{result.USER_ID}' AND APPROVED_FLAG='Y' AND ACTIVE='Y'").ToList();
+            //    var imei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE IMEI_NO='{model.Imei}' ").ToList();
+            //    if (SavedImei.Count == 0)
+            //    {
+            //        if (imei.Count > 0 && model.Imei != "EMPTY")
+            //            throw new Exception("Device already in use by another user");
+            //        string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APPROVED_FLAG,ACTIVE,APP_VERSION,FIREBASE_ID,CURRENT_LOGIN)
+            //    VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','Y','Y','{model.App_Version}','{model.Firebase_key}','Y')";
+            //        var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
+            //    }
+            //    else if (!SavedImei.Contains(model.Imei.Trim()))
+            //    {
 
-                    if (imei.Count > 0 && model.Imei != "EMPTY")
-                        throw new Exception("Device already in use by another user");
-                    string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APP_VERSION,FIREBASE_ID)
-                VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','{model.App_Version}','{model.Firebase_key}')";
-                    var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
-                    throw new Exception("IMEI_REG_ERROR");
-                }
-            }
-            else
-            {
-                List<string> SavedImei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE USERID='{result.USER_ID}'").ToList();
-                var imei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE IMEI_NO='{model.Imei}' ").ToList();
-                if (SavedImei.Count == 0)
-                {
-                    if (imei.Count > 0 && model.Imei != "EMPTY")
-                        throw new Exception("Device already in use by another user");
-                    string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APPROVED_FLAG,ACTIVE,APP_VERSION,FIREBASE_ID,CURRENT_LOGIN)
-                VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','Y','Y','{model.App_Version}','{model.Firebase_key}','Y')";
-                    var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
-                }
-                else if (!SavedImei.Contains(model.Imei.Trim()))
-                {
+            //        if (imei.Count > 0 && model.Imei != "EMPTY")
+            //            throw new Exception("Device already in use by another user");
+            //        string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APP_VERSION,FIREBASE_ID)
+            //    VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','{model.App_Version}','{model.Firebase_key}')";
+            //        var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
+            //        throw new Exception("IMEI_REG_ERROR");
+            //    }
+            //}
+            //else
+            //{
+            //    List<string> SavedImei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE USERID='{result.USER_ID}'").ToList();
+            //    var imei = dbContext.SqlQuery<string>($"SELECT IMEI_NO FROM DIST_LOGIN_DEVICE WHERE IMEI_NO='{model.Imei}' ").ToList();
+            //    if (SavedImei.Count == 0)
+            //    {
+            //        if (imei.Count > 0 && model.Imei != "EMPTY")
+            //            throw new Exception("Device already in use by another user");
+            //        string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APPROVED_FLAG,ACTIVE,APP_VERSION,FIREBASE_ID,CURRENT_LOGIN)
+            //    VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','Y','Y','{model.App_Version}','{model.Firebase_key}','Y')";
+            //        var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
+            //    }
+            //    else if (!SavedImei.Contains(model.Imei.Trim()))
+            //    {
 
-                    if (imei.Count > 0 && model.Imei != "EMPTY")
-                        throw new Exception("Device already in use by another user");
-                    string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APP_VERSION,FIREBASE_ID)
-                VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','{model.App_Version}','{model.Firebase_key}')";
-                    var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
-                    throw new Exception("IMEI_REG_ERROR");
-                }
-            }
-            
-            
+            //        if (imei.Count > 0 && model.Imei != "EMPTY")
+            //            throw new Exception("Device already in use by another user");
+            //        string imeiInsert = $@"INSERT INTO DIST_LOGIN_DEVICE (USERID,IMEI_NO,DEVICE_NAME,CREATED_BY,APP_VERSION,FIREBASE_ID)
+            //    VALUES ('{result.USER_ID}','{model.Imei}','{model.Device_Name}','{result.USER_ID}','{model.App_Version}','{model.Firebase_key}')";
+            //        var rowNum = dbContext.ExecuteSqlCommand(imeiInsert);
+            //        throw new Exception("IMEI_REG_ERROR");
+            //    }
+            //}
+
+
 
             //make all devices as not current login
             var row = dbContext.ExecuteSqlCommand($"UPDATE DIST_LOGIN_DEVICE SET CURRENT_LOGIN='N' WHERE USERID='{result.USER_ID}' AND IMEI_NO !='{model.Imei}'");
@@ -853,6 +854,45 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             return (result);
         }
 
+        //public List<ItemModel> FetchItems(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    var pref = FetchPreferences(model.COMPANY_CODE, dbContext);
+        //    string salesClause = "", conversionClause = "";
+        //    if ("Y" == pref.PO_SYN_RATE)
+        //        salesClause = "AND SALES_RATE IS NOT NULL AND SALES_RATE <> 0";
+        //    if ("Y" == pref.SQL_NN_CONVERSION_UNIT_FACTOR)
+        //        conversionClause = "AND IUS.MU_CODE IS NOT NULL AND IUS.CONVERSION_FACTOR IS NOT NULL";
+
+        //    string ItemsQuery = string.Empty;
+        //    ItemsQuery = $@"SELECT IM.ITEM_CODE, IM.ITEM_EDESC, ISS.BRAND_NAME, IM.INDEX_MU_CODE AS UNIT, MC.MU_EDESC, IUS.MU_CODE CONVERSION_UNIT,
+        //        TO_CHAR(IUS.CONVERSION_FACTOR) AS CONVERSION_FACTOR, TO_CHAR(NVL(IR.SALES_RATE, 0)) SALES_RATE, TO_CHAR(IR.APPLY_DATE) AS APPLY_DATE
+        //        FROM IP_ITEM_MASTER_SETUP IM
+        //          INNER JOIN IP_MU_CODE MC ON MC.MU_CODE = IM.INDEX_MU_CODE AND MC.COMPANY_CODE = IM.COMPANY_CODE
+        //          INNER JOIN IP_ITEM_SPEC_SETUP ISS ON ISS.ITEM_CODE = IM.ITEM_CODE AND ISS.COMPANY_CODE = IM.COMPANY_CODE AND TRIM(ISS.BRAND_NAME) IS NOT NULL
+        //          LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = ISS.ITEM_CODE AND IUS.COMPANY_CODE = ISS.COMPANY_CODE
+        //          LEFT JOIN (SELECT A.ITEM_CODE, A.APPLY_DATE, B.SALES_RATE, B.COMPANY_CODE
+        //                      FROM (SELECT ITEM_CODE, COMPANY_CODE, MAX(APP_DATE) APPLY_DATE 
+        //                        FROM IP_ITEM_RATE_APPLICAT_SETUP
+        //                        WHERE COMPANY_CODE = '{model.COMPANY_CODE}' 
+        //                        AND BRANCH_CODE = '{model.BRANCH_CODE}'
+        //                        GROUP BY ITEM_CODE, COMPANY_CODE) A
+        //                      INNER JOIN IP_ITEM_RATE_APPLICAT_SETUP B
+        //                        ON B.ITEM_CODE = A.ITEM_CODE
+        //                        AND B.APP_DATE = A.APPLY_DATE
+        //                        AND B.COMPANY_CODE = '{model.COMPANY_CODE}'
+        //                        AND B.BRANCH_CODE = '{model.BRANCH_CODE}') IR 
+        //            ON IR.ITEM_CODE = IM.ITEM_CODE AND IR.COMPANY_CODE = IM.COMPANY_CODE
+        //        WHERE IM.COMPANY_CODE = '{model.COMPANY_CODE}' AND IM.CATEGORY_CODE = '{CATEGORY_CODE}' AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N'
+        //        {salesClause}
+        //        {conversionClause}
+        //        ORDER BY UPPER(IM.ITEM_EDESC) ASC";
+        //    var Items = dbContext.SqlQuery<ItemModel>(ItemsQuery).ToList();
+        //    if (Items.Count <= 0)
+        //        throw new Exception("No records found");
+        //    return Items;
+        //}
+
+        /*SASHI* no value for mu_code*/
         public List<ItemModel> FetchItems(CommonRequestModel model, NeoErpCoreEntity dbContext)
         {
             var pref = FetchPreferences(model.COMPANY_CODE, dbContext);
@@ -1289,6 +1329,258 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             return result;
         }
 
+        /*sashi Subledger module*/
+        public dynamic FetchSubLedgers(TransactionRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            var slData = new List<Dictionary<string, object>>();
+            var opening = new Dictionary<string, object>();
+            List<double> drsArray = new List<double>();
+            List<double> crsArray = new List<double>();
+            Dictionary<string, float> ageingVals = new Dictionary<string, float>();
+
+            // First query to fetch transaction details
+            string query1 = $@"
+        SELECT voucher_date, voucher_no, dr_amount * exchange_rate AS dr_amount, 
+               cr_amount * exchange_rate AS cr_amount, particulars, created_by, 
+               currency_code, exchange_rate, BS_DATE(voucher_date) AS bs_date,
+               remarks, manual_no
+        FROM V$VIRTUAL_SUB_LEDGER
+        WHERE sub_code = '{model.sub_code}'
+          AND company_code = '{model.COMPANY_CODE}'
+          AND branch_code = '{model.BRANCH_CODE}'
+          AND trunc(voucher_date) BETWEEN '{model.from_date}' and 
+          '{model.to_date}'
+          AND deleted_flag = 'N'
+          AND form_code != 0
+        ORDER BY voucher_date, voucher_no";
+
+            string sConnStr1 = ConfigurationManager.ConnectionStrings["NeoErpCoreEntity"].ToString();
+            string[] tokens = sConnStr1.Split('"');
+
+            using (OracleConnection objConn = new OracleConnection(tokens[1]))
+            {
+                objConn.Open();
+
+                using (OracleCommand cmd = new OracleCommand(query1, objConn))
+                {
+                    cmd.Parameters.Add(":SubCode", model.sub_code);
+                    cmd.Parameters.Add(":CompanyCode", model.COMPANY_CODE);
+                    cmd.Parameters.Add(":BranchCode", model.BRANCH_CODE);
+                    cmd.Parameters.Add(":FromDate", model.from_date);
+                    cmd.Parameters.Add(":ToDate", model.to_date);
+
+                    using (OracleDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            double debitAmt = reader["dr_amount"] != DBNull.Value ? Convert.ToDouble(reader["dr_amount"]) : 0;
+                            double creditAmt = reader["cr_amount"] != DBNull.Value ? Convert.ToDouble(reader["cr_amount"]) : 0;
+
+                            drsArray.Add(debitAmt);
+                            crsArray.Add(creditAmt);
+
+                            var vals = new Dictionary<string, object>
+                            {
+                                ["voucher_date"] = Convert.ToDateTime(reader["voucher_date"]).ToString("dd-MMM-yyyy"),
+                                ["voucher_no"] = reader["voucher_no"].ToString(),
+                                ["dr_amount"] = debitAmt,
+                                ["cr_amount"] = creditAmt,
+                                ["particulars"] = reader["particulars"].ToString(),
+                                ["created_by"] = reader["created_by"].ToString(),
+                                ["currency_code"] = reader["currency_code"].ToString(),
+                                ["exchange_rate"] = reader["exchange_rate"] != DBNull.Value ? Convert.ToDouble(reader["exchange_rate"]) : 0,
+                                ["miti"] = reader["bs_date"].ToString(),
+                                ["remarks"] = reader["remarks"].ToString(),
+                                ["manual_no"] = reader["manual_no"].ToString()
+                            };
+
+                            slData.Add(vals);
+                        }
+                    }
+                }
+            }
+
+            // Second query for opening balance
+            string query2 = $@"
+        SELECT to_date('{model.from_date}', 'DD-MM-YYYY') AS voucher_date, ' Opening Balance' AS voucher_no,
+               CASE WHEN SUM(dr_amount) - SUM(cr_amount) > 0 THEN SUM(dr_amount) - SUM(cr_amount) END AS dr_amount,
+               CASE WHEN SUM(cr_amount) - SUM(dr_amount) > 0 THEN SUM(cr_amount) - SUM(dr_amount) END AS cr_amount
+        FROM V$VIRTUAL_SUB_LEDGER
+        WHERE sub_code = '{model.sub_code}'
+          AND company_code = '{model.COMPANY_CODE}'
+          AND branch_code = '{model.BRANCH_CODE}'
+          AND deleted_flag = 'N'
+          AND (form_code = '0' OR trunc(voucher_date) < '{model.from_date}')
+        GROUP BY sub_code";
+
+            using (OracleConnection objConn = new OracleConnection(tokens[1]))
+            {
+                objConn.Open();
+
+                using (OracleCommand cmd = new OracleCommand(query2, objConn))
+                {
+                    using (OracleDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            double openingDr = reader["dr_amount"] != DBNull.Value ? Convert.ToDouble(reader["dr_amount"]) : 0;
+                            double openingCr = reader["cr_amount"] != DBNull.Value ? Convert.ToDouble(reader["cr_amount"]) : 0;
+
+                            opening["DR"] = openingDr;
+                            opening["CR"] = openingCr;
+                        }
+                    }
+                }
+            }
+
+            double debitTotal = drsArray.Sum() + Convert.ToDouble(opening["DR"]);
+            double creditTotal = crsArray.Sum() + Convert.ToDouble(opening["CR"]);
+            double totalClosing = debitTotal - creditTotal;
+
+
+
+            //string cust_code = $@"select link_sub_code from sa_customer_setup where customer_code ='{model.sub_code}'";
+            var query_cust_code = model.sub_code;
+
+            string query3 = $@"
+        SELECT NVL(SUM(DR_AMOUNT)-SUM(CR_AMOUNT),0) FROM V$VIRTUAL_SUB_LEDGER 
+        WHERE SUB_CODE IN('{query_cust_code}') AND COMPANY_CODE in ({model.COMPANY_CODE})";
+
+            bool for_debit_balance = false;
+
+            // Execute the query to check the debit balance
+            //string sConnStr1 = ConfigurationManager.ConnectionStrings["NeoErpCoreEntity"].ToString();
+            //string[] tokens = sConnStr1.Split('"');
+
+            using (OracleConnection objConn = new OracleConnection(tokens[1]))
+            {
+                objConn.Open();  // Ensure the connection is opened here
+
+                using (OracleCommand objCmd = new OracleCommand(query3, objConn))
+                {
+                    OracleDataReader reader = objCmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        if (reader.GetDecimal(0) > 0)
+                        {
+                            for_debit_balance = true;
+                        }
+                    }
+                    reader.Close();
+                }
+            }
+            // Query for ageing data based on debit balance
+            if (for_debit_balance)
+            {
+                query3 = $@"
+            SELECT SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 0 AND 30 THEN REAL_BALANCE ELSE 0 END) A30, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 31 AND 60 THEN REAL_BALANCE ELSE 0 END) A60, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 61 AND 90 THEN REAL_BALANCE ELSE 0 END) A90, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 91 AND 120 THEN REAL_BALANCE ELSE 0 END) A120, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE > 120 THEN REAL_BALANCE ELSE 0 END) A121 
+            FROM (
+                SELECT VOUCHER_NO, VOUCHER_DATE, DR_AMOUNT, BALANCE_AMOUNT, CR_AMOUNT, 
+                DECODE(ROWNUM,1,ABS(BALANCE_AMOUNT), DR_AMOUNT) REAL_BALANCE 
+                FROM (
+                   SELECT  VOUCHER_NO,  VOUCHER_DATE, DR_AMOUNT, CR_AMOUNT, SUM (CR_AMOUNT - DR_AMOUNT ) OVER ( ORDER BY VOUCHER_DATE, REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', ''), COMPANY_CODE ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)   BALANCE_AMOUNT FROM (  
+                SELECT VOUCHER_NO,  VOUCHER_DATE, FORM_CODE, A.COMPANY_CODE, DR_AMOUNT  * NVL(EXCHANGE_RATE,1)  - NVL((SELECT SUM(NVL(REFERENCE_AMOUNT,0)) FROM  
+                   FA_REFERENCE_TRANSACTION WHERE REFERENCE_NO = A.MANUAL_NO AND COMPANY_CODE = A.COMPANY_CODE AND 
+                SUB_CODE = A.SUB_CODE AND DELETED_FLAG = 'N'),0)  DR_AMOUNT , DECODE( ROW_NUMBER() OVER ( ORDER BY  VOUCHER_DATE,  REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', ''),COMPANY_CODE ),1,  
+                (SELECT  NVL(SUM(NVL(CR_AMOUNT ,0)  * NVL(EXCHANGE_RATE,1) ),0) TOTALPAIDAMT FROM V$VIRTUAL_SUB_LEDGER  
+                WHERE DELETED_FLAG = 'N'  
+                AND COMPANY_CODE in ('{model.COMPANY_CODE}')
+                AND BRANCH_CODE IN ('{model.BRANCH_CODE}') 
+                AND TO_DATE(VOUCHER_DATE) <= TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')  
+                AND SUB_CODE IN('{query_cust_code}')  
+                AND (VOUCHER_NO, SUB_CODE, COMPANY_CODE) NOT IN (SELECT DISTINCT NVL(VOUCHER_NO,'A000000'),SUB_CODE, COMPANY_CODE FROM FA_REFERENCE_TRANSACTION WHERE 
+                COMPANY_CODE in ('{model.COMPANY_CODE}') AND DELETED_FLAG = 'N' AND SUB_CODE IN('{query_cust_code}') )),0) CR_AMOUNT FROM V$VIRTUAL_SUB_LEDGER A  
+                WHERE TO_DATE(VOUCHER_DATE) <= TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')  
+                AND A.DELETED_FLAG='N'  
+                AND COMPANY_CODE in ('{model.COMPANY_CODE}')
+                AND BRANCH_CODE IN ('{model.BRANCH_CODE}')  and 
+                SUB_CODE IN('{query_cust_code}')  
+                ORDER BY VOUCHER_DATE, VOUCHER_DATE, REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', '')   
+                ) A
+            ) WHERE BALANCE_AMOUNT < 0)";
+            }
+            else
+            {
+                query3 = $@"
+            SELECT SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 0 AND 30 THEN REAL_BALANCE ELSE 0 END) A30, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 31 AND 60 THEN REAL_BALANCE ELSE 0 END) A60, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 61 AND 90 THEN REAL_BALANCE ELSE 0 END) A90, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE BETWEEN 91 AND 120 THEN REAL_BALANCE ELSE 0 END) A120, 
+            SUM(CASE WHEN TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss') - VOUCHER_DATE > 120 THEN REAL_BALANCE ELSE 0 END) A121 
+            FROM (
+                 SELECT  VOUCHER_NO,  VOUCHER_DATE ,  CR_AMOUNT , BALANCE_AMOUNT, DR_AMOUNT, DECODE(ROWNUM,1,ABS(BALANCE_AMOUNT), CR_AMOUNT) REAL_BALANCE 
+                FROM (
+                    SELECT  VOUCHER_NO,  VOUCHER_DATE, CR_AMOUNT, DR_AMOUNT, SUM (DR_AMOUNT - CR_AMOUNT ) OVER ( ORDER BY VOUCHER_DATE, REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', ''), 
+                    COMPANY_CODE ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)   BALANCE_AMOUNT
+                    FROM (  
+                    SELECT VOUCHER_NO,  VOUCHER_DATE, FORM_CODE, A.COMPANY_CODE
+                    , CR_AMOUNT  * NVL(EXCHANGE_RATE,1) CR_AMOUNT , DECODE( ROW_NUMBER() OVER
+                    ( ORDER BY  VOUCHER_DATE,  REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', ''),COMPANY_CODE ),1,  
+                    (
+                    SELECT  NVL(SUM(NVL(DR_AMOUNT ,0)  * NVL(EXCHANGE_RATE,1) ),0) TOTALPAIDAMT FROM V$VIRTUAL_SUB_LEDGER  
+                    WHERE DELETED_FLAG = 'N'
+                    AND COMPANY_CODE in ('{model.COMPANY_CODE}')
+                    AND BRANCH_CODE IN ('{model.BRANCH_CODE}')  AND TO_DATE(VOUCHER_DATE) <= TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+                    AND SUB_CODE IN('{query_cust_code}')  
+                    ),0) DR_AMOUNT FROM V$VIRTUAL_SUB_LEDGER A  
+                    WHERE TO_DATE(VOUCHER_DATE) <= TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+                    AND A.DELETED_FLAG='N'  
+                    AND COMPANY_CODE in ('{model.COMPANY_CODE}')
+                    AND BRANCH_CODE IN ('{model.BRANCH_CODE}')  AND SUB_CODE IN('{query_cust_code}')  
+                    ORDER BY VOUCHER_DATE, VOUCHER_DATE, REGEXP_REPLACE(VOUCHER_NO, '[^0-9]', '')   
+
+                ) A
+            ) WHERE BALANCE_AMOUNT < 0)";
+            }
+
+            // Execute the query to get ageing data
+            //Dictionary<string, float> vals = new Dictionary<string, float>();
+            using (OracleConnection objConn = new OracleConnection(tokens[1]))
+            {
+                objConn.Open();  // Ensure the connection is opened here
+
+                using (OracleCommand objCmd = new OracleCommand(query3, objConn))
+                {
+                    OracleDataReader reader = objCmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        float d0 = reader.IsDBNull(0) ? 0 : reader.GetFloat(0);
+                        float d1 = reader.IsDBNull(1) ? 0 : reader.GetFloat(1);
+                        float d2 = reader.IsDBNull(2) ? 0 : reader.GetFloat(2);
+                        float d3 = reader.IsDBNull(3) ? 0 : reader.GetFloat(3);
+                        float d4 = reader.IsDBNull(4) ? 0 : reader.GetFloat(4);
+
+                        ageingVals["0-30"] = d0;
+                        ageingVals["30-60"] = d1;
+                        ageingVals["61-90"] = d2;
+                        ageingVals["91-120"] = d3;
+                        ageingVals["120++"] = d4;
+                        ageingVals["total"] = d0 + d1 + d2 + d3 + d4;
+                    }
+                    reader.Close();
+                }
+            }
+
+
+
+            var transaction = new
+            {
+                transactions = slData,
+                debit_total = debitTotal,
+                credit_total = creditTotal,
+                opening = opening,
+                closing_balance = totalClosing,
+                ageingReport = ageingVals
+                // You can extend this to include ageing_report, company_info, etc.
+            };
+
+            return transaction;
+        }
+        /*sashi Subledger module*/
         public List<MoveTransactionResponseModel> FetchMovementTransactions(TransactionRequestModel model, NeoErpCoreEntity dbContext)
         {
             var result = new List<MoveTransactionResponseModel>();
@@ -1296,13 +1588,11 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             if (!DateTime.TryParseExact(model.from_date, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate) || !DateTime.TryParseExact(model.to_date, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
                 throw new Exception("Invalid Date");
 
-          
-
             //opening balance
             string OpeningQuery = string.Empty;
             string NonOpeningQuery = string.Empty;
-            model.COMPANY_CODE = model.COMPANY_CODE.Replace(" ", string.Empty);
-            model.COMPANY_CODE = model.COMPANY_CODE.Replace(",", "','");
+            //model.COMPANY_CODE = model.COMPANY_CODE.Replace(" ", string.Empty);
+            //model.COMPANY_CODE = model.COMPANY_CODE.Replace(",", "','");
             model.BRANCH_CODE = model.BRANCH_CODE.Replace(" ", string.Empty);
             model.BRANCH_CODE = model.BRANCH_CODE.Replace(",", "','");
             if (string.IsNullOrWhiteSpace(model.acc_code))
@@ -1322,16 +1612,99 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //        ORDER BY SUB_EDESC, VOUCHER_DATE";
             //var query = $@"SELECT * FROM M$V_MOVEMENT_ANALYSIS WHERE 'C'|| CUSTOMER_CODE ='{model.acc_code}' AND COMPANY_CODE IN('{model.COMPANY_CODE}')";
             //var query1 = $@"SELECT VOUCHER_NO,VOUCHER_DATE,CREDIT_LIMIT,CREDIT_DAYS,DUE_DAYS,SALES_AMT,REC_AMT,BALANCE FROM M$V_MOVEMENT_ANALYSIS WHERE CUSTOMER_CODE='2836'";
-            var query1 = $@"SELECT CUSTOMER_EDESC,VOUCHER_NO,VOUCHER_DATE,CREDIT_LIMIT,CREDIT_DAYS,DUE_DAYS,SALES_AMT,REC_AMT,BALANCE FROM M$V_MOVEMENT_ANALYSIS WHERE 'C' || CUSTOMER_CODE ='{model.sub_code}' AND COMPANY_CODE IN('{model.COMPANY_CODE}')";
-            result= dbContext.SqlQuery<MoveTransactionResponseModel>(query1).ToList();
+            //var query2 = $@"SELECT CUSTOMER_EDESC,VOUCHER_NO,VOUCHER_DATE,CREDIT_LIMIT,CREDIT_DAYS,DUE_DAYS,SALES_AMT,REC_AMT,BALANCE FROM M$V_MOVEMENT_ANALYSIS WHERE 'C' || CUSTOMER_CODE ='{model.sub_code}' AND COMPANY_CODE IN('{model.COMPANY_CODE}')";
 
+            string sConnStr1 = ConfigurationManager.ConnectionStrings["NeoErpCoreEntity"].ToString();
+            string[] tokens = sConnStr1.Split('"');
 
+            using (OracleConnection objConn = new OracleConnection(tokens[1]))
+            {
+                objConn.Open();  // Ensure the connection is opened here
 
+                using (OracleCommand objCmd = new OracleCommand("DIST_MOVEMENT_ANALYSIS", objConn))
+                {
+                    objCmd.CommandType = CommandType.StoredProcedure;
+                    objCmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
+                    objCmd.Parameters.Add("p_fromDate", OracleDbType.Varchar2).Value = fromDate.ToString("dd-MMM-yyyy");
+                    objCmd.Parameters.Add("p_toDate", OracleDbType.Varchar2).Value = toDate.ToString("dd-MMM-yyyy");
+                    objCmd.Parameters.Add("p_company_codes", OracleDbType.Varchar2).Value = model.COMPANY_CODE;
+                    objCmd.Parameters.Add("p_sub_code", OracleDbType.Varchar2).Value = model.sub_code;
 
+                    using (OracleDataReader reader = objCmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            MoveTransactionResponseModel item = new MoveTransactionResponseModel
+                            {
+                                CUSTOMER_EDESC = reader.GetString(reader.GetOrdinal("CUSTOMER_EDESC")),
+                                VOUCHER_NO = reader.GetString(reader.GetOrdinal("VOUCHER_NO")),
+                                MANUAL_NO = reader.GetString(reader.GetOrdinal("MANUAL_NO")),
+                                DR_AMOUNT = reader.GetDecimal(reader.GetOrdinal("VSL_DR_AMOUNT")),
+                                CR_AMOUNT = reader.GetDecimal(reader.GetOrdinal("VSL_CR_AMOUNT")),
+                                VOUCHER_DATE = reader.GetString(reader.GetOrdinal("VOUCHER_DATE")),
+                                CREDIT_DAYS = reader.GetString(reader.GetOrdinal("CREDIT_DAYS")),
+                                CREDIT_LIMIT = reader.GetString(reader.GetOrdinal("CREDIT_LIMIT")),
+                                SALES_AMT = reader.GetString(reader.GetOrdinal("SALES_AMT")),
+                                SUB_CODE = reader.GetString(reader.GetOrdinal("SUB_CODE")),
+                                BALANCE = reader.GetString(reader.GetOrdinal("BALANCE")),
+                                REC_AMT = reader.GetString(reader.GetOrdinal("REC_AMT"))
+                            };
+
+                            result.Add(item);
+                        }
+                    }
+                }
+            }
             if (result.Count <= 0)
+            {
                 throw new Exception("No records found");
+            }
             return result;
         }
+
+        //public List<MoveTransactionResponseModel> FetchMovementTransactions(TransactionRequestModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    var result = new List<MoveTransactionResponseModel>();
+        //    DateTime fromDate, toDate;
+        //    if (!DateTime.TryParseExact(model.from_date, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate) || !DateTime.TryParseExact(model.to_date, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
+        //        throw new Exception("Invalid Date");
+
+
+
+        //    //opening balance
+        //    string OpeningQuery = string.Empty;
+        //    string NonOpeningQuery = string.Empty;
+        //    model.COMPANY_CODE = model.COMPANY_CODE.Replace(" ", string.Empty);
+        //    model.COMPANY_CODE = model.COMPANY_CODE.Replace(",", "','");
+        //    model.BRANCH_CODE = model.BRANCH_CODE.Replace(" ", string.Empty);
+        //    model.BRANCH_CODE = model.BRANCH_CODE.Replace(",", "','");
+        //    if (string.IsNullOrWhiteSpace(model.acc_code))
+        //        throw new Exception("No records found");
+
+        //    //var query = $@"SELECT DISTINCT SUB_CODE,SUB_EDESC, VOUCHER_NO,MANUAL_NO,TO_CHAR(VOUCHER_DATE) AS VOUCHER_DATE, CREDIT_LIMIT, CREDIT_DAYS, VOUCHER_DATE+CREDIT_DAYS DUE_DATE,
+        //    //                 COALESCE( SUM(DR_AMOUNT - CR_AMOUNT) OVER (PARTITION BY SUB_EDESC ORDER BY VOUCHER_DATE
+        //    //                     RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0 )       AS OP_BAL,
+        //    //                 SUM(DR_AMOUNT) OVER (PARTITION BY SUB_EDESC, VOUCHER_DATE)                  AS DAILY_DR,
+        //    //                 SUM(CR_AMOUNT) OVER (PARTITION BY SUB_EDESC, VOUCHER_DATE)                  AS DAILY_CR,
+        //    //                 SUM(DR_AMOUNT - CR_AMOUNT) OVER (PARTITION BY SUB_EDESC ORDER BY VOUCHER_DATE) AS CL_BAL
+        //    //            FROM     V$VIRTUAL_SUB_DEALER_LEDGER
+        //    //        WHERE 1=1
+        //    //        AND COMPANY_CODE IN ('{model.COMPANY_CODE}')
+        //    //        AND  TRUNC(VOUCHER_DATE) BETWEEN TO_DATE('{fromDate.ToString("dd-MMM-yyyy")}','DD-MON-RRRR') AND TO_DATE('{toDate.ToString("dd-MMM-yyyy")}','DD-MON-RRRR')
+        //    //        AND SUB_CODE in (select distinct link_sub_code from sa_customer_setup  where deleted_flag='N' and company_code in ('{model.COMPANY_CODE}') and deleted_flag='N' and group_sku_flag='I'  and customer_code='{model.acc_code}')
+        //    //        ORDER BY SUB_EDESC, VOUCHER_DATE";
+        //    //var query = $@"SELECT * FROM M$V_MOVEMENT_ANALYSIS WHERE 'C'|| CUSTOMER_CODE ='{model.acc_code}' AND COMPANY_CODE IN('{model.COMPANY_CODE}')";
+        //    //var query1 = $@"SELECT VOUCHER_NO,VOUCHER_DATE,CREDIT_LIMIT,CREDIT_DAYS,DUE_DAYS,SALES_AMT,REC_AMT,BALANCE FROM M$V_MOVEMENT_ANALYSIS WHERE CUSTOMER_CODE='2836'";
+        //    var query1 = $@"SELECT CUSTOMER_EDESC,VOUCHER_NO,VOUCHER_DATE,CREDIT_LIMIT,CREDIT_DAYS,DUE_DAYS,SALES_AMT,REC_AMT,BALANCE FROM M$V_MOVEMENT_ANALYSIS WHERE 'C' || CUSTOMER_CODE ='{model.sub_code}' AND COMPANY_CODE IN('{model.COMPANY_CODE}')";
+        //    result = dbContext.SqlQuery<MoveTransactionResponseModel>(query1).ToList();
+
+
+
+
+        //    if (result.Count <= 0)
+        //        throw new Exception("No records found");
+        //    return result;
+        //}
 
         public Dictionary<string, List<PurchaseOrderResponseModel>> FetchPurchaseOrder(PurchaseOrderRequestModel model, NeoErpCoreEntity dbContext)
         {
@@ -2440,18 +2813,18 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             string subquery = String.Empty;
             string MTDfilter = String.Empty;
             string filter = String.Empty;
-            string SUBfilter = String.Empty;           
+            string SUBfilter = String.Empty;
 
             if (model.REPORT_TYPE.ToUpper() == "MTD")
             {
-                
+
                 int month = DateTime.Now.Month;
                 int year = DateTime.Now.Year;
                 int day = DateTime.Now.Day;
                 DateConverter converter = DateConverter.ConvertToNepali(year, month, day); //converting english date to nepali date
                 string monthName = converter.MonthName;
                 MTDfilter = $@"HAVING FN_BS_MONTH (SUBSTR (NEPALI_MONTH, 5, 2))='{monthName}'";
-               
+
 
             }
             else if (model.REPORT_TYPE.ToUpper() == "YTD")
@@ -2461,13 +2834,13 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 
                 if (model.TYPE.ToUpper() == "D")
                 {
-                    SUBfilter= $@"AND A.SALES_DATE < trunc(sysdate)";
-                   
+                    SUBfilter = $@"AND A.SALES_DATE < trunc(sysdate)";
+
                 }
                 else if (model.TYPE.ToUpper() == "R")
                 {
                     SUBfilter = $@"AND A.ORDER_DATE < trunc(sysdate)";
-                    
+
                 }
             }
 
@@ -2537,7 +2910,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         }
         public List<AchievementReportResponseModel> fetchAchievementReportMonthWise(AchievementReportRequestModel model, NeoErpCoreEntity dbContext)
         {
-           
+
             string query = $@"  SELECT CUSTOMER_CODE,BRAND_NAME,ITEM_EDESC,NEPALI_MONTH,
                     FN_BS_MONTH (SUBSTR (NEPALI_MONTH, 5, 2)) AS NEPALI_MONTHINT,
                     ROUND(SUM(TARGET_QUANTITY),0) TARGET_QUANTITY,
@@ -2578,6 +2951,791 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             var list = dbContext.SqlQuery<AchievementReportResponseModel>(query).ToList();
             return list;
         }
+        public List<SalesVsCollectionModel> fetchSalesVsCollectionData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT DISTINCT E.CUSTOMER_CODE, E.CUSTOMER_EDESC,E.group_sku_flag, NVL(E.NET_SALES_VALUE, 0) AS NET_SALES_VALUE, NVL(E.COLLECTION, 0) AS COLLECTION, NVL(E.OPENING, 0) AS OPENING,E.COMPANY_CODE 
+                FROM (SELECT * FROM ( SELECT  A.CUSTOMER_CODE,A.CUSTOMER_EDESC, A.master_customer_code,A.pre_customer_code,A.group_sku_flag,A.company_code FROM SA_CUSTOMER_SETUP A WHERE 
+                 A.COMPANY_CODE IN ('{model.company_code}', '0') AND A.deleted_flag = 'N'  AND A.group_sku_flag = 'I'  GROUP BY  A.CUSTOMER_CODE, A.CUSTOMER_EDESC, A.master_customer_code, A.pre_customer_code,A.group_sku_flag,
+                 A.company_code ) A LEFT OUTER JOIN ( SELECT  COD,NET_SALES_VALUE FROM (SELECT cus_name,Cod, SALES_ROLL_QTY,SALES_QTY,SALES_VALUE,SALES_RET_ROLL_QTY,SALES_RET_QTY,
+                 SALES_RET_VALUE,SALES_ROLL_QTY - SALES_RET_ROLL_QTY AS NET_ROLL_QTY, SALES_QTY - SALES_RET_QTY AS NET_SALES_QTY, SALES_VALUE - SALES_RET_VALUE AS NET_SALES_VALUE 
+                FROM (SELECT  D.CUS_name, D.cod,SUM(A.SALES_ROLL_QTY) AS SALES_ROLL_QTY, SUM(A.SALES_QTY) AS SALES_QTY, SUM(A.SALES_VALUE) AS SALES_VALUE, SUM(SALES_RET_ROLL_QTY) AS SALES_RET_ROLL_QTY, 
+                SUM(A.SALES_RET_QTY) AS SALES_RET_QTY, SUM(A.SALES_RET_VALUE) AS SALES_RET_VALUE FROM ( SELECT  A.COMPANY_CODE,A.BRANCH_CODE,A.customer_code, SUM(NVL(A.ROLL_QTY, 0)) AS SALES_ROLL_QTY, 
+                SUM(NVL(A.QUANTITY, 0)) AS SALES_QTY,SUM(NVL(A.QUANTITY * A.NET_sales_RATE, 0)) AS SALES_VALUE,0 AS SALES_RET_ROLL_QTY,0 AS SALES_RET_QTY,0 AS SALES_RET_VALUE  FROM SA_SALES_INVOICE A 
+                 WHERE  A.DELETED_FLAG = 'N' AND A.COMPANY_CODE IN ('{model.company_code}', '0') AND A.BRANCH_CODE IN (SELECT sbc.branch_code  FROM SC_BRANCH_CONTROL  sbc,sc_application_users sau WHERE
+                sbc.user_no = sau.user_no and sbc.company_code=sau.company_code and sau.employee_code='{model.sp_code}' AND sbc.company_code IN ('{model.company_code}', '0'))
+                 AND TRUNC(A.SALES_DATE) BETWEEN '{model.start_date}' AND '{model.end_date}'  GROUP BY   A.COMPANY_CODE, A.BRANCH_CODE, A.customer_CODE
+                UNION ALL
+                SELECT  A.COMPANY_CODE, A.BRANCH_CODE, A.customer_code, 0 AS SALES_ROLL_QTY, 0 AS SALES_QTY,0 AS SALES_VALUE, SUM(NVL(A.ROLL_QTY, 0)) AS SALES_RET_ROLL_QTY,SUM(NVL(A.QUANTITY, 0)) AS SALES_RET_QTY,
+                SUM(NVL(A.QUANTITY * A.NET_sales_RATE, 0)) AS SALES_RET_VALUE FROM SA_SALES_RETURN A WHERE  A.DELETED_FLAG = 'N' AND A.COMPANY_CODE IN ('{model.company_code}', '0') AND A.BRANCH_CODE IN (
+                SELECT sbc.branch_code  FROM SC_BRANCH_CONTROL  sbc,sc_application_users sau WHERE sbc.user_no = sau.user_no and sbc.company_code=sau.company_code and sau.employee_code='{model.sp_code}' AND sbc.company_code IN ('{model.company_code}', '0') ) AND TRUNC(A.RETURN_DATE) BETWEEN '{model.start_date}' AND '{model.end_date}'
+                GROUP BY  A.COMPANY_CODE,  A.BRANCH_CODE, A.customer_CODE  ) A  LEFT OUTER JOIN (SELECT customer_code AS cod,customer_edesc AS cus_name  FROM SA_CUSTOMER_SETUP  WHERE COMPANY_CODE IN ('{model.company_code}', '0') 
+                GROUP BY customer_code, customer_edesc ) D ON D.cod = A.CUSTOMER_CODE GROUP BY   D.cod,D.cus_name)) ORDER BY Cus_name) B ON A.customer_code = B.cod
+                LEFT OUTER JOIN ( SELECT  sub_code, NVL(SUM(NVL(CR_AMOUNT, 0) * NVL(EXCHANGE_RATE, 1)), 0) AS collection FROM V$VIRTUAL_SUB_LEDGER b WHERE (COMPANY_CODE, Voucher_NO) IN (
+                SELECT  COMPANY_CODE, A.voucher_no FROM V$VIRTUAL_GENERAL_LEDGER A WHERE A.ACC_CODE IN ( SELECT  ACC_CODE FROM FA_CHART_OF_ACCOUNTS_SETUP WHERE ACC_NATURE IN ('AB', 'AC', 'LC')
+                AND COMPANY_CODE = A.COMPANY_CODE ) AND A.TRANSACTION_TYPE = 'DR' AND COMPANY_CODE IN ('{model.company_code}', '0') AND BRANCH_CODE IN (SELECT sbc.branch_code  FROM SC_BRANCH_CONTROL  sbc,sc_application_users sau WHERE
+                sbc.user_no = sau.user_no and sbc.company_code=sau.company_code and sau.employee_code='{model.sp_code}' AND sbc.company_code IN ('{model.company_code}', '0') ) AND TRUNC(voucher_DATE) BETWEEN '{model.start_date}' AND '{model.end_date}' AND A.DELETED_FLAG = 'N' AND A.Voucher_NO != '0') AND SUBSTR(sub_code, 1, 1) = 'C'
+                AND TRANSACTION_TYPE = 'CR' GROUP BY sub_code) C ON 'C' || A.customer_code = C.SUB_CODE LEFT OUTER JOIN (SELECT  sub_code AS D_CODE,NVL(SUM(dr_amount) - SUM(cr_amount), 0) AS OPENING
+                FROM V$VIRTUAL_SUB_LEDGEr WHERE company_code IN ('{model.company_code}', '0') AND deleted_flag = 'N' AND (form_code = '0' OR voucher_date < '{model.start_date}')  AND SUBSTR(sub_code, 1, 1) = 'C' GROUP BY sub_code
+                ) D ON 'C' || A.customer_code = D.D_CODE) E LEFT JOIN DIST_USER_AREAS dua ON dua.company_code = E.company_code and dua.customer_code=E.customer_code where dua.sp_code = '{model.sp_code}' and 
+                dua.company_code='{model.company_code}' ORDER BY 2, 1";
+            var list = dbContext.SqlQuery<SalesVsCollectionModel>(query).ToList();
+            return list;
+        }
+        public List<ClosingStockDtlModel> fetchLatestClosingStock(ClosingStockModel model, NeoErpCoreEntity dbContext)
+        {
+            var list = new List<ClosingStockDtlModel>();
+            if (!string.IsNullOrEmpty(model.reseller_code))
+            {
+                string query1 = $@"SELECT Item_code,current_stock AS lvs, company_code, branch_code,reseller_code as code,sp_code
+                    FROM dist_reseller_stock WHERE sp_code = '{model.sp_code}' AND trunc(created_date) =trunc(sysdate)
+                    AND company_code = '{model.company_code}'and reseller_code in {model.distributor_code} AND branch_code = '{model.branch_code}'";
+                list = dbContext.SqlQuery<ClosingStockDtlModel>(query1).ToList();
+
+            }
+            else if (!string.IsNullOrEmpty(model.distributor_code))
+            {
+                string query2 = $@"SELECT Item_code,current_stock AS lvs, company_code, branch_code,distributor_code as code,sp_code
+                    FROM dist_distributor_stock WHERE sp_code = '{model.sp_code}' AND trunc(created_date) =trunc(sysdate)
+                    AND company_code = '{model.company_code}'and distributor_code in ('{model.distributor_code}') AND branch_code = '{model.branch_code}'";
+                list = dbContext.SqlQuery<ClosingStockDtlModel>(query2).ToList();
+            }
+            //var list = dbContext.SqlQuery<ClosingStockDtlModel>(query).ToList();
+            return list;
+        }
+        public Dictionary<string, object> SynProfileData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            var result = new Dictionary<string, object>();
+
+            #region Dailywise 
+            if (model.data == "TODAY")
+            {
+                try
+                {
+                    model.start_date = DateTime.Today.ToString("dd-MMM-yyyy");
+                    model.end_date = DateTime.Today.ToString("dd-MMM-yyyy");
+                    // Adding TODAY data
+                    var todayData = new List<object>
+        {
+                     new { name = "Visit_Target", data = FetchPlanVisitedDataSafe(model, dbContext) },
+                    new { name = "Collection_Target", data = FetchCollectionDataSafe(model, dbContext) },
+                    };
+
+                    result["TODAY"] = todayData;  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["TODAY"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+                #endregion Dailywise
+
+            }
+
+            #region Monthly 
+            else if (model.data == "MTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Month'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+
+                    var monthlyData = new List<object>
+                {
+                    new { name = "Visit_Target", data = FetchPlanVisitedDataSafe(model, dbContext) },
+                    new { name = "Collection_Target", data = FetchCollectionDataSafe(model, dbContext) },
+             
+                };
+
+                    result["MTD"] = monthlyData;  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["MTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+            #endregion Monthly
+            #region Yearly 
+            else if (model.data == "YTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Year'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+
+                    var yearlyData = new List<object>
+                {
+                    new { name = "Visit_Target", data = FetchPlanVisitedDataSafe(model, dbContext) },
+                    new { name = "Collection_Target", data = FetchCollectionDataSafe(model, dbContext) },
+                };
+
+                    result["YTD"] = yearlyData;  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["YTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+                #endregion Yearly
+                return result;
+        }
+        public Dictionary<string, object> SynProductQuantityData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            var result = new Dictionary<string, object>();
+
+            #region Dailywise 
+            if (model.data == "TODAY")
+            {
+                try
+                {
+                    model.start_date = DateTime.Today.ToString("dd-MMM-yyyy");
+                    model.end_date = DateTime.Today.ToString("dd-MMM-yyyy");
+        //            // Adding TODAY data
+        //            var todayData = new List<object>
+        //{
+        //            new { name = "Sales_Target", data = FetchQuantityWiseSafe(model, dbContext) },
+        //            new { name = "Product_Target", data = FetchProductWiseSafe(model, dbContext) ,total=FetchProductTotalSafe(model, dbContext)},
+        //            };
+
+                    result["TODAY"] = FetchProductWiseSafe(model, dbContext);  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["TODAY"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+                #endregion Dailywise
+
+            }
+
+            #region Monthly 
+            else if (model.data == "MTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Month'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+
+                //    var monthlyData = new List<object>
+                //{
+                //    new { name = "Sales_Target", data = FetchQuantityWiseSafe(model, dbContext) },
+                //    new { name = "Product_Target", data = FetchProductWiseSafe(model, dbContext) ,total=FetchProductTotalSafe(model, dbContext)},
+                //};
+
+                    result["MTD"] = FetchProductWiseSafe(model, dbContext);  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["MTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+            #endregion Monthly
+            #region Yearly 
+            else if (model.data == "YTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Year'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+
+                //    var yearlyData = new List<object>
+                //{
+
+                //    new { name = "Sales_Target", data = FetchQuantityWiseSafe(model, dbContext) },
+                //    new { name = "Product_Target", data = FetchProductWiseSafe(model, dbContext) ,total=FetchProductTotalSafe(model, dbContext)},
+
+                //};
+
+                    result["YTD"] = FetchProductWiseSafe(model, dbContext);  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["YTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+            #endregion Yearly
+
+            return result;
+        }
+        public Dictionary<string, object> SynAreaCustomerData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            var result = new Dictionary<string, object>();
+
+            #region Dailywise 
+            if (model.data == "TODAY")
+            {
+                try
+                {
+                    model.start_date = DateTime.Today.ToString("dd-MMM-yyyy");
+                    model.end_date = DateTime.Today.ToString("dd-MMM-yyyy");
+                    result["TODAY"] = FetchAreaWiseSafe(model, dbContext); ;  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["TODAY"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+                #endregion Dailywise
+
+            }
+
+            #region Monthly 
+            else if (model.data == "MTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Month'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+                    result["MTD"] = FetchAreaWiseSafe(model, dbContext); ;  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["MTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+            #endregion Monthly
+            #region Yearly 
+            else if (model.data == "YTD")
+            {
+                try
+                {
+                    var dateData = dbContext.SqlQuery<DateModel>($"select startdate as START_DATE, enddate as END_DATE from v_date_range where rangename='This Year'").ToList();
+
+                    model.start_date = dateData[0].START_DATE.ToString("dd-MMM-yyyy");
+                    model.end_date = dateData[0].END_DATE.ToString("dd-MMM-yyyy");
+                    result["YTD"] = FetchAreaWiseSafe(model, dbContext);  // Directly assigning the list
+                }
+                catch (Exception ex)
+                {
+                    result["YTD"] = new object[] { new { result = new object[] { }, response = false, error = ex.Message } };
+                }
+            }
+            #endregion Yearly
+
+            return result;
+        }
+        private IEnumerable<object> FetchPlanVisitedDataSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            try { return FetchPlanVisitedData(model, dbContext); }
+            catch { return new object[] { }; }
+        }
+
+        private IEnumerable<object> FetchCollectionDataSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            try { return FetchCollectionData(model, dbContext); }
+            catch { return new object[] { }; }
+        }
+
+        private IEnumerable<object> FetchQuantityWiseSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            try { return FetchQuantityWise(model, dbContext) as IEnumerable<object> ?? new List<object>(); }
+            catch { return new object[] { }; }
+        }
+
+        private object FetchProductWiseSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            try { return FetchProductWise(model, dbContext); }
+            catch { return new object[] { }; }
+        }
+
+        private object FetchAreaWiseSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            try { return FetchAreaWise(model, dbContext); }
+            catch { return new object[] { }; }
+        }
+        //private IEnumerable<object> FetchAreaTotalSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    try { return FetchAreaTotal(model, dbContext); }
+        //    catch { return new object[] { }; }
+        //}
+        //private IEnumerable<object> FetchCustomerWiseSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    try { return FetchCustomerWise(model, dbContext); }
+        //    catch { return new object[] { }; }
+        //}
+        //private IEnumerable<object> FetchCustomerTotalSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    try { return FetchCustomerTotal(model, dbContext); }
+        //    catch { return new object[] { }; }
+        //}
+        //private IEnumerable<object> FetchProductTotalSafe(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    try { return FetchProductTotal(model, dbContext); }
+        //    catch { return new object[] { }; }
+        //}
+        public object FetchAreaWise(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT NVL(a.target_amount, 0) AS TARGET_AMOUNT,NVL(a.target_quantity, 0) AS TARGET_QUANTITY,0 AS QUANTITY_ACHIEVED,0 AS AMOUNT_ACHIEVED,CASE WHEN b.area_code IS NULL THEN 'not_defined' ELSE b.area_code END AS area_code, CASE  WHEN b.area_code IS NULL THEN 'not_defined' ELSE c.area_name END AS name,
+            CASE WHEN a.master_code IS NULL THEN 'not_defined' ELSE a.master_code END AS customer_code, CASE WHEN a.master_code IS NULL THEN 'not_defined' ELSE d.customer_edesc END AS customer_edesc
+            FROM ip_target_setup a,dist_distributor_master b,dist_area_master c,sa_customer_setup  d 
+            WHERE a.company_code = b.company_code AND a.master_code = b.distributor_code AND b.area_code = c.area_code AND b.company_code = c.company_code AND a.master_code = d.customer_code AND c.company_code = d.company_code
+            AND a.target_type = 'SAL' and a.deleted_flag='N' and b.deleted_flag='N'  and c.deleted_flag='N'
+            AND a.sub_target_type = 'CUS' AND a.assign_employee = '{model.sp_code}' AND a.deleted_flag = 'N' AND trunc(a.from_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY') AND a.company_code in ('{model.company_code}')
+            UNION ALL
+            SELECT 0 as TARGET_QUANTITY,0 as TARGET_AMOUNT,NVL(a.quantity, 0) AS QUANTITY_ACHIEVED,NVL(a.total_price, 0) AS AMOUNT_ACHIEVED,
+            CASE  WHEN b.area_code IS NULL THEN 'not_defined' ELSE b.area_code END AS area_code, CASE WHEN b.area_code IS NULL THEN 'not_defined' ELSE d.area_name END AS name,CASE WHEN a.customer_code IS NULL THEN 'not_defined' ELSE a.customer_code END AS customer_code,CASE WHEN a.customer_code IS NULL THEN 'not_defined' ELSE f.customer_edesc END AS customer_edesc
+            FROM dist_ip_ssd_purchase_order a,dist_distributor_master b,dist_login_user c,dist_area_master d,(SELECT DISTINCT area_code, sp_code, company_code FROM dist_user_areas where deleted_flag='N') e,sa_customer_setup f
+            WHERE a.company_code = b.company_code AND a.customer_code = b.distributor_code AND a.company_code = c.company_code AND a.created_by = c.userid and e.sp_code=c.sp_code and a.customer_code=f.customer_code AND a.company_code = f.company_code
+            AND c.sp_code = e.sp_code  AND c.company_code = e.company_code AND b.area_code = e.area_code AND b.area_code = d.area_code AND b.company_code = d.company_code
+            AND trunc(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY')  AND TO_DATE('{model.end_date}', 'DD-MON-YY') 
+            AND a.company_code in ('{model.company_code}') AND a.deleted_flag = 'N' AND f.deleted_flag = 'N' AND b.deleted_flag = 'N'  AND c.active = 'Y' AND d.deleted_flag = 'N'  AND c.sp_code = '{model.sp_code}'
+            UNION ALL
+            SELECT 0 as TARGET_QUANTITY,0 as TARGET_AMOUNT,nvl(a.quantity, 0) QUANTITY_ACHIEVED, nvl(total_price, 0) AMOUNT_ACHIEVED,
+            CASE WHEN b.area_code IS NULL THEN 'not_defined' ELSE b.area_code  END area_code, CASE WHEN b.area_code IS NULL THEN 'not_defined' ELSE d.area_name END AS name,CASE WHEN a.customer_code IS NULL THEN 'not_defined' ELSE a.customer_code END AS customer_code,CASE WHEN a.customer_code IS NULL THEN 'not_defined' ELSE f.customer_edesc END AS customer_edesc
+            FROM dist_ip_ssr_purchase_order a, dist_distributor_master b,dist_login_user c,dist_area_master d,(SELECT DISTINCT area_code, sp_code, company_code FROM dist_user_areas where deleted_flag='N') e,sa_customer_setup f
+            WHERE a.company_code = b.company_code AND a.customer_code = b.distributor_code  AND a.company_code = c.company_code AND a.created_by = c.userid and a.customer_code=f.customer_code AND a.company_code = f.company_code
+            AND c.sp_code = e.sp_code AND c.company_code = e.company_code AND b.area_code = e.area_code AND b.area_code = d.area_code and e.sp_code=c.sp_code AND f.deleted_flag = 'N'
+            AND b.company_code = d.company_code AND a.company_code in ('{model.company_code}') AND a.deleted_flag = 'N' AND b.deleted_flag = 'N'  AND c.active = 'Y' AND d.deleted_flag = 'N'
+            AND c.sp_code = '{model.sp_code}' AND trunc(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY')  AND TO_DATE('{model.end_date}', 'DD-MON-YY')";
+            var result = dbContext.SqlQuery<AreaCusWiseModel>(query).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            var areaData = result
+          .GroupBy(x => new { x.AREA_CODE, x.NAME })
+          .Select(g => new AreaWiseModel
+          {
+              NAME = g.Key.NAME,
+              TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+              TARGET_AMOUNT = g.Sum(x => x.TARGET_AMOUNT),
+              QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED),
+              AMOUNT_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED)
+          }).OrderBy(g => (g.QUANTITY_ACHIEVED + g.AMOUNT_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+            var areaSum = new AreaWiseModel
+            {
+                NAME = "Total",
+                TARGET_QUANTITY = areaData.Sum(x => x.TARGET_QUANTITY),
+                TARGET_AMOUNT = areaData.Sum(x => x.TARGET_AMOUNT),
+                QUANTITY_ACHIEVED = areaData.Sum(x => x.QUANTITY_ACHIEVED),
+                AMOUNT_ACHIEVED = areaData.Sum(x => x.AMOUNT_ACHIEVED)
+            };
+            var customerData = result
+          .GroupBy(x => new { x.CUSTOMER_CODE, x.CUSTOMER_EDESC })
+          .Select(g => new CustomerWiseModel
+          {
+              NAME = g.Key.CUSTOMER_EDESC,
+              TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+              TARGET_AMOUNT = g.Sum(x => x.TARGET_AMOUNT),
+              QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED),
+              AMOUNT_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED)
+          }).OrderBy(g => (g.QUANTITY_ACHIEVED + g.AMOUNT_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+            var customerSum = new CustomerWiseModel
+            {
+                NAME = "Total",
+                TARGET_QUANTITY = customerData.Sum(x => x.TARGET_QUANTITY),
+                TARGET_AMOUNT = customerData.Sum(x => x.TARGET_AMOUNT),
+                QUANTITY_ACHIEVED = customerData.Sum(x => x.QUANTITY_ACHIEVED),
+                AMOUNT_ACHIEVED = customerData.Sum(x => x.AMOUNT_ACHIEVED)
+            };
+            var data = new List<object>
+                {
+                    new { name = "Area_Target", data =areaData,total= areaSum},
+                    new { name = "Customer_Target", data = customerData,total=customerSum }
+                };
+            return (data);
+        }
+        //public List<AreaWiseModel> FetchAreaTotal(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    var groupedData = FetchAreaWise(model, dbContext);
+
+        //    if (groupedData == null || groupedData.Count <= 0)
+        //        throw new Exception("No records found");
+
+        //    // Calculate the total sums across all areas
+        //    var totalSum = new AreaWiseModel
+        //    {
+        //        AREA_CODE = "",
+        //        NAME = "Total",
+        //        TARGET_QUANTITY = groupedData.Sum(x => x.TARGET_QUANTITY),
+        //        TARGET_AMOUNT = groupedData.Sum(x => x.TARGET_AMOUNT),
+        //        QUANTITY_ACHIEVED = groupedData.Sum(x => x.QUANTITY_ACHIEVED),
+        //        AMOUNT_ACHIEVED = groupedData.Sum(x => x.AMOUNT_ACHIEVED)
+        //    };
+
+        //    return new List<AreaWiseModel> { totalSum };
+        //}
+        public List<CollectionModel> FetchCollectionData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT 'Collection_Target' AS name,nvl(target_amount,0) AS target_amount,0 AS amount_achieved
+            FROM ip_target_setup WHERE assign_employee = '{model.sp_code}' AND target_type = 'COL' AND company_code in ('{model.company_code}') 
+            AND trunc(from_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YYYY') AND TO_DATE('{model.end_date}', 'DD-MON-YYYY')
+            union all 
+            SELECT 'Collection_Target' AS name, 0 AS target_amount,nvl(amount,0) AS amount_achieved
+            FROM dist_collection WHERE sp_code = '{model.sp_code}' AND company_code in ('{model.company_code}') 
+            AND trunc(created_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YYYY') AND TO_DATE('{model.end_date}', 'DD-MON-YYYY')";
+            var result = dbContext.SqlQuery<CollectionModel>(query).ToList();
+            var groupedData = result
+            .GroupBy(x => new { x.NAME })
+            .Select(g => new CollectionModel
+            {
+              NAME = g.Key.NAME,
+                TARGET_AMOUNT = g.Sum(x => x.TARGET_AMOUNT),
+                AMOUNT_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED),
+            }).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return (groupedData);
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<VisitPlanWiseModel> FetchPlanVisitedData(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT  t.name, T.TOTAL_TARGETS as TARGET_QUANTITY, NVL(V.TOTAL_ACHIEVED, 0) AS QUANTITY_ACHIEVED
+                FROM (SELECT SP_CODE, FULL_NAME,'Plan_wise' AS name, COUNT(*) AS TOTAL_TARGETS FROM DIST_TARGET_ENTITY WHERE COMPANY_CODE = '{model.company_code}'
+                AND SP_CODE = {model.sp_code} AND TRUNC(ASSIGN_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')  GROUP BY SP_CODE, FULL_NAME ) T
+                LEFT JOIN ( SELECT SP_CODE,FULL_NAME,'plan_wise' AS name, COUNT(*) AS TOTAL_ACHIEVED FROM  DIST_VISITED_ENTITY WHERE IS_VISITED = 'Y' AND CUSTOMER_CODE  IN (SELECT 
+                        ENTITY_CODE FROM  DIST_TARGET_ENTITY WHERE COMPANY_CODE ='{model.company_code}' AND SP_CODE = {model.sp_code}
+                        AND TRUNC(ASSIGN_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+            ) AND TRUNC(UPDATE_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+                GROUP BY SP_CODE, FULL_NAME) V ON T.SP_CODE = V.SP_CODE AND t.full_name = v.full_name
+                union 
+                SELECT  t.name, T.TOTAL_TARGETS as TARGET_QUANTITY, NVL(V.TOTAL_ACHIEVED, 0) AS QUANTITY_ACHIEVED
+                FROM (SELECT SP_CODE, FULL_NAME,'Nonplan_wise' AS name, 0 AS TOTAL_TARGETS FROM DIST_TARGET_ENTITY WHERE COMPANY_CODE = '{model.company_code}'
+                AND SP_CODE = {model.sp_code} AND TRUNC(ASSIGN_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')  GROUP BY SP_CODE, FULL_NAME ) T
+                LEFT JOIN ( SELECT SP_CODE,FULL_NAME,'nonplan_wise' AS name, COUNT(*) AS TOTAL_ACHIEVED FROM  DIST_VISITED_ENTITY WHERE IS_VISITED = 'Y' AND CUSTOMER_CODE NOT IN (SELECT 
+                        ENTITY_CODE FROM  DIST_TARGET_ENTITY WHERE COMPANY_CODE ='{model.company_code}' AND SP_CODE = {model.sp_code}
+                        AND TRUNC(ASSIGN_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+                ) AND TRUNC(UPDATE_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+                GROUP BY SP_CODE, FULL_NAME) V ON T.SP_CODE = V.SP_CODE AND t.full_name = v.full_name order by name desc";
+            var result = dbContext.SqlQuery<VisitPlanWiseModel>(query).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<QuantityModel> FetchQuantityWise(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"  SELECT
+           'Quantity_Wise' AS name,
+            nvl(target_quantity,0) AS target_quantity,
+            0 as quantity_achieved
+        FROM
+            ip_target_setup
+        WHERE
+            assign_employee = '{model.sp_code}'
+            AND company_code in ('{model.company_code}')
+            AND target_type = 'SAL'
+            AND from_date BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')    
+union all
+ SELECT
+            'Quantity_Wise' AS name,
+             0 as target_quantity,
+            nvl(dispo.quantity,0) AS quantity_achieved
+        FROM
+            dist_ip_ssd_purchase_order   dispo,
+            dist_login_user              dlu,
+            dist_user_item_mapping   duim 
+        WHERE
+            dlu.userid = dispo.created_by
+            AND dlu.company_code = dispo.company_code
+            and duim.sp_code=dlu.sp_code and duim.company_code=dispo.company_code and duim.item_code=dispo.item_code
+            AND dispo.company_code in ('{model.company_code}')
+            AND dlu.sp_code = '{model.sp_code}'
+            AND trunc(dispo.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+            
+union all 
+SELECT
+            'Quantity_Wise' AS name,
+             0 as target_quantity,
+            nvl(dirpo.quantity,0) AS quantity_achieved
+        FROM
+            dist_ip_ssr_purchase_order   dirpo,
+            dist_login_user              dlu,
+            dist_user_item_mapping   duim
+        WHERE
+            dlu.userid = dirpo.created_by
+            AND dlu.company_code = dirpo.company_code
+            and duim.sp_code=dlu.sp_code and duim.company_code=dirpo.company_code and duim.item_code=dirpo.item_code
+            AND dirpo.company_code in ('{model.company_code}')
+            AND dlu.sp_code = '{model.sp_code}'
+            AND trunc(dirpo.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+union all 
+  SELECT
+           'Amount_Wise' AS name,
+            nvl(target_amount,0) AS target_quantity,
+            0 as quantity_achieved
+        FROM
+            ip_target_setup
+        WHERE
+            assign_employee = '{model.sp_code}'
+            AND company_code in ('{model.company_code}')
+            AND target_type = 'SAL'
+            AND from_date BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')    
+union all
+ SELECT
+            'Amount_Wise' AS name,
+             0 as target_quantity,
+            nvl(dispo.total_price,0) AS quantity_achieved
+        FROM
+            dist_ip_ssd_purchase_order   dispo,
+            dist_login_user              dlu,
+            dist_user_item_mapping   duim 
+        WHERE
+            dlu.userid = dispo.created_by
+            AND dlu.company_code = dispo.company_code
+            and duim.sp_code=dlu.sp_code and duim.company_code=dispo.company_code and duim.item_code=dispo.item_code
+            AND dispo.company_code in ('{model.company_code}')
+            AND dlu.sp_code = '{model.sp_code}'
+            AND trunc(dispo.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+            
+union all 
+SELECT
+            'Amount_Wise' AS name,
+             0 as target_quantity,
+            nvl(dirpo.total_price,0) AS quantity_achieved
+        FROM
+            dist_ip_ssr_purchase_order   dirpo,
+            dist_login_user              dlu,
+            dist_user_item_mapping   duim
+        WHERE
+            dlu.userid = dirpo.created_by
+            AND dlu.company_code = dirpo.company_code
+            and duim.sp_code=dlu.sp_code and duim.company_code=dirpo.company_code and duim.item_code=dirpo.item_code
+            AND dirpo.company_code in ('{model.company_code}')
+            AND dlu.sp_code = '{model.sp_code}'
+            AND trunc(dirpo.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')";
+            var result = dbContext.SqlQuery<QuantityModel>(query).ToList();
+            var groupedData = result
+          .GroupBy(x => new { x.NAME })
+          .Select(g => new QuantityModel
+          {
+              NAME = g.Key.NAME,
+              TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+              QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED),
+          }).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return (groupedData);
+        }
+        public object FetchProductWise(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT
+    NVL(CAST(a.target_amount AS NUMBER), 0) AS target_amount,
+    NVL(CAST(a.target_quantity AS NUMBER), 0) AS target_quantity,
+    0 AS quantity_achieved,
+    0 AS amount_achieved,
+    'Quantity Wise' AS Quantity_name,
+    'Amount Wise' AS Amount_name,
+    CASE
+        WHEN b.item_code IS NULL THEN 'not_defined'
+        ELSE b.item_code
+    END AS item_code,
+    CASE
+        WHEN b.item_edesc IS NULL THEN 'not_defined'
+        ELSE b.item_edesc
+    END AS item_name
+FROM
+    ip_target_setup a
+   left JOIN ip_item_master_setup b ON a.company_code = b.company_code and a.master_code=b.item_code
+   left JOIN dist_user_item_mapping c ON b.item_code = c.item_code AND a.assign_employee = c.sp_code
+WHERE
+    a.target_type = 'SAL'
+    AND a.sub_target_type = 'ITM'
+    AND a.deleted_flag = 'N'
+    AND b.deleted_flag = 'N'
+    AND c.deleted_flag = 'N'
+    AND a.assign_employee = '{model.sp_code}'
+    AND TRUNC(a.from_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+    AND a.company_code IN ('{model.company_code}')
+
+UNION ALL
+
+SELECT
+    0 AS target_quantity,
+    0 AS target_amount,
+    NVL(CAST(a.quantity AS NUMBER), 0) AS quantity_achieved,
+    NVL(CAST(a.total_price AS NUMBER), 0) AS amount_achieved,
+    'Quantity Wise' AS Quantity_name,
+    'Amount Wise' AS Amount_name,
+    CASE
+        WHEN b.item_code IS NULL THEN 'not_defined'
+        ELSE b.item_code
+    END AS item_code,
+    CASE
+        WHEN b.item_edesc IS NULL THEN 'not_defined'
+        ELSE b.item_edesc
+    END AS item_name
+FROM
+    dist_ip_ssd_purchase_order a
+  left  JOIN ip_item_master_setup b ON a.company_code = b.company_code AND a.item_code = b.item_code
+  left  JOIN dist_login_user c ON a.created_by = c.userid
+   left JOIN dist_user_item_mapping d ON b.item_code = d.item_code AND c.sp_code = d.sp_code
+WHERE
+    a.deleted_flag = 'N'
+    AND b.deleted_flag = 'N'
+    AND c.active = 'Y'
+    AND d.deleted_flag = 'N'
+    AND c.sp_code = '{model.sp_code}'
+    AND TRUNC(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+    AND a.company_code IN ('{model.company_code}')
+
+UNION ALL
+
+SELECT
+    0 AS target_quantity,
+    0 AS target_amount,
+    NVL(CAST(a.quantity AS NUMBER), 0) AS quantity_achieved,
+    NVL(CAST(a.total_price AS NUMBER), 0) AS amount_achieved,
+    'Quantity Wise' AS Quantity_name,
+    'Amount Wise' AS Amount_name,
+    CASE
+        WHEN b.item_code IS NULL THEN 'not_defined'
+        ELSE b.item_code
+    END AS item_code,
+    CASE
+        WHEN b.item_edesc IS NULL THEN 'not_defined'
+        ELSE b.item_edesc
+    END AS item_name
+FROM
+    dist_ip_ssr_purchase_order a
+   left  JOIN ip_item_master_setup b ON a.company_code = b.company_code AND a.item_code = b.item_code
+   left JOIN dist_login_user c ON a.created_by = c.userid
+  left  JOIN dist_user_item_mapping d ON b.item_code = d.item_code AND c.sp_code = d.sp_code
+WHERE
+    a.deleted_flag = 'N'
+    AND b.deleted_flag = 'N'
+    AND c.active = 'Y'
+    AND d.deleted_flag = 'N'
+    AND c.sp_code = '{model.sp_code}'
+    AND TRUNC(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY')
+    AND a.company_code IN ('{model.company_code}')";
+            var result = dbContext.SqlQuery<ProductQuantityWiseModel>(query).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            var itemData = result
+          .GroupBy(x => new { x.ITEM_CODE, x.ITEM_NAME })
+          .Select(g => new ProductWiseModel
+          {
+              NAME = g.Key.ITEM_NAME,
+              TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+              TARGET_AMOUNT = g.Sum(x => x.TARGET_AMOUNT),
+              QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED),
+              AMOUNT_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED)
+          }).OrderBy(g => (g.QUANTITY_ACHIEVED + g.AMOUNT_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+            var itemSum = new AreaWiseModel
+            {
+                NAME = "Total",
+                TARGET_QUANTITY = itemData.Sum(x => x.TARGET_QUANTITY),
+                TARGET_AMOUNT = itemData.Sum(x => x.TARGET_AMOUNT),
+                QUANTITY_ACHIEVED = itemData.Sum(x => x.QUANTITY_ACHIEVED),
+                AMOUNT_ACHIEVED = itemData.Sum(x => x.AMOUNT_ACHIEVED)
+            };
+            var quantityData = result
+              .GroupBy(x => new { x.Quantity_name })
+              .Select(g => new QuantityModel
+              {
+                  NAME = g.Key.Quantity_name,
+                  TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+                  QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED)
+              }).OrderBy(g => (g.QUANTITY_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+                    var amountData = result
+               .GroupBy(x => new { x.Amount_name })
+               .Select(g => new QuantityModel
+               {
+                   NAME = g.Key.Amount_name,
+                   TARGET_QUANTITY = g.Sum(x => x.TARGET_AMOUNT),
+                   QUANTITY_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED)
+               }).OrderBy(g => (g.AMOUNT_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+            var mergedData = quantityData.Union(amountData).ToList();
+            var data = new List<object>
+                {
+                    new { name = "Sales_Target", data =mergedData},
+                    new { name = "Product_Target", data = itemData,total=itemSum }
+                };
+            return (data);
+        }
+        //public List<ProductWiseModel> FetchProductTotal(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    var groupedData = FetchProductWise(model, dbContext);
+
+        //    if (groupedData == null || groupedData.Count <= 0)
+        //        throw new Exception("No records found");
+
+        //    // Calculate the total sums across all areas
+        //    var totalSum = new ProductWiseModel
+        //    {
+        //        NAME = "Total",
+        //        TARGET_QUANTITY = groupedData.Sum(x => x.TARGET_QUANTITY),
+        //        TARGET_AMOUNT = groupedData.Sum(x => x.TARGET_AMOUNT),
+        //        QUANTITY_ACHIEVED = groupedData.Sum(x => x.QUANTITY_ACHIEVED),
+        //        AMOUNT_ACHIEVED = groupedData.Sum(x => x.AMOUNT_ACHIEVED)
+        //    };
+
+        //    return new List<ProductWiseModel> { totalSum };
+        //}
+        public List<QuantityModel> FetchAmountWise(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"SELECT ITS.ASSIGN_EMPLOYEE AS SP_CODE, ITS.TOTAL_TARGET AS TARGET_AMOUNT, COALESCE(DIDPR.TOTAL_AMOUNT, 0) + COALESCE(DIRPO.TOTAL_AMOUNT, 0) AS AMOUNT_ACHIEVED
+            FROM (SELECT ASSIGN_EMPLOYEE, COALESCE(ROUND(SUM(TARGET_AMOUNT), 2), 0.00) AS TOTAL_TARGET, COMPANY_CODE FROM IP_TARGET_SETUP WHERE ASSIGN_EMPLOYEE = {model.sp_code} AND COMPANY_CODE ='{model.company_code}' AND TARGET_TYPE = 'SAL' AND FROM_DATE BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY') GROUP BY ASSIGN_EMPLOYEE, COMPANY_CODE) ITS
+            LEFT JOIN (SELECT COMPANY_CODE, COALESCE(SUM(TOTAL_PRICE), 0.00) AS TOTAL_AMOUNT FROM DIST_IP_SSD_PURCHASE_ORDER WHERE CUSTOMER_CODE = {model.sp_code} AND COMPANY_CODE ='{model.company_code}' AND TRUNC(ORDER_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY') GROUP BY COMPANY_CODE) DIDPR ON ITS.COMPANY_CODE = DIDPR.COMPANY_CODE
+            LEFT JOIN (SELECT COMPANY_CODE, COALESCE(SUM(TOTAL_PRICE), 0.00) AS TOTAL_AMOUNT FROM DIST_IP_SSR_PURCHASE_ORDER WHERE CUSTOMER_CODE = {model.sp_code} AND COMPANY_CODE ='{model.company_code}' AND TRUNC(ORDER_DATE) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY') GROUP BY COMPANY_CODE) DIRPO ON ITS.COMPANY_CODE = DIRPO.COMPANY_CODE;
+            ";
+            var result = dbContext.SqlQuery<QuantityModel>(query).ToList();
+            return result;
+        }
+        //public List<CustomerWiseModel> FetchCustomerWise(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    string query = $@"SELECT NVL(a.target_amount, 0) AS TARGET_AMOUNT,NVL(a.target_quantity, 0) AS TARGET_QUANTITY,0 AS QUANTITY_ACHIEVED,0 AS AMOUNT_ACHIEVED,
+        //            CASE WHEN b.customer_code IS NULL THEN 'not_defined' ELSE b.customer_code END AS customer_code,
+        //            CASE WHEN b.customer_edesc IS NULL THEN 'not_defined' ELSE b.customer_edesc END AS name
+        //            FROM  ip_target_setup a, sa_customer_setup b, dist_user_areas  c WHERE a.company_code = b.company_code AND a.master_code = b.customer_code AND b.company_code = c.company_code and b.customer_code=c.customer_code
+        //            AND a.assign_employee = c.sp_code and c.customer_code is not null AND a.target_type = 'SAL' and a.deleted_flag='N' and b.deleted_flag='N'  and c.deleted_flag='N' AND a.sub_target_type = 'CUS'
+        //            AND a.assign_employee = '{model.sp_code}' AND a.deleted_flag = 'N' AND trunc(a.from_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY') AND TO_DATE('{model.end_date}', 'DD-MON-YY') AND a.company_code in ('{model.company_code}')
+        //            UNION ALL
+        //            SELECT 0 as TARGET_QUANTITY, 0 as TARGET_AMOUNT,NVL(a.quantity, 0) AS QUANTITY_ACHIEVED,NVL(a.total_price, 0) AS AMOUNT_ACHIEVED,
+        //            CASE WHEN b.customer_code IS NULL THEN 'not_defined' ELSE b.customer_code END AS customer_code,CASE WHEN b.customer_edesc IS NULL THEN 'not_defined' ELSE b.customer_edesc END AS name
+        //            FROM dist_ip_ssd_purchase_order a,sa_customer_setup b, dist_login_user c,dist_user_areas d
+        //            WHERE a.company_code = b.company_code AND a.customer_code = b.customer_code AND a.company_code = c.company_code AND a.created_by = c.userid and d.sp_code=c.sp_code
+        //            AND b.customer_code = d.customer_code and d.customer_code is not null AND b.company_code = d.company_code  AND trunc(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY')  AND TO_DATE('{model.end_date}', 'DD-MON-YY') 
+        //            AND a.company_code in ('{model.company_code}')AND a.deleted_flag = 'N' AND b.deleted_flag = 'N'  AND c.active = 'Y' AND d.deleted_flag = 'N'  AND c.sp_code = '{model.sp_code}'
+        //            UNION ALL
+        //            SELECT  0 as TARGET_QUANTITY,0 as TARGET_AMOUNT,nvl(a.quantity, 0) QUANTITY_ACHIEVED,nvl(total_price, 0) AMOUNT_ACHIEVED,
+        //            CASE WHEN b.customer_code IS NULL THEN 'not_defined'  ELSE b.customer_code END AS customer_code, CASE WHEN b.customer_edesc IS NULL THEN 'not_defined'  ELSE b.customer_edesc END AS name
+        //            FROM dist_ip_ssr_purchase_order a,sa_customer_setup b, dist_login_user c, dist_user_areas d
+        //            WHERE a.company_code = b.company_code AND a.customer_code = b.customer_code AND a.company_code = c.company_code AND a.created_by = c.userid AND b.customer_code = d.customer_code and d.sp_code=c.sp_code
+        //            AND b.company_code = d.company_code and d.customer_code is not null AND a.company_code in ('{model.company_code}') AND a.deleted_flag = 'N' AND b.deleted_flag = 'N'  AND c.active = 'Y' AND d.deleted_flag = 'N'
+        //            AND c.sp_code = '{model.sp_code}' AND trunc(a.order_date) BETWEEN TO_DATE('{model.start_date}', 'DD-MON-YY')  AND TO_DATE('{model.end_date}', 'DD-MON-YY')";
+        //    var result = dbContext.SqlQuery<CustomerWiseModel>(query).ToList();
+        //    if (result.Count <= 0)
+        //        throw new Exception("No records found");
+        //    var groupedData = result
+        //  .GroupBy(x => new { x.CUSTOMER_CODE, x.NAME })
+        //  .Select(g => new CustomerWiseModel
+        //  {
+        //      CUSTOMER_CODE = g.Key.CUSTOMER_CODE,
+        //      NAME = g.Key.NAME,
+        //      TARGET_QUANTITY = g.Sum(x => x.TARGET_QUANTITY),
+        //      TARGET_AMOUNT = g.Sum(x => x.TARGET_AMOUNT),
+        //      QUANTITY_ACHIEVED = g.Sum(x => x.QUANTITY_ACHIEVED),
+        //      AMOUNT_ACHIEVED = g.Sum(x => x.AMOUNT_ACHIEVED)
+        //  }).OrderBy(g => (g.QUANTITY_ACHIEVED + g.AMOUNT_ACHIEVED) > 0 ? 1 : 2).ThenBy(g => g.NAME).ToList();
+
+        //    return (groupedData);
+        //}
+        //public List<CustomerWiseModel> FetchCustomerTotal(ProfileDetailsModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    var groupedData = FetchProductWise(model, dbContext);
+
+        //    if (groupedData == null || groupedData.Count <= 0)
+        //        throw new Exception("No records found");
+
+        //    // Calculate the total sums across all areas
+        //    var totalSum = new CustomerWiseModel
+        //    {
+        //        NAME = "Total",
+        //        TARGET_QUANTITY = groupedData.Sum(x => x.TARGET_QUANTITY),
+        //        TARGET_AMOUNT = groupedData.Sum(x => x.TARGET_AMOUNT),
+        //        QUANTITY_ACHIEVED = groupedData.Sum(x => x.QUANTITY_ACHIEVED),
+        //        AMOUNT_ACHIEVED = groupedData.Sum(x => x.AMOUNT_ACHIEVED)
+        //    };
+
+        //    return new List<CustomerWiseModel> { totalSum };
+        //}
         public Dictionary<string, object> fetchProfileDetails(ProfileDetails model, NeoErpCoreEntity dbContext)
         {
             var data = new Dictionary<string, object>();
@@ -2593,7 +3751,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             try
             {
                 var planVisit = FetchTargetVisits(model, dbContext);
-                var unplanVisit = FetchNonPlanVisits(model, dbContext); 
+                var unplanVisit = FetchNonPlanVisits(model, dbContext);
 
                 var targetVisitData = new Dictionary<string, object>
                 {
@@ -2601,7 +3759,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     { "unplanVisit", unplanVisit }
                 };
 
-                            data.Add("targetVisit", targetVisitData);
+                data.Add("targetVisit", targetVisitData);
             }
             catch (Exception ex)
             {
@@ -2627,7 +3785,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         }
         public List<PLAN_VISIT_TARGET> FetchTargetVisits(ProfileDetails model, NeoErpCoreEntity dbContext)
         {
-                string query = $@"SELECT group_edesc, sp_code, employee_edesc, SUM(target) PLAN_TARGET, SUM(visited) PLAN_ACHIEVED, SUM(total_visited) visited,0 as NONPLAN_TARGET,SUM(extra) NONPLAN_ACHIEVED 
+            string query = $@"SELECT group_edesc, sp_code, employee_edesc, SUM(target) PLAN_TARGET, SUM(visited) PLAN_ACHIEVED, SUM(total_visited) visited,0 as NONPLAN_TARGET,SUM(extra) NONPLAN_ACHIEVED 
                             FROM (SELECT group_edesc, sp_code, full_name employee_edesc, trunc(assign_date) assign_date, SUM(target) target, SUM(visited) visited, nvl((SELECT COUNT(DISTINCT customer_code)
                             FROM dist_visited_entity WHERE userid = aa.userid AND company_code = aa.company_code AND trunc(update_date) = trunc(aa.assign_date)), 0) total_visited, 
                             SUM(nvl((SELECT COUNT(DISTINCT customer_code) FROM dist_visited_entity WHERE userid = aa.userid AND company_code = aa.company_code AND trunc(update_date) = trunc(aa.assign_date)), 0) - visited) extra 
@@ -2665,9 +3823,9 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             string date = model.DATE.ToString("MM/dd/yyyy");
             string query = $@"select ds.SCHEME_ID as SchemeID ,ds.SCHEME_NAME as SchemeName , ds.Start_Date as StartDate, ds.End_Date as EndDate, ds.AREA_CODE as AreaCode, da.AREA_NAME as AreaName,  ds.OFFER_TYPE as OfferType, dm.ENTITY_CODE as SP_CODE from DIST_SCHEME ds,DIST_AREA_MASTER da,  DIST_SCHEME_ENTITY_MAPPING dm  where ds.AREA_CODE=da.AREA_CODE and  ds.Scheme_ID=dm.Scheme_ID and  TO_DATE( '{date}', 'MM/DD/RRRR' ) BETWEEN ds.Start_Date AND ds.End_Date and dm.ENTITY_CODE='{model.SP_CODE}' and   ds.COMPANY_CODE={model.COMPANY_CODE} and ds.BRANCH_CODE={model.BRANCH_CODE} and ds.DELETED_FLAG='N'";
             var schemes = dbContext.SqlQuery<SchemeReportResponseModel>(query).ToList();
-            foreach(var scheme in schemes)
-            {                
-                var Itemquery = $@"select  distinct sc.Item_code, it.Item_Edesc from DIST_SCHEME_ITEMS sc, IP_ITEM_MASTER_SETUP it where sc.ITEM_CODE=it.ITEM_CODE and sc.SCHEME_ID={scheme.SchemeID} and sc.ITEM_CODE='{model.ITEM_CODE}'" ;
+            foreach (var scheme in schemes)
+            {
+                var Itemquery = $@"select  distinct sc.Item_code, it.Item_Edesc from DIST_SCHEME_ITEMS sc, IP_ITEM_MASTER_SETUP it where sc.ITEM_CODE=it.ITEM_CODE and sc.SCHEME_ID={scheme.SchemeID} and sc.ITEM_CODE='{model.ITEM_CODE}'";
                 scheme.Items = dbContext.SqlQuery<ItemDetails>(Itemquery).ToList();
                 if (scheme.Items.Count != 0)
                 {
@@ -2709,12 +3867,12 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 schemes.Remove(scheme);
             }
             return schemes;
-            
-        }
 
+        }
+        //public List<>
         public List<DistributionSalesReturnModel> GetAllDistSalesReturn(CommonRequestModel requestParam, NeoErpCoreEntity dbContext)
         {
-            var distSR = new List<DistributionSalesReturnModel>() {new DistributionSalesReturnModel { Id = "1", Response = "Wawooo You Hit the return API" }};
+            var distSR = new List<DistributionSalesReturnModel>() { new DistributionSalesReturnModel { Id = "1", Response = "Wawooo You Hit the return API" } };
             return distSR;
         }
         #endregion Fetching Data
@@ -2786,7 +3944,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     {
                         string updateQuery = $@"UPDATE DIST_LM_LOCATION_TRACKING SET SUBMIT_DATE = TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),LATITUDE='{model.latitude}' ,LONGITUDE='{model.longitude}'
                         WHERE SP_CODE = '{model.sp_code}' AND COMPANY_CODE = '{model.COMPANY_CODE}' AND TRUNC(SUBMIT_DATE) = TRUNC(SYSDATE) AND TRACK_TYPE = '{model.Track_Type}'";
-                        row = dbContext.ExecuteSqlCommand(insertQuery);
+                        row = dbContext.ExecuteSqlCommand(updateQuery);
                     }
                 } //if not previous entry, insert a new row for EOD/ATN
                 else
@@ -2820,23 +3978,24 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                         try
                         {
                             var hris_procedure = $"BEGIN HRIS_ATTENDANCE_INSERT ({thumbId}, TRUNC(SYSDATE), NULL, 'MOBILE', TO_TIMESTAMP('{time}')); END;";
-                           dbContext.ExecuteSqlCommand(hris_procedure);
-                        }catch(Exception ex)
-                        {
-                            
+                            dbContext.ExecuteSqlCommand(hris_procedure);
                         }
-                    
+                        catch (Exception ex)
+                        {
+
+                        }
+
                     }
 
                     var rowCal = dbContext.ExecuteSqlCommand(queryEod);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
 
                 }
             }
             var result = new Dictionary<string, string>();
-            result.Add(model.sp_code, model.Sync_Id==null?"":model.Sync_Id);
+            result.Add(model.sp_code, model.Sync_Id == null ? "" : model.Sync_Id);
             return result;
         }
 
@@ -2936,29 +4095,123 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 throw new Exception("Unable to get next ID for the purchase order.");
 
             var today = $"TO_DATE('{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}','MM/dd/yyyy hh24:mi:ss')";
-            foreach (var item in model.products)
+            //foreach (var item in model.products)
+            //{
+            //    item.party_type_code = item.party_type_code == null ? "" : item.party_type_code;
+            //    string InsertQuery = string.Empty;
+            //    string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.item_code}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            //    decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
+            //    item.rate = item.rate == 0 ? SP : item.rate;
+
+            //    var total = item.rate * item.quantity;
+
+            //    if (model.type.Equals("P", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
+            //        || model.type.Equals("D", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
+            //        InsertQuery = $@"INSERT INTO DIST_IP_SSD_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE)
+            //                VALUES('{id}',{today},'{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{today},'N','N','N','N','N','{item.party_type_code}','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+            //    else
+            //        InsertQuery = $@"INSERT INTO DIST_IP_SSR_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,RESELLER_CODE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,DISPATCH_FROM,WHOLESELLER_CODE)
+            //                VALUES('{id}',{today},'{model.reseller_code}','{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{today},'N','N','N','N','N','{item.party_type_code}','{item.Po_Shipping_Address}','{item.Po_Sales_Type}','{item.Po_Shipping_Contact}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Dispatch_From}','{model.WholeSeller_Code}')";
+            //    int rowNum = dbContext.ExecuteSqlCommand(InsertQuery);
+            //}
+            var serialnumber = 1;
+            try
             {
-                item.party_type_code = item.party_type_code == null ? "" : item.party_type_code;
-                string InsertQuery = string.Empty;
-                string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.item_code}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
-                decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
-                item.rate = item.rate == 0 ? SP : item.rate;
+                foreach (var item in model.products)
+                {
+                    item.party_type_code = item.party_type_code ?? "";
+                    string InsertQuery = string.Empty;
+                    string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.item_code}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+                    decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
+                    item.rate = item.rate == 0 ? SP : item.rate;
+                    var total = item.rate * item.quantity;
+                    var discount = item.discount + item.discountRate * item.quantity + (item.discountPercentage * total / 100);
+                    total = Math.Round(total - discount, 2);
 
-                var total = item.rate * item.quantity;
+                    if (model.type.Equals("P", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
+                        || model.type.Equals("D", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
+                    {
+                        InsertQuery = $@"INSERT INTO DIST_IP_SSD_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO,DISCOUNT,DISCOUNT_RATE,DISCOUNT_PERCENTAGE,PRIORITY_STATUS_CODE)
+                                    VALUES('{id}',{today},'{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','{item.reject_flag}','N','{item.party_type_code}','{item.CITY_CODE}','{item.SALES_TYPE_CODE}','{item.SHIPPING_CONTACT}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}','{item.discount}','{item.discountRate}','{item.discountPercentage}','{item.PRIORITY_STATUS_CODE}')";
+                        int distInsertResult = dbContext.ExecuteSqlCommand(InsertQuery);
 
-                if (model.type.Equals("P", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
-                    || model.type.Equals("D", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
-                    InsertQuery = $@"INSERT INTO DIST_IP_SSD_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE)
-                            VALUES('{id}',{today},'{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{today},'N','N','N','N','N','{item.party_type_code}','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
-                else
-                    InsertQuery = $@"INSERT INTO DIST_IP_SSR_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,RESELLER_CODE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,DISPATCH_FROM,WHOLESELLER_CODE)
-                            VALUES('{id}',{today},'{model.reseller_code}','{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{today},'N','N','N','N','N','{item.party_type_code}','{item.Po_Shipping_Address}','{item.Po_Sales_Type}','{item.Po_Shipping_Contact}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Dispatch_From}','{model.WholeSeller_Code}')";
-                int rowNum = dbContext.ExecuteSqlCommand(InsertQuery);
+                        if (distInsertResult == 0)
+                        {
+                            throw new Exception("Failed to insert!");
+                        }
+                        var preferences = FetchPreferences(model.COMPANY_CODE, dbContext);
+                        if (preferences.SO_SALES_ORDER.Trim().ToUpper() == "Y")
+                        {
+                            var voucherCode = "select  FN_NEW_VOUCHER_NO('" + model.COMPANY_CODE + "','" + item.form_code + "',TRUNC(sysdate),'SA_SALES_ORDER') from dual";
+                            var data = _objectEntity.SqlQuery<string>(voucherCode).FirstOrDefault();
+                            var sessionQuery = "SELECT MYSEQUENCE.NEXTVAL FROM DUAL";
+                            int sessionId = dbContext.SqlQuery<int>(sessionQuery).FirstOrDefault();
+                            if (data == null)
+                                throw new Exception("Sales Order No. Not Generated.Please try once again");
+                            var query = string.Format(@"Insert into SA_SALES_ORDER
+                                                                           (ORDER_NO, ORDER_DATE, CUSTOMER_CODE, SERIAL_NO, ITEM_CODE, MU_CODE, QUANTITY, UNIT_PRICE, TOTAL_PRICE, CALC_QUANTITY, CALC_UNIT_PRICE, CALC_TOTAL_PRICE, FORM_CODE, COMPANY_CODE, BRANCH_CODE, CREATED_BY, CREATED_DATE, DELETED_FLAG, DELIVERY_DATE, CURRENCY_CODE, EXCHANGE_RATE, TRACKING_NO, STOCK_BLOCK_FLAG,MODIFY_BY,MODIFY_DATE,PARTY_TYPE_CODE,REMARKS,SESSION_ROWID)
+                                                                         Values
+                                                                           ('" + data + @"', to_date('" + DateTime.Parse(model.Order_Date).ToString("MM/dd/yyyy") + "','MM/dd/yyyy'), '" + model.distributor_code + @"'," + serialnumber + @",
+                                                                            '" + item.item_code + @"', '" + item.mu_code + @"'," + item.quantity + @" , " + item.rate + @", " + total + @",
+                                                                           " + item.quantity + @" , " + item.rate + @", " + total + @",
+                                                                            '" + item.form_code + @"', '" + model.COMPANY_CODE + @"', '" + model.BRANCH_CODE + @"', UPPER('" + model.login_code + @"'), sysdate,
+                                                                            'N', TO_DATE(sysdate), 'NRS', 1,
+                                                                            '0', 'N',UPPER('" + model.login_code + @"'), to_date('" + model.Order_Date + @"','MM/dd/yyyy hh24:mi:ss'),'" + item.party_type_code + @"', '" + item.remarks + @"','" + sessionId + @"')");
+                            int distInsert = dbContext.ExecuteSqlCommand(query);
+                            if (distInsert > 0)
+                            {
+                                var masterQuery = @"Insert into MASTER_TRANSACTION
+                                               (VOUCHER_NO, VOUCHER_AMOUNT, FORM_CODE, CHECKED_BY, AUTHORISED_BY, POSTED_BY, COMPANY_CODE, BRANCH_CODE, CREATED_BY, CREATED_DATE, DELETED_FLAG, VOUCHER_DATE, CURRENCY_CODE, EXCHANGE_RATE, PRINT_COUNT,PRINT_FLAG,SESSION_ROWID)
+                                             Values
+                                               ('" + data + @"', " + total + @", '" + item.form_code + @"', '', '',
+                                                '', '" + model.COMPANY_CODE + "', '" + model.BRANCH_CODE + "', UPPER('" + model.login_code + @"'),
+                                                sysdate, 'N', to_date('" + DateTime.Parse(model.Order_Date).ToString("MM/dd/yyyy") + "','MM/dd/yyyy'),'NRS', 1, 0,'N', '" + sessionId + @"')";
+                                var masterRowaffected = dbContext.ExecuteSqlCommand(masterQuery);
+                            }
+                            var partialUpdate = $@"UPDATE DIST_IP_SSD_PURCHASE_ORDER SET REJECT_FLAG='N',APPROVE_QTY = {item.quantity}, APPROVE_AMT = {total}, QUANTITY={item.quantity},SALES_ORDER_NO='{data}' WHERE ORDER_NO = {id} and ITEM_CODE = {item.item_code}";
+                            var Pupdate = dbContext.ExecuteSqlCommand(partialUpdate);
+                            serialnumber++;
+                        }
+                    }
+                    else
+                    {
+                        InsertQuery = $@"INSERT INTO DIST_IP_SSR_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,RESELLER_CODE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO,DISPATCH_FROM,WHOLESELLER_CODE,PRIORITY_STATUS_CODE,DISCOUNT,DISCOUNT_RATE,DISCOUNT_PERCENTAGE)
+                                    VALUES('{id}',{today},'{model.reseller_code}','{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','N','N','{item.party_type_code}','{item.CITY_CODE}','{item.SALES_TYPE_CODE}','{item.SHIPPING_CONTACT}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}','{model.Dispatch_From}','{model.WholeSeller_Code}','{item.PRIORITY_STATUS_CODE}','{item.discount}','{item.discountRate}','{item.discountPercentage}')";
+                        int rowNum = dbContext.ExecuteSqlCommand(InsertQuery);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
             return id.ToString();
         }
 
-        public bool NewCollection(CollectionRequestModel model, NeoErpCoreEntity dbContext)
+        //public bool NewCollection(CollectionRequestModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    if (string.IsNullOrWhiteSpace(model.sp_code))
+        //        throw new Exception("Sp code is empty");
+        //    if (string.IsNullOrWhiteSpace(model.entity_type))
+        //        throw new Exception("Entity type is empty");
+        //    if (string.IsNullOrWhiteSpace(model.created_by))
+        //        throw new Exception("Created by is empty");
+        //    decimal Amount;
+        //    string[] types = { "P", "D", "R" };
+        //    if (string.IsNullOrWhiteSpace(model.amount) || !decimal.TryParse(model.amount, out Amount))
+        //        throw new Exception("Amount should be in Number");
+        //    if (!types.Contains(model.entity_type.ToUpper()))
+        //        throw new Exception(@"ENITY_TYPE must be 'P' or 'D' or 'R' ");
+        //    string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE)
+        //    VALUES ('{model.sp_code}','{model.entity_code}','{model.entity_type}','{model.bill_no}','{model.cheque_no}','{model.bank_name}','{model.amount}','{model.payment_mode}',TO_DATE('{model.cheque_clearance_date}','dd-mm-yyyy'),
+        //    '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+        //    var row = dbContext.ExecuteSqlCommand(insertQuery);
+        //    if (row <= 0)
+        //        throw new Exception("Unable to save collection");
+        //    return true;
+        //}
+
+        public bool NewCollection(CollectionRequestModel model, HttpFileCollection Files, NeoErpCoreEntity dbContext)
         {
             if (string.IsNullOrWhiteSpace(model.sp_code))
                 throw new Exception("Sp code is empty");
@@ -2972,12 +4225,88 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 throw new Exception("Amount should be in Number");
             if (!types.Contains(model.entity_type.ToUpper()))
                 throw new Exception(@"ENITY_TYPE must be 'P' or 'D' or 'R' ");
-            string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE)
+
+            var id = this.GetMaxId("DIST_COLLECTION", "ID", dbContext);
+            string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE,OTP_CODE,ID)
             VALUES ('{model.sp_code}','{model.entity_code}','{model.entity_type}','{model.bill_no}','{model.cheque_no}','{model.bank_name}','{model.amount}','{model.payment_mode}',TO_DATE('{model.cheque_clearance_date}','dd-mm-yyyy'),
-            '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+            '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.otp_code}',{id})";
             var row = dbContext.ExecuteSqlCommand(insertQuery);
             if (row <= 0)
                 throw new Exception("Unable to save collection");
+            /*sashi*/
+            //HttpPostedFile file = files[$"userfile[{model.Index}]"];
+            //var ImageId = this.GetMaxId("DIST_VISIT_IMAGE", "IMAGE_CODE", dbContext);
+            //var folderpath = UploadPath + "\\EntityImages";
+            //if (!Directory.Exists(folderpath))
+            //    Directory.CreateDirectory(folderpath);
+            //string FileName = string.Format("{0}{1}{2}", "EntityImage", ImageId, Path.GetExtension(file.FileName));
+            //string filePath = Path.Combine(folderpath, FileName);
+            //int count = 1;
+            //while (File.Exists(filePath))
+            //{
+            //    FileName = string.Format("{0}{1}_{2}{3}", "EntityImage", ImageId, count++, Path.GetExtension(file.FileName));
+            //    filePath = Path.Combine(folderpath, FileName);
+            //}
+
+            //file.SaveAs(filePath);
+            //var InsertQuery = $@"INSERT INTO DIST_VISIT_IMAGE (IMAGE_CODE,IMAGE_NAME,IMAGE_TITLE,IMAGE_DESC,SP_CODE,ENTITY_CODE,TYPE,UPLOAD_DATE,LONGITUDE,LATITUDE,CATEGORYID,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+            //                        VALUES ({ImageId}, '{FileName}', '{DBNull.Value}', '{model.Description.Replace("'", "''")}', '{model.ACC_CODE}', '{model.entity_code}', '{model.entity_type}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy  HH24:MI:SS'),'{model.longitude}', '{model.latitude}','{model.Categoryid}','{model.COMPANY_CODE}', '{model.BRANCH_CODE}','{model.Sync_Id}')";
+            //row += dbContext.ExecuteSqlCommand(InsertQuery);
+
+            //result.Add(model.Sync_Id, ImageId.ToString());
+
+            foreach (string tagName in Files)
+            {
+                HttpPostedFile file = Files[tagName];
+                string ChequePath = string.Empty;
+
+                var ImageId = this.GetMaxId("DIST_VISIT_IMAGE", "IMAGE_CODE", dbContext);
+                ChequePath = UploadPath + "\\EntityImages";
+
+                if (!Directory.Exists(ChequePath))
+                    Directory.CreateDirectory(ChequePath);
+                string FileName = string.Format("{0}{1}", model.entity_code, Path.GetExtension(file.FileName));
+                string filePath = Path.Combine(ChequePath, FileName);
+                int count = 1;
+                while (File.Exists(filePath))
+                {
+                    FileName = string.Format("{0}_{1}{2}", model.entity_code, count++, Path.GetExtension(file.FileName));
+                    filePath = Path.Combine(ChequePath, FileName);
+                }
+                string mediaType;
+                int categoryId = 0;
+                if (tagName.IndexOf("cheque", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    mediaType = "CHEQUE";
+                    string chequeQuery = $"SELECT CATEGORYID FROM DIST_IMAGE_CATEGORY WHERE CATEGORY_CODE = 'cheque'";
+                    categoryId = dbContext.SqlQuery<int>(chequeQuery).FirstOrDefault();
+                    file.SaveAs(filePath);
+                }
+                else if (tagName.IndexOf("signature", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    mediaType = "SIGNATURE";
+                    string chequeQuery = $"SELECT CATEGORYID FROM DIST_IMAGE_CATEGORY WHERE CATEGORY_CODE = 'signature'";
+                    categoryId = dbContext.SqlQuery<int>(chequeQuery).FirstOrDefault();
+                    file.SaveAs(filePath);
+                }
+                else
+                    continue;
+                var InsertQuery = $@"INSERT INTO DIST_VISIT_IMAGE (IMAGE_CODE,IMAGE_NAME,IMAGE_TITLE,IMAGE_DESC,SP_CODE,ENTITY_CODE,TYPE,UPLOAD_DATE,LONGITUDE,LATITUDE,CATEGORYID,COMPANY_CODE,BRANCH_CODE,SYNC_ID,ID)
+                                    VALUES ({ImageId}, '{FileName}', '{DBNull.Value}', '{mediaType}', '{model.sp_code}', '{model.entity_code}', '{model.entity_type}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy  HH24:MI:SS'),'{model.longitude}', '{model.latitude}','{categoryId}','{model.COMPANY_CODE}', '{model.BRANCH_CODE}','{model.Sync_Id}',{id})";
+                var rows = dbContext.ExecuteSqlCommand(InsertQuery);
+                //string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+                //            ('{FileName}','{descriptions[tagName]}','R','{ResellerCode}','{mediaType}','{model.user_id}',SYSDATE,'{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+                //row = dbContext.ExecuteSqlCommand(ImageQuery);
+
+                //var InsertQuery = $@"INSERT INTO DIST_VISIT_IMAGE (IMAGE_CODE,IMAGE_NAME,IMAGE_TITLE,IMAGE_DESC,SP_CODE,ENTITY_CODE,TYPE,UPLOAD_DATE,LONGITUDE,LATITUDE,CATEGORYID,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+                //                    VALUES ({ImageId}, '{FileName}', '{DBNull.Value}', '{model.Description.Replace("'", "''")}', '{model.ACC_CODE}', '{model.entity_code}', '{model.entity_type}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy  HH24:MI:SS'),'{model.longitude}', '{model.latitude}','{model.Categoryid}','{model.COMPANY_CODE}', '{model.BRANCH_CODE}','{model.Sync_Id}')";
+                //row += dbContext.ExecuteSqlCommand(InsertQuery);
+
+                //result.Add(model.Sync_Id, ImageId.ToString());
+            }
+
+            /*sashi*/
+
             return true;
         }
 
@@ -3278,6 +4607,119 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             var result = entityList.FirstOrDefault();
             return result;
         }
+        public EntityResponseModel CreateDistributor(CreateDistributorModel model, HttpFileCollection Files, Dictionary<string, string> descriptions, NeoErpCoreEntity dbContext)
+        {
+            //primary contact
+            var primary = new ContactModel();
+            foreach (var c in model.contact)
+                if (c.primary.Equals("Y", StringComparison.OrdinalIgnoreCase))
+                    primary = c;
+            if (primary != null)
+                model.contact.Remove(primary);
+
+            if (string.IsNullOrWhiteSpace(model.address))
+                throw new Exception("Address is empty.");
+            if (string.IsNullOrWhiteSpace(model.latitude))
+                throw new Exception("Latitude is empty.");
+            if (string.IsNullOrWhiteSpace(model.longitude))
+                throw new Exception("Longitude is empty.");
+            if (string.IsNullOrWhiteSpace(model.area_code))
+                throw new Exception("Area code not selected.");
+            string testQuery = $"SELECT * FROM sa_customer_setup WHERE CUSTOMER_EDESC = '{model.distributor_name}' AND PAN_NO = '{model.pan}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            var testObj = dbContext.SqlQuery<object>(testQuery).ToList();
+            if (testObj.Count > 0)
+                throw new Exception("Distributor with the provided name and PAN no. already exists.");
+            //Generate distributor code
+            //sashi
+            var newmaxitemcode = string.Empty;
+            var newmaxitemcodequery = $@"SELECT MAX(TO_NUMBER(CUSTOMER_CODE))+1 as MASTER_CUSTOMER_CODE FROM SA_CUSTOMER_SETUP";
+            newmaxitemcode = dbContext.SqlQuery<int>(newmaxitemcodequery).FirstOrDefault().ToString();
+
+            using (var transaction = _objectEntity.Database.BeginTransaction())
+            {
+                try
+                {
+
+                    if (newmaxitemcodequery != null)
+                    {
+
+                        string CustomerQuery = $@"INSERT INTO sa_customer_setup(CUSTOMER_CODE,CUSTOMER_EDESC,CUSTOMER_NDESC,REGD_OFFICE_EADDRESS,REGD_OFFICE_NADDRESS,TEL_MOBILE_NO1,TEL_MOBILE_NO2,FAX_NO,EMAIL,PARTY_TYPE_CODE,CUSTOMER_FLAG,LINK_SUB_CODE,CREDIT_RATE,CREDIT_LIMIT
+                                            ,CUSHION_PERCENT,DUE_BILL_COUNT,ACTIVE_FLAG,REMARKS,GROUP_SKU_FLAG,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE,DISCOUNT_FLAT_RATE,EXCLUSIVE_FLAG,DISCOUNT_DAYS,DISCOUNT_PERCENT,COMPANY_CODE,CREATED_BY
+                                            ,CREATED_DATE,DELETED_FLAG,OPENING_DATE,MATURITY_DATE,CUSTOMER_GROUP_ID,COUNTRY_CODE,ZONE_CODE,DISTRICT_CODE,CITY_CODE,DEALING_PERSON,EXCISE_NO,TIN,EXPORT_FLAG,GST_NO,IEC_NO,FSSAI_NO,AD_CODE) VALUES
+                                            ('{newmaxitemcode}','{model.distributor_name}','{model.distributor_name}','{model.address.Replace("'", "''")}','{model.address.Replace("'", "''")}','{primary.contact_suffix}','{primary.contact_suffix}','{null}','{model.email}','{null}','D','{'C' + newmaxitemcode}','{null}','{null}'
+                                            ,'{null}','{null}','Y','{null}','G','{model.BRANCH_CODE}','{model.COMPANY_CODE}','{null}','{null}','{null}','{null}','{model.COMPANY_CODE}','ADMIN'
+                                            ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+                                            ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{null}','{null}','{null}','{null}','{null}','{null}','{null}','{null}','N','{null}','{null}','{null}','{null}')";
+                        var row = dbContext.ExecuteSqlCommand(CustomerQuery);
+
+                        string DistributorQuery = $@"INSERT INTO DIST_DISTRIBUTOR_MASTER(DISTRIBUTOR_CODE,LATITUDE,LONGITUDE,CREATED_BY,CREATED_DATE,ACTIVE,COMPANY_CODE,BRANCH_CODE,AREA_CODE,GROUPID,WEIGHT,DELETED_FLAG,DISTRIBUTOR_TYPE_ID,DISTRIBUTOR_SUBTYPE_ID) VALUES
+                            ('{newmaxitemcode}','{model.latitude}','{model.longitude}','{model.user_id}',TO_DATE('{model.Saved_Date}', 'MM/dd/yyyy hh24:mi:ss'),'Y','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.area_code}','{model.Group_id}','{0}','{'N'}','{model.DISTRIBUTOR_TYPE_ID}','{model.DISTRIBUTOR_SUBTYPE_ID}')";
+                        row = dbContext.ExecuteSqlCommand(DistributorQuery);
+
+                        //insert contact details
+                        foreach (var con in model.contact)
+                        {
+                            string ContactQuery = $@"INSERT INTO DIST_DISTRIBUTOR_DETAIL(DISTRIBUTOR_CODE,COMPANY_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,DESIGNATION,CREATED_BY,CREATED_DATE) VALUES
+                            ('{newmaxitemcode}','{model.COMPANY_CODE}','{con.contact_suffix}','{con.name}','{con.number}','{con.designation}','{model.user_id}',TO_DATE(SYSDATE))";
+                            row = dbContext.ExecuteSqlCommand(ContactQuery);
+                        }
+
+                        //upload files
+                        foreach (string tagName in Files)
+                        {
+                            HttpPostedFile file = Files[tagName];
+                            string DistributorPath = string.Empty;
+
+                            DistributorPath = UploadPath + "\\DistributorImages";
+
+                            if (!Directory.Exists(DistributorPath))
+                                Directory.CreateDirectory(DistributorPath);
+                            string FileName = string.Format("{0}{1}", newmaxitemcode, Path.GetExtension(file.FileName));
+                            string filePath = Path.Combine(DistributorPath, FileName);
+                            int count = 1;
+                            while (File.Exists(filePath))
+                            {
+                                FileName = string.Format("{0}_{1}{2}", newmaxitemcode, count++, Path.GetExtension(file.FileName));
+                                filePath = Path.Combine(DistributorPath, FileName);
+                            }
+                            string mediaType;
+                            if (tagName.IndexOf("store", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                mediaType = "STORE";
+                                file.SaveAs(filePath);
+                            }
+                            else if (tagName.IndexOf("pcontact", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                mediaType = "PCONTACT";
+                                file.SaveAs(filePath);
+                            }
+                            else
+                                continue;
+                            string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+                            ('{FileName}','{descriptions[tagName]}','D','{newmaxitemcode}','{mediaType}','{model.user_id}',SYSDATE,'{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+                            row = dbContext.ExecuteSqlCommand(ImageQuery);
+                        }
+                        _objectEntity.SaveChanges();
+                        transaction.Commit();
+                    }
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                }
+            }
+            //sashi
+            var fetchModel = new EntityRequestModel
+            {
+                entity_code = newmaxitemcode,
+                BRANCH_CODE = model.BRANCH_CODE,
+                COMPANY_CODE = model.COMPANY_CODE,
+                entity_type = "D"
+            };
+            var entityList = this.FetchEntityById(fetchModel, dbContext);
+            var result = entityList.FirstOrDefault();
+            return result;
+        }
 
         public string UpdateReseller(CreateResellerModel model, NeoErpCoreEntity dbContext)
         {
@@ -3400,7 +4842,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                             dbContext.ExecuteSqlCommand(hris_procedure);
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
 
                     }
@@ -3418,52 +4860,161 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             // }
             return result;
         }
+        //public Dictionary<string, string> UploadDistSalesReturnPic(NameValueCollection form, HttpFileCollection Files, NeoErpCoreEntity dbContext)
+        //{
+        //    var result = new Dictionary<string, string>();
+        //    var today = DateTime.Now.ToString("MM/dd/yyyyHH:mm:ss");
+        //    // var time = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+        //    var coll = new Dictionary<string, string>();
+        //    string item_code = string.Empty;
+        //    int itemCount = 0;
+        //    foreach (string tagName in Files)
+        //    {
+        //        HttpPostedFile file = Files[tagName];
+        //        string UserFolderpath = string.Empty;
 
-        public Dictionary<string, string> UploadDistSalesReturnPic(NameValueCollection form, HttpFileCollection Files, NeoErpCoreEntity dbContext)
+        //        coll.Add(tagName, form[$"description"]);
+        //        UserFolderpath = UploadPath + "\\DistSalesReturnImages";  //model.entity_code is the sp_code(sales person code)
+
+        //        if (!Directory.Exists(UserFolderpath))
+        //            Directory.CreateDirectory(UserFolderpath);
+        //        string FileName = string.Format("DSR_{0}_{1}{2}", form["itemcode[" + itemCount + "]"], form["order_no[" + itemCount + "]"], Path.GetExtension(file.FileName));
+        //        string filePath = Path.Combine(UserFolderpath, FileName);
+        //        int count = 1;
+        //        while (File.Exists(filePath))
+        //        {
+        //            FileName = string.Format("DSR_{0}_{1}_{2}{3}", form["itemcode[" + itemCount + "]"], form["order_no[" + itemCount + "]"], itemCount, Path.GetExtension(file.FileName));
+        //            filePath = Path.Combine(UserFolderpath, FileName);
+        //            break;
+        //        }
+
+        //        file.SaveAs(filePath);
+
+        //        string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CATEGORYID,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+        //                    ('{FileName}','{coll[tagName]}','R','{form["SP_CODE"]}','GENERAL',1,'{form["SP_CODE"]}',TO_DATE('{today}','MM/dd/yyyy hh24:mi:ss'),'{form["COMPANY_CODE"]}','{form["BRANCH_CODE"]}')";
+        //        var row = dbContext.ExecuteSqlCommand(ImageQuery);
+        //        itemCount++;
+        //    }
+
+        //    string resultValue = "Image successfully uploaded";
+
+        //    result.Add("msg", resultValue);
+        //    // }
+        //    // else
+        //    // {
+        //    //  result.Add("msg", "Attendence Successful");
+        //    // }
+        //    return result;
+        //}
+
+        public Dictionary<string, string> UploadDistSalesReturnPic(DistributionSalesReturnModel returnModel, HttpFileCollection Files, Dictionary<string, string> descriptions, NeoErpCoreEntity dbContext)
         {
             var result = new Dictionary<string, string>();
-            var today = DateTime.Now.ToString("MM/dd/yyyyHH:mm:ss");
-           // var time = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+            var todayDt = DateTime.Now.ToString("MM/dd/yyyyHH:mm:ss");
+            // var time = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
             var coll = new Dictionary<string, string>();
             string item_code = string.Empty;
             int itemCount = 0;
-            foreach (string tagName in Files)
+            try
             {
-                HttpPostedFile file = Files[tagName];
-                string UserFolderpath = string.Empty;
-
-                coll.Add(tagName, form[$"description"]);
-                UserFolderpath = UploadPath + "\\DistSalesReturnImages";  //model.entity_code is the sp_code(sales person code)
-
-                if (!Directory.Exists(UserFolderpath))
-                    Directory.CreateDirectory(UserFolderpath);
-                string FileName = string.Format("DSR_{0}_{1}{2}", form["itemcode[" + itemCount + "]"],form["order_no["+itemCount+"]"], Path.GetExtension(file.FileName));
-                string filePath = Path.Combine(UserFolderpath, FileName);
-                int count = 1;
-                while (File.Exists(filePath))
+                var saveResult = new Dictionary<string, string>();
+                if (returnModel.locationinfo != null)
                 {
-                    FileName = string.Format("DSR_{0}_{1}_{2}{3}", form["itemcode[" + itemCount + "]"], form["order_no[" + itemCount + "]"],itemCount, Path.GetExtension(file.FileName));
-                    filePath = Path.Combine(UserFolderpath, FileName);
-                    break;
+                    returnModel.locationinfo.remarks = "Sales Return Begin(auto)";
+                    var locationRes = this.UpdateMyLocation(returnModel.locationinfo, dbContext);
                 }
 
-                file.SaveAs(filePath);
+                int id = 0;
+                long idL = 1L;
+                if (returnModel.ENTITY_TYPE.Equals("P", StringComparison.OrdinalIgnoreCase) || returnModel.ENTITY_TYPE.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
+                    || returnModel.ENTITY_TYPE.Equals("D", StringComparison.OrdinalIgnoreCase) || returnModel.ENTITY_TYPE.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
+                    //idL =this.GetMaxIdSalesReturn("DIST_SALES_RETURN", "RETURN_NO", dbContext);
+                    idL = 2;
+                else if (returnModel.ENTITY_TYPE.Equals("R", StringComparison.OrdinalIgnoreCase) || returnModel.ENTITY_TYPE.Equals("RESELLER", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(returnModel.RESELLER_CODE))
+                        throw new Exception("Reseller code is empty");
+                    //idL=this.GetMaxIdSalesReturn("DIST_SALES_RETURN", "RETURN_NO", dbContext);
+                }
+                else
+                    throw new Exception("Invalid customer type");
+                if (idL <= 0)
+                    throw new Exception("Unable to get next ID for the sales return.");
 
-                string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CATEGORYID,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
-                            ('{FileName}','{coll[tagName]}','R','{form["SP_CODE"]}','GENERAL',1,'{form["SP_CODE"]}',TO_DATE('{today}','MM/dd/yyyy hh24:mi:ss'),'{form["COMPANY_CODE"]}','{form["BRANCH_CODE"]}')";
-                var row = dbContext.ExecuteSqlCommand(ImageQuery);
-                itemCount++;
+                var today = $"TO_DATE('{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}','MM/dd/yyyy hh24:mi:ss')";
+                returnModel.Saved_Date = string.IsNullOrWhiteSpace(returnModel.Saved_Date) ? today : $"TO_DATE('{returnModel.Saved_Date}','MM/dd/yyyy hh24:mi:ss')";
+                //var OrderDate = string.IsNullOrWhiteSpace(returnModel.ORDER_DATE.ToString()) ? today : $"TO_DATE('{returnModel.ORDER_DATE}','MM/dd/yyyy hh24:mi:ss')";
+
+                foreach (var item in returnModel.products)
+                {
+                    item.PARTY_TYPE_CODE = item.PARTY_TYPE_CODE ?? "";
+                    string InsertQuery = string.Empty;
+                    string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.ITEM_CODE}' AND COMPANY_CODE='{returnModel.COMPANY_CODE}'";
+                    decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
+
+                    var saveQuery = $@"INSERT INTO DIST_SALES_RETURN(RETURN_NO,RETURN_DATE,CUSTOMER_CODE,SERIAL_NO,ITEM_CODE,MU_CODE,QUANTITY,FORM_CODE,COMPANY_CODE,BRANCH_CODE,CREATED_BY,CREATED_DATE,
+                                                    MFD_DATE,EXPIRY_DATE,RETRUN_CONDITIONS,COMPLAIN_TYPE,COMPLAIN_SERIOUSNESS,DISTRIBUTOR_REMARKS,ASM_REMARKS,BATCH_NO,CUSTOMER_TYPE,DELETED_FLAG) 
+                                       VALUES('{returnModel.ORDER_NO}',TRUNC(TO_DATE('{returnModel.ORDER_DATE.ToShortDateString()}','MM/DD/YYYY')),'{returnModel.CUSTOMER_CODE}',
+                                                   '{item.BATCH_NO}','{item.ITEM_CODE}','{item.MU_CODE}','{item.QUANTITY}','0','{returnModel.COMPANY_CODE}','{returnModel.BRANCH_CODE}',
+                                                   '{returnModel.user_id}',SYSDATE,'{item.MBF_DATA}','{item.EXP_DATE}',
+                                                    '{returnModel.CONDITION}','{returnModel.COMPLAIN_TYPE}','{returnModel.SERIOUSNESS}','{returnModel.REMARKS_DIST}','{returnModel.REMARKS_ASM}','{item.BATCH_NO}','{returnModel.ENTITY_TYPE}','N')";
+                    var rowAffacted = dbContext.ExecuteSqlCommand(saveQuery);
+                    saveResult.Add(item.SYNC_ID, returnModel.ORDER_NO);
+
+                }
+                string lastTag = "";
+                foreach (string tagName in Files)
+                {
+                    int count = 0;
+                    string imageTag = "";
+                    if (tagName == lastTag)
+                    {
+                        count++;   
+                    }
+                    else {
+                        count = 0;
+                        lastTag = tagName;
+                                     }
+
+                    string imageKey = tagName + "[" + count + "]";
+                    imageTag = imageKey;
+
+
+                    HttpPostedFile file = Files[tagName];
+                    string UserFolderpath = string.Empty;
+
+                    //coll.Add(tagName, form[$"description"]);
+                    UserFolderpath = UploadPath + "\\DistSalesReturnImages";  //model.entity_code is the sp_code(sales person code)
+
+                    if (!Directory.Exists(UserFolderpath))
+                        Directory.CreateDirectory(UserFolderpath);
+                    string FileName = string.Format("DSR_{0}_{1}{2}", returnModel.ORDER_NO, itemCount, Path.GetExtension(file.FileName));
+                    string filePath = Path.Combine(UserFolderpath, FileName);
+                    //int count = 1;
+                    while (File.Exists(filePath))
+                    {
+                        FileName = string.Format("DSR_{0}_{1}_{2}{3}", returnModel.ORDER_NO, itemCount, itemCount, Path.GetExtension(file.FileName));
+                        filePath = Path.Combine(UserFolderpath, FileName);
+                        break;
+                    }
+                    file.SaveAs(filePath);
+
+                    string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CATEGORYID,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+                            ('{FileName}','{descriptions[imageTag]}','{returnModel.ENTITY_TYPE}','{returnModel.CUSTOMER_CODE}','GENERAL',1,'{returnModel.user_id}',TO_DATE('{todayDt}','MM/dd/yyyy hh24:mi:ss'),'{returnModel.COMPANY_CODE}','{returnModel.BRANCH_CODE}')";
+                    var row = dbContext.ExecuteSqlCommand(ImageQuery);
+                    itemCount++;
+                }
+                //return saveResult;
+                string resultValue = "Data saved successfully";
+
+                result.Add("msg", resultValue);
+                return result;
             }
-           
-            string resultValue = "Image successfully uploaded";
-            
-            result.Add("msg", resultValue);
-            // }
-            // else
-            // {
-            //  result.Add("msg", "Attendence Successful");
-            // }
-            return result;
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
         }
 
         public string SaveScheme(SchemeModel model, NeoErpCoreEntity dbContext)
@@ -3525,7 +5076,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 var SalesPersonQuery = String.Empty;
                 if (companyName.Equals("Bhudeo Khadya Udyog P. Ltd."))
                 {
-                     ResPOQuery = $@"   SELECT WM_CONCAT(DISTINCT ROUTE_NAME) ROUTE_NAME, GROUP_EDESC,SP_CODE, EMPLOYEE_EDESC, ASSIGN_DATE,ATN_TIME,EOD_TIME,WORKING_HOURS,
+                    ResPOQuery = $@"   SELECT WM_CONCAT(DISTINCT ROUTE_NAME) ROUTE_NAME, GROUP_EDESC,SP_CODE, EMPLOYEE_EDESC, ASSIGN_DATE,ATN_TIME,EOD_TIME,WORKING_HOURS,
 sum(TARGET) TARGET,sum(VISITED) TARGET_VISITED,sum(TOTAL_VISITED) VISITED,sum(EXTRA) EXTRA,sum(NOT_VISITED) NOT_VISITED,
 sum(TOTAL_PJP) TOTAL_PJP,sum(PJP) PJP_PRODUCTIVE,sum(NON_PJP) PJP_NON_PRODUCTIVE,
 sum(NON_N_PJP) NPJP_PRODUCTIVE,sum(TOTAL_QUANTITY) PJP_TOTAL_QUANTITY,sum(TOTAL_PRICE) PJP_TOTAL_AMOUNT,
@@ -3565,17 +5116,17 @@ FROM DIST_LOGIN_USER A, DIST_TARGET_ENTITY B
 WHERE A.USERID = B.USERID
 AND A.COMPANY_CODE = B.COMPANY_CODE
 AND A.ACTIVE = 'Y'
-AND A.COMPANY_CODE IN ('01')/*('{Company}')*/
+AND A.COMPANY_CODE IN ('{Company}')
 AND B.ASSIGN_DATE  BETWEEN TO_DATE('2021-Dec-15','RRRR-MON-DD') AND TO_DATE('2021-Dec-15','RRRR-MON-DD') /*sysdate*/
 GROUP BY A.USERID, A.FULL_NAME, A.SP_CODE, B.ASSIGN_DATE, A.COMPANY_CODE,B.ROUTE_CODE, B.ROUTE_NAME,B.GROUP_EDESC, B.COMPANY_CODE
 ORDER BY B.ASSIGN_DATE) AA
 WHERE 1=1  
- AND SP_CODE IN  ('1001030') /*('{SpCode}')*/ 
+ AND SP_CODE IN  ('{SpCode}')
  GROUP BY  USERID, COMPANY_CODE,TRUNC(ASSIGN_DATE),  ATN_TIME,EOD_TIME, SP_CODE,GROUP_EDESC,SP_CODE, FULL_NAME,EOD_REMARKS)  group by   ASSIGN_DATE,ATN_TIME,EOD_TIME, SP_CODE,GROUP_EDESC,SP_CODE,EOD_REMARKS,EMPLOYEE_EDESC,WORKING_HOURS  order by sp_code
  ";
 
 
-                     SalesPersonQuery = $@"SELECT * FROM (
+                    SalesPersonQuery = $@"SELECT * FROM (
                                 SELECT DPO1.ORDER_NO, DPO1.ORDER_DATE,BS_DATE(TO_CHAR(DPO1.ORDER_DATE)) MITI, DPO1.CUSTOMER_CODE, DPO1.BILLING_NAME CUSTOMER_EDESC, '' RESELLER_NAME, 'D' ORDER_ENTITY, TRIM(IMS.ITEM_EDESC) ITEM_EDESC, 
                                         DPO1.MU_CODE, DPO1.QUANTITY, DPO1.UNIT_PRICE, DPO1.TOTAL_PRICE NET_TOTAL, IUS.MU_CODE CONVERSION_MU_CODE, IUS.CONVERSION_FACTOR,
                                          DPO1.PARTY_TYPE_CODE,
@@ -3702,7 +5253,7 @@ WHERE 1=1
                 }
                 else
                 {
-                     ResPOQuery = $@"SELECT  PO.EMPLOYEE_EDESC,  PO.BRAND_NAME,
+                    ResPOQuery = $@"SELECT  PO.EMPLOYEE_EDESC,  PO.BRAND_NAME,
                                     SUM(PO.TOTAL_QUANTITY) TOTAL_QUANTITY, SUM(PO.TOTAL_AMOUNT) TOTAL_AMOUNT,PO.MU_CODE FROM (SELECT DPO.CREATED_BY, DLU.SP_CODE, TRIM(HES.EMPLOYEE_EDESC) EMPLOYEE_EDESC, DPO.COMPANY_CODE, TRIM(ISS.BRAND_NAME) BRAND_NAME,
                                     SUM(DPO.QUANTITY) TOTAL_QUANTITY, SUM(DPO.TOTAL_PRICE) TOTAL_AMOUNT,DPO.MU_CODE
                                    FROM DIST_IP_SSD_PURCHASE_ORDER DPO
@@ -3739,11 +5290,11 @@ WHERE 1=1
                 }
                 var ResellerData = dbContext.SqlQuery(ResPOQuery);
                 //   var DistrubutorData = dbContext.SqlQuery(DisPOQuery);
-                
+
                 string EodData = string.Empty;
 
 
-                if(companyName.Equals("JGI Distribution Pvt. Ltd."))
+                if (companyName.Equals("JGI Distribution Pvt. Ltd."))
                 {
 
                     #region EODQuery
@@ -4386,7 +5937,7 @@ WHERE COMPANY_CODE = '{Company}'";
                     //{
                     //    message1 += $@"<tr><td>{row["BRAND_NAME"]}</td><td>{row["TOTAL_QUANTITY"]}</td><td>{row["TOTAL_AMOUNT"]}</td><td>{row["MU_CODE"]}</td></tr>";
                     //}
-                    if(orderData != null)
+                    if (orderData != null)
                     {
                         foreach (DataRow row in orderData.Rows)
                         {
@@ -4407,16 +5958,16 @@ WHERE COMPANY_CODE = '{Company}'";
                     if (companyName.Equals("Bhudeo Khadya Udyog P. Ltd."))
                     {
                         var SalesPersonData = dbContext.SqlQuery(SalesPersonQuery);
-                         ResellerAttach1 = new System.Net.Mail.Attachment(CommonHelper.ConvertTableIntoExcel(ResellerData, SalesPersonData), string.Format("{0}.{1}", "Purchase Orders", "xls"));
+                        ResellerAttach1 = new System.Net.Mail.Attachment(CommonHelper.ConvertTableIntoExcel(ResellerData, SalesPersonData), string.Format("{0}.{1}", "Purchase Orders", "xls"));
 
                     }
                     else
                     {
-                         ResellerAttach1 = new System.Net.Mail.Attachment(ResellerData.DataToExcel(), string.Format("{0}.{1}", "Purchase Orders", "xls"));
+                        ResellerAttach1 = new System.Net.Mail.Attachment(ResellerData.DataToExcel(), string.Format("{0}.{1}", "Purchase Orders", "xls"));
 
                     }
                     // var DistrubutorAttach = new System.Net.Mail.Attachment(DistrubutorData.DataToExcel(), string.Format("{0}.{1}", "Distributor Purchase Orders", "xls"));
-                    System.Net.Mail.Attachment[] file1 = new System.Net.Mail.Attachment[] {ResellerAttach1 };
+                    System.Net.Mail.Attachment[] file1 = new System.Net.Mail.Attachment[] { ResellerAttach1 };
 
 
                     //mailModel.ATTACHMENT_FILE = file;

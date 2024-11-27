@@ -76,247 +76,81 @@ namespace NeoERP.QuotationManagment.Service.Repository
         public List<Quotation_setup> GetQuotationId()
         {
             //string query = $@"select FN_NEW_TENDERNO('{_workContext.CurrentUserinformation.company_code}','{_workContext.CurrentUserinformation.branch_code}') as TENDER_NO from dual";
-            //string query = $@"select GENERATE_TENDER_NO('{_workContext.CurrentUserinformation.company_code}') as TENDER_NO from dual";
-            //List<Quotation_setup> id = _dbContext.SqlQuery<Quotation_setup>(query).ToList();
-            string fQuery = $@"SELECT fs.form_code,fds.table_name as TableName FROM form_setup fs,form_detail_setup fds
-                where ( fds.form_code = fs.form_code ) and ( fds.company_code = fs.company_code )
-                 AND fs.quotation_flag = 'Y'and fs.quotation_flag is not null and fs.company_code='{_workContext.CurrentUserinformation.company_code}' and rownum=1";
-            Inventory data = _dbContext.SqlQuery<Inventory>(fQuery).FirstOrDefault();
-            var companycode = _workContext.CurrentUserinformation.company_code;
-            //string tablename = "IP_QUOTATION_INQUIRY";
-            string transactiondate = DateTime.Now.ToString("dd-MMM-yyyy");
-            string query = string.Format(@"select FN_NEW_VOUCHER_NO('{0}','{1}','{2}','{3}') as TENDER_NO FROM DUAL", companycode, data.FORM_CODE, transactiondate, data.TableName);
+            string query = $@"select GENERATE_TENDER_NO('{_workContext.CurrentUserinformation.company_code}') as TENDER_NO from dual";
             List<Quotation_setup> id = _dbContext.SqlQuery<Quotation_setup>(query).ToList();
+            //string fQuery = $@"select FORM_CODE from form_setup where form_edesc ='Quotation Enquiry' and  company_code= '{_workContext.CurrentUserinformation.company_code}'";
+            //string formcode = _dbContext.SqlQuery<string>(fQuery).FirstOrDefault();
+            //var companycode = _workContext.CurrentUserinformation.company_code;
+            //string tablename = "IP_QUOTATION_INQUIRY";
+            //string transactiondate = DateTime.Now.ToString("dd-MMM-yyyy");
+            //string query = string.Format(@"select FN_NEW_VOUCHER_NO('{0}','{1}','{2}','{3}') as TENDER_NO FROM DUAL", companycode, formcode, transactiondate, tablename);
+            //List<Quotation_setup> id = _dbContext.SqlQuery<Quotation_setup>(query).ToList();
             return id;
         }
-        //public bool InsertQuotationData(FormDetails data)
-        //{
-        //    try
-        //    {
-        //        //int tenderId = data.ID;
-        //        //if (tenderId == 0)
-        //        //{
-        //        //    var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_setup";
-        //        //    int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
-        //        //    string insertQuery = string.Format(@"INSERT INTO sa_quotation_setup(TENDER_NO, VALID_DATE, ISSUE_DATE, CREATED_DATE, CREATED_BY, COMPANY_CODE, STATUS,REMARKS,ID,APPROVED_STATUS,BRANCH_CODE) 
-        //        //                 VALUES('{0}', TO_DATE('{1}', 'DD-MON-YYYY'), TO_DATE('{2}', 'DD-MON-YYYY'), TO_DATE('{3}', 'DD-MON-YYYY'), '{4}', '{5}', '{6}','{7}',{8},'{9}','{10}')",
-        //        //                              data.TENDER_NO,
-        //        //                              data.VALID_DATE.HasValue ? $"{data.VALID_DATE.Value.ToString("dd-MMM-yyyy")}" : null,
-        //        //                              data.ISSUE_DATE.HasValue ? $"{data.ISSUE_DATE.Value.ToString("dd-MMM-yyyy")}" : null,
-        //        //                              DateTime.Now.ToString("dd-MMM-yyyy"),
-        //        //                              _workContext.CurrentUserinformation.login_code,
-        //        //                              _workContext.CurrentUserinformation.company_code,
-        //        //                              "E", data.REMARKS, id, "N", _workContext.CurrentUserinformation.branch_code);
-        //        //    _dbContext.ExecuteSqlCommand(insertQuery);
-        //        //    List<Item> itemData = data.Items;
-        //        //    if (itemData != null)
-        //        //    {
-        //        //        foreach (var item in itemData)
-        //        //        {
-
-        //        //            InsertItemData(item, data.TENDER_NO); // Pass each item individually to InsertItemData
-        //        //        }
-        //        //    }
-        //        //}
-        //        //else
-        //        //{
-        //        //    string updateQuery = $@"UPDATE sa_quotation_setup 
-        //        //       SET VALID_DATE = {(data.VALID_DATE.HasValue ? $"'{data.VALID_DATE.Value.ToString("dd-MMM-yyyy")}'" : "null")},
-        //        //           ISSUE_DATE = {(data.ISSUE_DATE.HasValue ? $"'{data.ISSUE_DATE.Value.ToString("dd-MMM-yyyy")}'" : "null")},
-        //        //           MODIFIED_DATE = '{DateTime.Now.ToString("dd-MMM-yyyy")}',REMARKS='{data.REMARKS}',
-        //        //           MODIFIED_BY = '{_workContext.CurrentUserinformation.login_code}',
-        //        //           COMPANY_CODE = '{_workContext.CurrentUserinformation.company_code}'
-        //        //       WHERE id = '{data.ID}' 
-        //        //       AND tender_no = '{data.TENDER_NO}'";
-        //        //    _dbContext.ExecuteSqlCommand(updateQuery);
-        //        //    List<Item> itemData = data.Items;
-        //        //    if (itemData != null)
-        //        //    {
-        //        //        foreach (var item in itemData)
-        //        //        {
-        //        //            var query = $@"SELECT * FROM sa_quotation_Items WHERE tender_no='{data.TENDER_NO}' AND id='{item.ID}'";
-        //        //            List<Item> itemDetails = _dbContext.SqlQuery<Item>(query).ToList();
-
-        //        //            if (itemDetails.Any())
-        //        //            {
-        //        //                    UpdateItemData(item, data.TENDER_NO);
-        //        //            }
-        //        //            else
-        //        //            {
-        //        //                InsertItemData(item, data.TENDER_NO);
-        //        //            }
-
-        //        //        }
-        //        //    }
-        //        //}
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception(ex.Message);
-        //    }
-        //}
-        public bool InsertQuotationData(List<Inventory> childColumnValue, Inventory masterColumnValue, CommonFieldsForInventory commonValue, FormDetails model)
+        public bool InsertQuotationData(Quotation_setup data)
         {
             try
             {
-                int serialno = 1;
-                bool insertedToChild = false;
-                Inventory inventoryChildDetails = new Inventory();
-                foreach (var childCol in childColumnValue)
+                int tenderId = data.ID;
+                if (tenderId == 0)
                 {
-                    inventoryChildDetails.VOUCHER_NO = (commonValue.VoucherNumber == "undefined") ? commonValue.NewVoucherNumber : commonValue.VoucherNumber;
-                    inventoryChildDetails.MANUAL_NO = string.IsNullOrEmpty(childCol.MANUAL_NO) ? masterColumnValue.MANUAL_NO : childCol.MANUAL_NO;
-                    inventoryChildDetails.SERIAL_NO = string.IsNullOrEmpty(childCol.SERIAL_NO) ? serialno.ToString() : childCol.SERIAL_NO;
-                    inventoryChildDetails.TO_LOCATION_CODE = string.IsNullOrEmpty(childCol.TO_LOCATION_CODE) ? masterColumnValue.TO_LOCATION_CODE : childCol.TO_LOCATION_CODE;
-                    inventoryChildDetails.REMARKS = string.IsNullOrEmpty(childCol.REMARKS) ? masterColumnValue.REMARKS : childCol.REMARKS;
-                    inventoryChildDetails.CALC_TOTAL_PRICE = childCol.CALC_TOTAL_PRICE;
-                    inventoryChildDetails.CALC_UNIT_PRICE = childCol.CALC_UNIT_PRICE;
-                    inventoryChildDetails.CALC_QUANTITY = childCol.CALC_QUANTITY;
-                    inventoryChildDetails.TOTAL_PRICE = childCol.TOTAL_PRICE;
-                    inventoryChildDetails.UNIT_PRICE = childCol.UNIT_PRICE;
-                    inventoryChildDetails.QUANTITY = childCol.QUANTITY;
-                    inventoryChildDetails.MU_CODE = string.IsNullOrEmpty(childCol.MU_CODE) ? masterColumnValue.MU_CODE : childCol.MU_CODE;
-                    inventoryChildDetails.ITEM_CODE = string.IsNullOrEmpty(childCol.ITEM_CODE) ? masterColumnValue.ITEM_CODE : childCol.ITEM_CODE;
+                    var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_setup";
+                    int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
+                    string insertQuery = string.Format(@"INSERT INTO sa_quotation_setup(TENDER_NO, VALID_DATE, ISSUE_DATE, CREATED_DATE, CREATED_BY, COMPANY_CODE, STATUS,REMARKS,ID,APPROVED_STATUS,BRANCH_CODE) 
+                                 VALUES('{0}', TO_DATE('{1}', 'DD-MON-YYYY'), TO_DATE('{2}', 'DD-MON-YYYY'), TO_DATE('{3}', 'DD-MON-YYYY'), '{4}', '{5}', '{6}','{7}',{8},'{9}','{10}')",
+                                              data.TENDER_NO,
+                                              data.VALID_DATE.HasValue ? $"{data.VALID_DATE.Value.ToString("dd-MMM-yyyy")}" : null,
+                                              data.ISSUE_DATE.HasValue ? $"{data.ISSUE_DATE.Value.ToString("dd-MMM-yyyy")}" : null,
+                                              DateTime.Now.ToString("dd-MMM-yyyy"),
+                                              _workContext.CurrentUserinformation.login_code,
+                                              _workContext.CurrentUserinformation.company_code,
+                                              "E", data.REMARKS, id, "N", _workContext.CurrentUserinformation.branch_code);
+                    _dbContext.ExecuteSqlCommand(insertQuery);
+                    List<Item> itemData = data.Items;
+                    if (itemData != null)
+                    {
+                        foreach (var item in itemData)
+                        {
 
-                    if (string.IsNullOrEmpty(masterColumnValue.MODIFY_DATE))
-                    {
-                        inventoryChildDetails.MODIFY_DATE = "''";
-                    }
-                    else
-                    {
-                        inventoryChildDetails.MODIFY_DATE = masterColumnValue.MODIFY_DATE;
-                    }
-                    if (string.IsNullOrEmpty(masterColumnValue.MODIFY_BY))
-                    {
-                        inventoryChildDetails.MODIFY_BY = "";
-                    }
-                    else
-                    {
-                        inventoryChildDetails.MODIFY_BY = masterColumnValue.MODIFY_BY;
-                    }
-                    inventoryChildDetails.DELETED_FLAG = "N";
-                    inventoryChildDetails.CREATED_DATE = commonValue.VoucherDate;
-                    inventoryChildDetails.CREATED_BY = string.IsNullOrEmpty(childCol.CREATED_BY) ? masterColumnValue.CREATED_BY : _workContext.CurrentUserinformation.login_code.ToUpper();
-                    inventoryChildDetails.BRANCH_CODE = string.IsNullOrEmpty(childCol.BRANCH_CODE) ? _workContext.CurrentUserinformation.branch_code : childCol.BRANCH_CODE;
-                    inventoryChildDetails.MRR_NO = string.IsNullOrEmpty(childCol.MRR_NO) ? masterColumnValue.MRR_NO : childCol.MRR_NO;
-                    inventoryChildDetails.COMPLETED_QUANTITY = childCol.COMPLETED_QUANTITY;
-                    inventoryChildDetails.FORM_CODE = string.IsNullOrEmpty(commonValue.FormCode) ? masterColumnValue.FORM_CODE : commonValue.FormCode;
-                    inventoryChildDetails.COMPANY_CODE = string.IsNullOrEmpty(childCol.COMPANY_CODE) ? _workContext.CurrentUserinformation.company_code : childCol.COMPANY_CODE;
-
-                    inventoryChildDetails.IMAGE =(childCol.IMAGE);
-                    inventoryChildDetails.CATEGORY = string.IsNullOrEmpty(childCol.CATEGORY) ? masterColumnValue.CATEGORY : childCol.CATEGORY;
-                    inventoryChildDetails.BRAND_NAME = string.IsNullOrEmpty(childCol.BRAND_NAME) ? masterColumnValue.BRAND_NAME : childCol.BRAND_NAME;
-                    inventoryChildDetails.INTERFACE = string.IsNullOrEmpty(childCol.INTERFACE) ? masterColumnValue.INTERFACE : childCol.INTERFACE;
-                    inventoryChildDetails.TYPE = string.IsNullOrEmpty(childCol.TYPE) ? masterColumnValue.TYPE : childCol.TYPE;
-                    inventoryChildDetails.LAMINATION = string.IsNullOrEmpty(childCol.LAMINATION) ? masterColumnValue.LAMINATION : childCol.LAMINATION;
-                    inventoryChildDetails.ITEM_SIZE = string.IsNullOrEmpty(childCol.ITEM_SIZE) ? masterColumnValue.ITEM_SIZE : childCol.ITEM_SIZE;
-                    inventoryChildDetails.THICKNESS = string.IsNullOrEmpty(childCol.THICKNESS) ? masterColumnValue.THICKNESS : childCol.THICKNESS;
-                    inventoryChildDetails.COLOR = string.IsNullOrEmpty(childCol.COLOR) ? masterColumnValue.COLOR : childCol.COLOR;
-                    inventoryChildDetails.GRADE = string.IsNullOrEmpty(childCol.GRADE) ? masterColumnValue.GRADE : childCol.GRADE;
-                    inventoryChildDetails.SIZE_LENGTH =childCol.SIZE_LENGTH;
-                    inventoryChildDetails.SIZE_WIDTH =childCol.SIZE_WIDTH;
-
-                    inventoryChildDetails.SYN_ROWID = string.IsNullOrEmpty(childCol.SYN_ROWID) ? masterColumnValue.SYN_ROWID : childCol.SYN_ROWID;
-                    inventoryChildDetails.SESSION_ROWID = string.IsNullOrEmpty(childCol.SESSION_ROWID) ? masterColumnValue.SESSION_ROWID : childCol.SESSION_ROWID;
-                    inventoryChildDetails.DIVISION_CODE = string.IsNullOrEmpty(childCol.DIVISION_CODE) ? masterColumnValue.DIVISION_CODE : childCol.DIVISION_CODE;
-                    inventoryChildDetails.INVOICE_NO = string.IsNullOrEmpty(childCol.INVOICE_NO) ? masterColumnValue.INVOICE_NO : childCol.INVOICE_NO;
-                    inventoryChildDetails.INVOICE_DATE = string.IsNullOrEmpty(childCol.INVOICE_DATE) ? masterColumnValue.INVOICE_DATE : childCol.INVOICE_DATE;
-                    inventoryChildDetails.SUPPLIER_CODE = string.IsNullOrEmpty(childCol.SUPPLIER_CODE) ? masterColumnValue.SUPPLIER_CODE : childCol.SUPPLIER_CODE;
-                    inventoryChildDetails.SUPPLIER_INV_NO = string.IsNullOrEmpty(childCol.SUPPLIER_INV_NO) ? masterColumnValue.SUPPLIER_INV_NO : childCol.SUPPLIER_INV_NO;
-                    inventoryChildDetails.SUPPLIER_INV_DATE = string.IsNullOrEmpty(childCol.SUPPLIER_INV_DATE) ? (masterColumnValue.SUPPLIER_INV_DATE == "Invalid date" ? null : masterColumnValue.SUPPLIER_INV_DATE) : childCol.SUPPLIER_INV_DATE;
-                    inventoryChildDetails.SUPPLIER_BUDGET_FLAG = string.IsNullOrEmpty(childCol.SUPPLIER_BUDGET_FLAG) ? masterColumnValue.SUPPLIER_BUDGET_FLAG : childCol.SUPPLIER_BUDGET_FLAG;
-                    inventoryChildDetails.BUDGET_FLAG = string.IsNullOrEmpty(inventoryChildDetails.BUDGET_FLAG) ? inventoryChildDetails.BUDGET_FLAG : inventoryChildDetails.BUDGET_FLAG;
-                    inventoryChildDetails.DUE_DATE = string.IsNullOrEmpty(childCol.DUE_DATE) ? (masterColumnValue.DUE_DATE == "Invalid date" ? null : masterColumnValue.DUE_DATE) : childCol.DUE_DATE;
-                    inventoryChildDetails.CURRENCY_CODE = string.IsNullOrEmpty(childCol.CURRENCY_CODE) ? "NRS" : masterColumnValue.CURRENCY_CODE;
-                    inventoryChildDetails.EXCHANGE_RATE = string.IsNullOrEmpty(childCol.EXCHANGE_RATE) ? "1" : masterColumnValue.EXCHANGE_RATE;
-                    inventoryChildDetails.TERMS_DAY = string.IsNullOrEmpty(childCol.TERMS_DAY) ? masterColumnValue.TERMS_DAY : childCol.TERMS_DAY;
-                    inventoryChildDetails.TRACKING_NO = string.IsNullOrEmpty(childCol.TRACKING_NO) ? masterColumnValue.TRACKING_NO : childCol.TRACKING_NO;
-                    inventoryChildDetails.BATCH_NO = string.IsNullOrEmpty(childCol.BATCH_NO) ? masterColumnValue.BATCH_NO : childCol.BATCH_NO;
-                    inventoryChildDetails.LOT_NO = string.IsNullOrEmpty(childCol.LOT_NO) ? masterColumnValue.LOT_NO : childCol.LOT_NO;
-                    inventoryChildDetails.SUPPLIER_MRR_NO = string.IsNullOrEmpty(childCol.SUPPLIER_MRR_NO) ? masterColumnValue.SUPPLIER_MRR_NO : childCol.SUPPLIER_MRR_NO;
-                    inventoryChildDetails.PP_NO = string.IsNullOrEmpty(childCol.PP_NO) ? masterColumnValue.PP_NO : childCol.PP_NO;
-                    inventoryChildDetails.P_TYPE = string.IsNullOrEmpty(childCol.P_TYPE) ? masterColumnValue.P_TYPE : childCol.P_TYPE;
-                    inventoryChildDetails.PP_DATE = string.IsNullOrEmpty(childCol.PP_DATE) ? masterColumnValue.PP_DATE : childCol.PP_DATE;
-                    inventoryChildDetails.NET_GROSS_RATE = string.IsNullOrEmpty(childCol.NET_GROSS_RATE) ? masterColumnValue.NET_GROSS_RATE : childCol.NET_GROSS_RATE;
-                    inventoryChildDetails.NET_SALES_RATE = string.IsNullOrEmpty(childCol.NET_SALES_RATE) ? masterColumnValue.NET_SALES_RATE : childCol.NET_SALES_RATE;
-                    inventoryChildDetails.NET_TAXABLE_RATE = string.IsNullOrEmpty(childCol.NET_TAXABLE_RATE) ? masterColumnValue.NET_TAXABLE_RATE : childCol.NET_TAXABLE_RATE;
-                    inventoryChildDetails.MASTER_PP_NO = string.IsNullOrEmpty(childCol.MASTER_PP_NO) ? masterColumnValue.MASTER_PP_NO : childCol.MASTER_PP_NO;
-                    inventoryChildDetails.SECOND_QUANTITY = string.IsNullOrEmpty(childCol.SECOND_QUANTITY) ? masterColumnValue.SECOND_QUANTITY : childCol.SECOND_QUANTITY;
-                    inventoryChildDetails.THIRD_QUANTITY = string.IsNullOrEmpty(childCol.THIRD_QUANTITY) ? masterColumnValue.THIRD_QUANTITY : childCol.THIRD_QUANTITY;
-                    inventoryChildDetails.RECONCILE_DATE = string.IsNullOrEmpty(childCol.RECONCILE_DATE) ? masterColumnValue.RECONCILE_DATE : childCol.RECONCILE_DATE;
-                    inventoryChildDetails.RECONCILE_FLAG = string.IsNullOrEmpty(childCol.RECONCILE_FLAG) ? masterColumnValue.RECONCILE_FLAG : childCol.RECONCILE_FLAG;
-                    inventoryChildDetails.RECONCILE_BY = string.IsNullOrEmpty(childCol.RECONCILE_BY) ? masterColumnValue.RECONCILE_BY : childCol.RECONCILE_BY;
-                    inventoryChildDetails.PHOTO_FILE_NAME1 = string.IsNullOrEmpty(childCol.PHOTO_FILE_NAME1) ? masterColumnValue.PHOTO_FILE_NAME1 : childCol.PHOTO_FILE_NAME1;
-                    inventoryChildDetails.PHOTO_FILE_NAME2 = string.IsNullOrEmpty(childCol.PHOTO_FILE_NAME2) ? masterColumnValue.PHOTO_FILE_NAME2 : childCol.PHOTO_FILE_NAME2;
-                    inventoryChildDetails.SPECIFICATION = string.IsNullOrEmpty(childCol.SPECIFICATION) ? masterColumnValue.SPECIFICATION : childCol.SPECIFICATION;
-                    inventoryChildDetails.SUPPLIER_MRR_DATE = string.IsNullOrEmpty(childCol.SUPPLIER_MRR_DATE) ? masterColumnValue.SUPPLIER_MRR_DATE : childCol.SUPPLIER_MRR_DATE;
-                    inventoryChildDetails.BRAND_NAME = string.IsNullOrEmpty(childCol.BRAND_NAME) ? masterColumnValue.BRAND_NAME : childCol.BRAND_NAME;
-                    inventoryChildDetails.BRAND_ACCEPT_FLAG = string.IsNullOrEmpty(childCol.BRAND_ACCEPT_FLAG) ? masterColumnValue.BRAND_ACCEPT_FLAG : childCol.BRAND_ACCEPT_FLAG;
-                    inventoryChildDetails.BRAND_REMARKS = string.IsNullOrEmpty(childCol.BRAND_REMARKS) ? masterColumnValue.BRAND_REMARKS : childCol.BRAND_REMARKS;
-                    inventoryChildDetails.RACK_QTY = string.IsNullOrEmpty(childCol.RACK_QTY) ? masterColumnValue.RACK_QTY : childCol.RACK_QTY;
-                    inventoryChildDetails.RACK2_QTY = string.IsNullOrEmpty(childCol.RACK2_QTY) ? masterColumnValue.RACK2_QTY : childCol.RACK2_QTY;
-                    inventoryChildDetails.GATE_ENTRY_NO = string.IsNullOrEmpty(childCol.GATE_ENTRY_NO) ? masterColumnValue.GATE_ENTRY_NO : childCol.GATE_ENTRY_NO;
-                    inventoryChildDetails.ISSUE_NO = string.IsNullOrEmpty(childCol.ISSUE_NO) ? masterColumnValue.ISSUE_NO : childCol.ISSUE_NO;
-                    inventoryChildDetails.ISSUE_DATE = string.IsNullOrEmpty(childCol.ISSUE_DATE) ? masterColumnValue.ISSUE_DATE : childCol.ISSUE_DATE;
-                    inventoryChildDetails.ISSUE_TYPE_CODE = string.IsNullOrEmpty(childCol.ISSUE_TYPE_CODE) ? masterColumnValue.ISSUE_TYPE_CODE : childCol.ISSUE_TYPE_CODE;
-                    inventoryChildDetails.FROM_LOCATION_CODE = string.IsNullOrEmpty(childCol.FROM_LOCATION_CODE) ? masterColumnValue.FROM_LOCATION_CODE : childCol.FROM_LOCATION_CODE;
-                    inventoryChildDetails.TO_BUDGET_FLAG = string.IsNullOrEmpty(childCol.TO_BUDGET_FLAG) ? masterColumnValue.TO_BUDGET_FLAG : childCol.TO_BUDGET_FLAG;
-                    inventoryChildDetails.REQ_QUANTITY = string.IsNullOrEmpty(childCol.REQ_QUANTITY) ? masterColumnValue.REQ_QUANTITY : childCol.REQ_QUANTITY;
-                    inventoryChildDetails.PRODUCTION_QTY = string.IsNullOrEmpty(childCol.PRODUCTION_QTY) ? masterColumnValue.PRODUCTION_QTY : childCol.PRODUCTION_QTY;
-                    inventoryChildDetails.PRODUCT_CODE = string.IsNullOrEmpty(childCol.PRODUCT_CODE) ? masterColumnValue.PRODUCT_CODE : childCol.PRODUCT_CODE;
-                    inventoryChildDetails.USE_PLACE = string.IsNullOrEmpty(childCol.USE_PLACE) ? masterColumnValue.USE_PLACE : childCol.USE_PLACE;
-                    inventoryChildDetails.CUSTOMER_CODE = string.IsNullOrEmpty(childCol.CUSTOMER_CODE) ? masterColumnValue.CUSTOMER_CODE : childCol.CUSTOMER_CODE;
-                    inventoryChildDetails.EMPLOYEE_CODE = string.IsNullOrEmpty(childCol.EMPLOYEE_CODE) ? masterColumnValue.EMPLOYEE_CODE : childCol.EMPLOYEE_CODE;
-                    inventoryChildDetails.ISSUE_SLIP_NO = string.IsNullOrEmpty(childCol.ISSUE_SLIP_NO) ? masterColumnValue.ISSUE_SLIP_NO : childCol.ISSUE_SLIP_NO;
-                    inventoryChildDetails.REFERENCE_NO = string.IsNullOrEmpty(childCol.REFERENCE_NO) ? masterColumnValue.REFERENCE_NO : childCol.REFERENCE_NO;
-                    inventoryChildDetails.RETURN_NO = string.IsNullOrEmpty(childCol.RETURN_NO) ? masterColumnValue.RETURN_NO : childCol.RETURN_NO;
-                    inventoryChildDetails.RETURN_DATE = string.IsNullOrEmpty(childCol.RETURN_DATE) ? masterColumnValue.RETURN_DATE : childCol.RETURN_DATE;
-                    inventoryChildDetails.BUDGET_CODE = string.IsNullOrEmpty(childCol.BUDGET_CODE) ? masterColumnValue.BUDGET_CODE : childCol.BUDGET_CODE;
-                    inventoryChildDetails.TERMS_DAYS = string.IsNullOrEmpty(childCol.TERMS_DAYS) ? masterColumnValue.TERMS_DAYS : childCol.TERMS_DAYS;
-                    inventoryChildDetails.REQUISITION_NO = string.IsNullOrEmpty(childCol.REQUISITION_NO) ? masterColumnValue.REQUISITION_NO : childCol.REQUISITION_NO;
-                    inventoryChildDetails.REQUISITION_DATE = string.IsNullOrEmpty(childCol.REQUISITION_DATE) ? masterColumnValue.REQUISITION_DATE : childCol.REQUISITION_DATE;
-                    inventoryChildDetails.BUYERS_NAME = string.IsNullOrEmpty(childCol.BUYERS_NAME) ? masterColumnValue.BUYERS_NAME : childCol.BUYERS_NAME;
-                    inventoryChildDetails.BUYERS_ADDRESS = string.IsNullOrEmpty(childCol.BUYERS_ADDRESS) ? masterColumnValue.BUYERS_ADDRESS : childCol.BUYERS_ADDRESS;
-                    inventoryChildDetails.ACTUAL_QUANTITY = string.IsNullOrEmpty(childCol.ACTUAL_QUANTITY) ? masterColumnValue.ACTUAL_QUANTITY : childCol.ACTUAL_QUANTITY;
-                    inventoryChildDetails.ACKNOWLEDGE_BY = string.IsNullOrEmpty(childCol.ACKNOWLEDGE_BY) ? masterColumnValue.ACKNOWLEDGE_BY : childCol.ACKNOWLEDGE_BY;
-                    inventoryChildDetails.ACKNOWLEDGE_DATE = string.IsNullOrEmpty(childCol.ACKNOWLEDGE_DATE) ? masterColumnValue.ACKNOWLEDGE_DATE : childCol.ACKNOWLEDGE_DATE;
-                    inventoryChildDetails.OPENING_DATA_FLAG = string.IsNullOrEmpty(childCol.OPENING_DATA_FLAG) ? masterColumnValue.OPENING_DATA_FLAG : childCol.OPENING_DATA_FLAG;
-                    inventoryChildDetails.TO_FORM_CODE = string.IsNullOrEmpty(childCol.TO_FORM_CODE) ? masterColumnValue.TO_FORM_CODE : childCol.TO_FORM_CODE;
-                    inventoryChildDetails.ORDER_NO = string.IsNullOrEmpty(childCol.ORDER_NO) ? masterColumnValue.ORDER_NO : childCol.ORDER_NO;
-                    inventoryChildDetails.ORDER_DATE = string.IsNullOrEmpty(childCol.ORDER_DATE) ? masterColumnValue.ORDER_DATE : childCol.ORDER_DATE;
-                    inventoryChildDetails.DELIVERY_DATE = string.IsNullOrEmpty(childCol.DELIVERY_DATE) ? masterColumnValue.DELIVERY_DATE : childCol.DELIVERY_DATE;
-                    inventoryChildDetails.DELIVERY_TERMS = string.IsNullOrEmpty(childCol.DELIVERY_TERMS) ? masterColumnValue.DELIVERY_TERMS : childCol.DELIVERY_TERMS;
-                    inventoryChildDetails.CANCEL_QUANTITY = string.IsNullOrEmpty(childCol.CANCEL_QUANTITY) ? masterColumnValue.CANCEL_QUANTITY : childCol.CANCEL_QUANTITY;
-                    inventoryChildDetails.ADJUST_QUANTITY = string.IsNullOrEmpty(childCol.ADJUST_QUANTITY) ? masterColumnValue.ADJUST_QUANTITY : childCol.ADJUST_QUANTITY;
-                    inventoryChildDetails.CANCEL_FLAG = string.IsNullOrEmpty(childCol.CANCEL_FLAG) ? masterColumnValue.CANCEL_FLAG : childCol.CANCEL_FLAG;
-                    inventoryChildDetails.CANCEL_BY = string.IsNullOrEmpty(childCol.CANCEL_BY) ? masterColumnValue.CANCEL_BY : childCol.CANCEL_BY;
-                    inventoryChildDetails.CANCEL_DATE = string.IsNullOrEmpty(childCol.CANCEL_DATE) ? masterColumnValue.CANCEL_DATE : childCol.CANCEL_DATE;
-                    inventoryChildDetails.PARTY_CODE = string.IsNullOrEmpty(childCol.PARTY_CODE) ? masterColumnValue.PARTY_CODE : childCol.PARTY_CODE;
-                    inventoryChildDetails.MRR_DATE = string.IsNullOrEmpty(childCol.MRR_DATE) ? masterColumnValue.MRR_DATE : childCol.MRR_DATE;
-                    inventoryChildDetails.REQUEST_DATE = string.IsNullOrEmpty(childCol.REQUEST_DATE) ? masterColumnValue.REQUEST_DATE : childCol.REQUEST_DATE;
-                    inventoryChildDetails.QUOTE_DATE = string.IsNullOrEmpty(childCol.QUOTE_DATE) ? masterColumnValue.QUOTE_DATE : "SYSDATE";
-                  
-                     if (commonValue.TableName.ToUpper() == "IP_QUOTATION_INQUIRY")
-                    {
-                        inventoryChildDetails = ProcessImageData(inventoryChildDetails);
-                        var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_Items";
-                        int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
-                        string insertItemQuery = $@"INSERT INTO sa_quotation_Items (ID,TENDER_NO, ITEM_CODE, SPECIFICATION, IMAGE, UNIT, QUANTITY, Category, BRAND_NAME, INTERFACE, TYPE, LAMINATION, ITEM_SIZE, THICKNESS, COLOR, GRADE, SIZE_LENGTH, SIZE_WIDTH,DELETED_FLAG,REMARKS) 
-                             VALUES({id},'{commonValue.NewVoucherNumber}','{inventoryChildDetails.ITEM_CODE}','{inventoryChildDetails.SPECIFICATION}', '{inventoryChildDetails.IMAGE}', '{inventoryChildDetails.MU_CODE}', {inventoryChildDetails.QUANTITY}, '{inventoryChildDetails.CATEGORY}',
-                            '{inventoryChildDetails.BRAND_NAME}', '{inventoryChildDetails.INTERFACE}', '{inventoryChildDetails.TYPE}', '{inventoryChildDetails.LAMINATION}', '{inventoryChildDetails.ITEM_SIZE}', '{inventoryChildDetails.THICKNESS}', '{inventoryChildDetails.COLOR}', '{inventoryChildDetails.GRADE}', {inventoryChildDetails.SIZE_LENGTH}, {inventoryChildDetails.SIZE_WIDTH},'N','{inventoryChildDetails.REMARKS}')";
-
-                        _dbContext.ExecuteSqlCommand(insertItemQuery);
-                        serialno++;
-                        insertedToChild = true;
+                            InsertItemData(item, data.TENDER_NO); // Pass each item individually to InsertItemData
+                        }
                     }
                 }
-                serialno++;
-                return insertedToChild;
+                else
+                {
+                    string updateQuery = $@"UPDATE sa_quotation_setup 
+                       SET VALID_DATE = {(data.VALID_DATE.HasValue ? $"'{data.VALID_DATE.Value.ToString("dd-MMM-yyyy")}'" : "null")},
+                           ISSUE_DATE = {(data.ISSUE_DATE.HasValue ? $"'{data.ISSUE_DATE.Value.ToString("dd-MMM-yyyy")}'" : "null")},
+                           MODIFIED_DATE = '{DateTime.Now.ToString("dd-MMM-yyyy")}',REMARKS='{data.REMARKS}',
+                           MODIFIED_BY = '{_workContext.CurrentUserinformation.login_code}',
+                           COMPANY_CODE = '{_workContext.CurrentUserinformation.company_code}'
+                       WHERE id = '{data.ID}' 
+                       AND tender_no = '{data.TENDER_NO}'";
+                    _dbContext.ExecuteSqlCommand(updateQuery);
+                    List<Item> itemData = data.Items;
+                    if (itemData != null)
+                    {
+                        foreach (var item in itemData)
+                        {
+                            var query = $@"SELECT * FROM sa_quotation_Items WHERE tender_no='{data.TENDER_NO}' AND id='{item.ID}'";
+                            List<Item> itemDetails = _dbContext.SqlQuery<Item>(query).ToList();
+
+                            if (itemDetails.Any())
+                            {
+                                    UpdateItemData(item, data.TENDER_NO);
+                            }
+                            else
+                            {
+                                InsertItemData(item, data.TENDER_NO);
+                            }
+
+                        }
+                    }
+                }
+                return true;
             }
             catch (Exception ex)
             {
-                //throw new Exception(ex.StackTrace);
                 throw new Exception(ex.Message);
             }
         }
@@ -325,7 +159,7 @@ namespace NeoERP.QuotationManagment.Service.Repository
         {
             try
             {
-                //item = ProcessImageData(item);
+                item = ProcessImageData(item);
                 var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_Items";
                 int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
                 string insertItemQuery = string.Format(@"INSERT INTO sa_quotation_Items (ID,TENDER_NO, ITEM_CODE, SPECIFICATION, IMAGE, UNIT, QUANTITY, Category, BRAND_NAME, INTERFACE, TYPE, LAMINATION, ITEM_SIZE, THICKNESS, COLOR, GRADE, SIZE_LENGTH, SIZE_WIDTH,DELETED_FLAG) 
@@ -340,133 +174,46 @@ namespace NeoERP.QuotationManagment.Service.Repository
                 throw new Exception(ex.Message);
             }
         }
-        //private Item ProcessImageData(Item item)
-        //{
-        //    if (!string.IsNullOrEmpty(item.IMAGE))
-        //    {
-        //        byte[] imageBytes = Convert.FromBase64String(item.IMAGE);
-
-        //        string folderPath = "~/Areas/NeoERP.QuotationManagement/Image/Items/";
-        //        string imageName = $"{Guid.NewGuid()}.png"; // Generating unique image name
-        //        string imagePath = $"{folderPath}{imageName}"; // Combining folder path and image name
-        //        string physicalPath = HttpContext.Current.Server.MapPath(imagePath);
-        //        File.WriteAllBytes(physicalPath, imageBytes);
-        //        item.IMAGE = imageName;
-        //    }
-        //    else
-        //    {
-        //        item.IMAGE = item.IMAGE_NAME;
-        //    }
-
-        //    return item;
-        //}
-        private Inventory ProcessImageData(Inventory data)
+        private Item ProcessImageData(Item item)
         {
-            if (!string.IsNullOrEmpty(data.IMAGE))
+            if (!string.IsNullOrEmpty(item.IMAGE))
             {
-                byte[] imageBytes = Convert.FromBase64String(data.IMAGE);
+                byte[] imageBytes = Convert.FromBase64String(item.IMAGE);
 
                 string folderPath = "~/Areas/NeoERP.QuotationManagement/Image/Items/";
                 string imageName = $"{Guid.NewGuid()}.png"; // Generating unique image name
                 string imagePath = $"{folderPath}{imageName}"; // Combining folder path and image name
                 string physicalPath = HttpContext.Current.Server.MapPath(imagePath);
                 File.WriteAllBytes(physicalPath, imageBytes);
-                data.IMAGE = imageName;
+                item.IMAGE = imageName;
             }
             else
             {
-                data.IMAGE = data.IMAGE_NAME;
+                item.IMAGE = item.IMAGE_NAME;
             }
 
-            return data;
+            return item;
         }
 
-        //public bool UpdateItemData(Item item, string tenderNo)
-        //{
-        //    try
-        //    {
-        //        //item = ProcessImageData(item);
-
-        //        string updateItemQuery = string.Format(@"UPDATE sa_quotation_Items  SET ITEM_CODE = '{2}', 
-        //         SPECIFICATION = '{3}', IMAGE = '{4}',UNIT = '{5}', QUANTITY = {6},Category = '{7}',BRAND_NAME = '{8}', 
-        //         INTERFACE = '{9}',TYPE = '{10}',LAMINATION = '{11}', ITEM_SIZE = '{12}', THICKNESS = '{13}', COLOR = '{14}', 
-        //         GRADE = '{15}',SIZE_LENGTH = {16},SIZE_WIDTH = {17} WHERE TENDER_NO = '{1}' AND ID = {0}",
-        //                                 item.ID, tenderNo, item.ITEM_CODE, item.SPECIFICATION, item.IMAGE, item.UNIT, item.QUANTITY, item.CATEGORY, item.BRAND_NAME, item.INTERFACE, item.TYPE, item.LAMINATION, item.ITEM_SIZE, item.THICKNESS, item.COLOR, item.GRADE, item.SIZE_LENGTH, item.SIZE_WIDTH, "N");
-        //        _dbContext.ExecuteSqlCommand(updateItemQuery);
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception(ex.Message);
-        //    }
-        //}
-        public bool UpdateItemData(List<Inventory> childColumnValue, Inventory masterColumnValue, CommonFieldsForInventory commonValue, FormDetails model)
+        public bool UpdateItemData(Item item, string tenderNo)
         {
             try
             {
-                foreach (var childCol in childColumnValue)
-                {
-                    var query = $@"SELECT * FROM sa_quotation_Items WHERE tender_no='{commonValue.NewVoucherNumber}' AND id='{childCol.ID}'";
-                    List<Item> itemDetails = _dbContext.SqlQuery<Item>(query).ToList();
+                item = ProcessImageData(item);
 
-                    if (itemDetails.Any())
-                    {
-                        Inventory invDetails = ProcessImageData(childCol);
-                        string updateItemQuery = $@"UPDATE sa_quotation_Items SET ITEM_CODE = '{childCol.ITEM_CODE}',SPECIFICATION = '{childCol.SPECIFICATION}', IMAGE = '{invDetails.IMAGE}',UNIT = '{childCol.MU_CODE}', QUANTITY = {childCol.QUANTITY},REMARKS='{childCol.REMARKS}'";
-
-                        List<string> setClauses = new List<string>();
-
-                        if (!string.IsNullOrEmpty(childCol.CATEGORY))
-                            setClauses.Add($"CATEGORY = '{childCol.CATEGORY}'");
-                        if (!string.IsNullOrEmpty(childCol.BRAND_NAME))
-                            setClauses.Add($"BRAND_NAME = '{childCol.BRAND_NAME}'");
-                        if (!string.IsNullOrEmpty(childCol.INTERFACE))
-                            setClauses.Add($"INTERFACE = '{childCol.INTERFACE}'");
-                        if (!string.IsNullOrEmpty(childCol.TYPE))
-                            setClauses.Add($"TYPE = '{childCol.TYPE}'");
-                        if (!string.IsNullOrEmpty(childCol.LAMINATION))
-                            setClauses.Add($"LAMINATION = '{childCol.LAMINATION}'");
-                        if (!string.IsNullOrEmpty(childCol.ITEM_SIZE))
-                            setClauses.Add($"ITEM_SIZE = '{childCol.ITEM_SIZE}'");
-                        if (!string.IsNullOrEmpty(childCol.THICKNESS))
-                            setClauses.Add($"THICKNESS = '{childCol.THICKNESS}'");
-                        if (!string.IsNullOrEmpty(childCol.COLOR))
-                            setClauses.Add($"COLOR = '{childCol.COLOR}'");
-                        if (!string.IsNullOrEmpty(childCol.GRADE))
-                            setClauses.Add($"GRADE = '{childCol.GRADE}'");
-                        if (childCol.SIZE_LENGTH != 0)
-                            setClauses.Add($"SIZE_LENGTH = {childCol.SIZE_LENGTH}");
-                        if (childCol.SIZE_WIDTH != 0)
-                            setClauses.Add($"SIZE_WIDTH = {childCol.SIZE_WIDTH}");
-                        if (setClauses.Count > 0)
-                        {
-                            updateItemQuery += ", " + string.Join(", ", setClauses);
-                        }
-
-                        updateItemQuery += $" WHERE TENDER_NO = '{commonValue.NewVoucherNumber}' AND ID={childCol.ID}";
-
-                        _dbContext.ExecuteSqlCommand(updateItemQuery);
-
-                    }
-                    else
-                    {
-                        Inventory invDetails = ProcessImageData(childCol);
-                        var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_Items";
-                        int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
-                        string insertItemQuery = $@"INSERT INTO sa_quotation_Items (ID,TENDER_NO, ITEM_CODE, SPECIFICATION, IMAGE, UNIT, QUANTITY, Category, BRAND_NAME, INTERFACE, TYPE, LAMINATION, ITEM_SIZE, THICKNESS, COLOR, GRADE, SIZE_LENGTH, SIZE_WIDTH,DELETED_FLAG,REMARKS) 
-                             VALUES({id},'{commonValue.NewVoucherNumber}','{childCol.ITEM_CODE}','{childCol.SPECIFICATION}', '{invDetails.IMAGE}', '{childCol.MU_CODE}', {childCol.QUANTITY}, '{childCol.CATEGORY}',
-                            '{childCol.BRAND_NAME}', '{childCol.INTERFACE}', '{childCol.TYPE}', '{childCol.LAMINATION}', '{childCol.ITEM_SIZE}', '{childCol.THICKNESS}', '{childCol.COLOR}', '{childCol.GRADE}', {childCol.SIZE_LENGTH}, {childCol.SIZE_WIDTH},'N','{childCol.REMARKS}')";
-                        _dbContext.ExecuteSqlCommand(insertItemQuery);
-                    }
-                }
+                string updateItemQuery = string.Format(@"UPDATE sa_quotation_Items  SET ITEM_CODE = '{2}', 
+                 SPECIFICATION = '{3}', IMAGE = '{4}',UNIT = '{5}', QUANTITY = {6},Category = '{7}',BRAND_NAME = '{8}', 
+                 INTERFACE = '{9}',TYPE = '{10}',LAMINATION = '{11}', ITEM_SIZE = '{12}', THICKNESS = '{13}', COLOR = '{14}', 
+                 GRADE = '{15}',SIZE_LENGTH = {16},SIZE_WIDTH = {17} WHERE TENDER_NO = '{1}' AND ID = {0}",
+                                         item.ID, tenderNo, item.ITEM_CODE, item.SPECIFICATION, item.IMAGE, item.UNIT, item.QUANTITY, item.CATEGORY, item.BRAND_NAME, item.INTERFACE, item.TYPE, item.LAMINATION, item.ITEM_SIZE, item.THICKNESS, item.COLOR, item.GRADE, item.SIZE_LENGTH, item.SIZE_WIDTH, "N");
+                _dbContext.ExecuteSqlCommand(updateItemQuery);
                 return true;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error updating item data: " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
-
         public List<Quotation_setup> GetTenderId(string tenderNo)
         {
             string query = $@"select id from sa_quotation_setup where tender_no='{tenderNo}'";
@@ -516,11 +263,11 @@ namespace NeoERP.QuotationManagment.Service.Repository
                 throw new Exception(ex.Message);
             }
         }
-        public bool updateItemsById(string id)
+        public bool updateItemsById(string tenderNo,string id)
         {
             try
             {
-                var UPDATE_QUERY = $@"UPDATE sa_quotation_Items SET deleted_flag ='Y' WHERE id='{id}'";
+                var UPDATE_QUERY = $@"UPDATE sa_quotation_Items SET deleted_flag ='Y' WHERE TENDER_NO='{tenderNo}' and id='{id}'";
                 _dbContext.ExecuteSqlCommand(UPDATE_QUERY);
                 return true;
             }
@@ -675,12 +422,11 @@ namespace NeoERP.QuotationManagment.Service.Repository
                 var UPDATE_QUERY = $@"UPDATE quotation_details SET status ='{status}',approved_by='{_workContext.CurrentUserinformation.login_code}',approved_date='{DateTime.Now.ToString("dd - MMM - yyyy")}' WHERE QUOTATION_NO='{quotationNo}'";
                 _dbContext.ExecuteSqlCommand(UPDATE_QUERY);
 
-
-                string fQuery = $@"select FORM_CODE from form_setup where form_edesc ='Quotation Enquiry' and  company_code= '{_workContext.CurrentUserinformation.company_code}'";
+                string fQuery = $@"select FORM_CODE from form_setup where quotation_flag='Y' and  company_code= '{_workContext.CurrentUserinformation.company_code}'";
                 string formCode = _dbContext.SqlQuery<string>(fQuery).FirstOrDefault();
 
                 string vquery = $@"select qs.quotation_no,qs.tender_no,qs.created_date,qs.supplier_code,scs.regd_office_eaddress as address,scs.tel_mobile_no1 as contact_no ,iims.item_code,sqi.specification,
-                iims.index_mu_code,sqi.quantity,qdi.rate,qdi.net_amount as total_net_amount,sqs.company_code,sqs.branch_code,qs.currency,qs.currency_rate,qs.delivery_date
+                iims.index_mu_code,sqi.quantity,qdi.rate,qdi.amount as total_net_amount,sqs.company_code,sqs.branch_code,qs.currency,qs.currency_rate,qs.delivery_date
                 from quotation_details qs ,ip_supplier_setup scs,sa_quotation_items sqi,ip_item_master_setup iims ,sa_quotation_setup sqs,quotation_detail_itemwise qdi
                 where scs.supplier_code=qs.supplier_code and iims.item_code=sqi.item_code and qs.tender_no=sqi.tender_no and sqs.tender_no=qs.tender_no and 
                 sqs.company_code=iims.company_code and sqs.company_code=scs.company_code and qdi.quotation_no=qs.quotation_no and  sqi.item_code=qdi.item_code
@@ -718,6 +464,7 @@ namespace NeoERP.QuotationManagment.Service.Repository
                     int deliveryDays = (int)dateDifference.TotalDays;
                     string sQuery = $@"SELECT MYSEQUENCE.NEXTVAL FROM DUAL";
                     var sessionRowId =_dbContext.SqlQuery<int>(sQuery).FirstOrDefault();
+
 
                     string insertItemQuery = $@"
                     INSERT INTO ip_quotation_inquiry (
@@ -880,298 +627,6 @@ namespace NeoERP.QuotationManagment.Service.Repository
                 throw new Exception(ex.Message);
             }
         }
-        public List<FormDetailSetup> GetFormDetailSetup()
-        {
-            string Query = $@"SELECT FDS.SERIAL_NO,
-                            FS.FORM_EDESC,
-                            FS.FORM_TYPE,
-                            FS.NEGATIVE_STOCK_FLAG,
-                           FDS.FORM_CODE,
-                           FDS.TABLE_NAME,
-                           FDS.COLUMN_NAME,
-                           FDS.COLUMN_WIDTH,
-                           FDS.COLUMN_HEADER,
-                           FDS.TOP_POSITION,
-                           FDS.LEFT_POSITION,
-                           FDS.DISPLAY_FLAG,
-                           FDS.DEFA_VALUE,
-                           FDS.IS_DESC_FLAG,
-                           FDS.MASTER_CHILD_FLAG,
-                           FDS.FORM_CODE,
-                           FDS.COMPANY_CODE,
-                           CS.COMPANY_EDESC,
-                            CS.TELEPHONE,
-                            CS.EMAIL,
-                            CS.TPIN_VAT_NO,
-                            CS.ADDRESS,
-                           FDS.CREATED_BY,
-                           FDS.CREATED_DATE,
-                           FDS.DELETED_FLAG,
-                           FDS.FILTER_VALUE,
-                           FDS.SYN_ROWID,
-                           FDS.MODIFY_DATE,
-                           FDS.MODIFY_BY,
-                           FS.REFERENCE_FLAG,
-                           FS.FREEZE_MASTER_REF_FLAG,
-                           FS.REF_FIX_QUANTITY,
-                           FS.REF_FIX_PRICE                          
-                      FROM    FORM_DETAIL_SETUP FDS
-                           LEFT JOIN
-                              COMPANY_SETUP CS ON FDS.COMPANY_CODE = CS.COMPANY_CODE
-                              LEFT JOIN FORM_SETUP FS
-                               ON FDS.FORM_CODE = FS.FORM_CODE AND FDS.COMPANY_CODE = FS.COMPANY_CODE
-                     WHERE FS.QUOTATION_FLAG='Y'  AND CS.COMPANY_CODE = '{_workContext.CurrentUserinformation.company_code}'";
-            List<FormDetailSetup> entity = this._dbContext.SqlQuery<FormDetailSetup>(Query).ToList();
-            return entity;
-        }
-        public Inventory MapMasterColumnWithValue(string masterColumn)
-        {
-            try
-            {
-                var masterColVal = JsonConvert.DeserializeObject<Inventory>(masterColumn);
-                return masterColVal;
 
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.StackTrace);
-            }
-        }
-        public List<Inventory> MapChildColumnWithValue(string childColumn)
-        {
-            try
-            {
-                var childColVal = JsonConvert.DeserializeObject<List<Inventory>>(childColumn);
-                return childColVal;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.StackTrace);
-            }
-        }
-        public bool SaveColumnValue(Inventory masterColumnValue, CommonFieldsForInventory commonValue)
-        {
-            try
-            {
-                bool insertedToMaster = false;
-                var idquery = $@"SELECT COALESCE(MAX(ID) + 1, 1) AS id FROM sa_quotation_setup";
-                int id = _dbContext.SqlQuery<int>(idquery).FirstOrDefault();
-                string insertQuery = $@"INSERT INTO sa_quotation_setup(TENDER_NO,ISSUE_DATE,VALID_DATE, CREATED_DATE, CREATED_BY, COMPANY_CODE, 
-                        STATUS, REMARKS, ID, APPROVED_STATUS, BRANCH_CODE,MANUAL_NO) VALUES('{commonValue.VoucherNumber}',
-                         TO_DATE('{masterColumnValue.QUOTE_DATE}', 'DD-MON-YYYY'), 
-                         TO_DATE('{masterColumnValue.TO_DELIVERED_DATE}', 'DD-MON-YYYY'), 
-                         TO_DATE('{DateTime.Now.ToString("dd-MMM-yyyy")}', 'DD-MON-YYYY'), '{_workContext.CurrentUserinformation.login_code}',
-                        '{_workContext.CurrentUserinformation.company_code}', 'E', '{masterColumnValue.REMARKS}', {id}, 'N', '{_workContext.CurrentUserinformation.branch_code}','{masterColumnValue.MANUAL_NO}')";
-
-                _dbContext.ExecuteSqlCommand(insertQuery);
-                insertedToMaster = true;
-                return insertedToMaster;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-        public bool UpdateColumnValue(Inventory masterColumnValue, CommonFieldsForInventory commonValue)
-        {
-            try
-            {
-                bool insertedToMaster = false;
-                string updateQuery = $@"UPDATE sa_quotation_setup 
-                       SET VALID_DATE = TO_DATE('{masterColumnValue.TO_DELIVERED_DATE}', 'DD-MON-YYYY'),
-                           ISSUE_DATE = TO_DATE('{masterColumnValue.QUOTE_DATE}', 'DD-MON-YYYY'),
-                           MODIFIED_DATE = '{DateTime.Now.ToString("dd-MMM-yyyy")}',REMARKS='{masterColumnValue.REMARKS}',
-                           MODIFIED_BY = '{_workContext.CurrentUserinformation.login_code}',
-                           COMPANY_CODE = '{_workContext.CurrentUserinformation.company_code}',MANUAL_NO='{masterColumnValue.MANUAL_NO}'
-                       WHERE tender_no = '{commonValue.VoucherNumber}'";
-                _dbContext.ExecuteSqlCommand(updateQuery);
-                insertedToMaster = true;
-                return insertedToMaster;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
-        public bool SaveMasterColumnValue(Inventory masterColumnValue, CommonFieldsForInventory commonValue)
-        {
-            try
-            {
-                bool insertedToMaster = false;
-                string fQuery = $@"SELECT form_code FROM form_setup where  quotation_flag = 'Y' and company_code='{_workContext.CurrentUserinformation.company_code}'";
-                string formCode = _dbContext.SqlQuery<string>(fQuery).FirstOrDefault();
-                string insertmasterQuery = string.Format(@"INSERT INTO MASTER_TRANSACTION(VOUCHER_NO,VOUCHER_AMOUNT,FORM_CODE,COMPANY_CODE,BRANCH_CODE,CREATED_BY,DELETED_FLAG,CURRENCY_CODE,CREATED_DATE,VOUCHER_DATE,SESSION_ROWID,SYN_ROWID,EXCHANGE_RATE,REFERENCE_NO) 
-                     VALUES('{0}',{1},'{2}','{3}','{4}','{5}','{6}','{7}',{8},TO_DATE({9},'DD-MON-YY hh24:mi:ss'),'{10}','{11}',{12},'{13}')",
-                    commonValue.VoucherNumber, 0, formCode, _workContext.CurrentUserinformation.company_code, _workContext.CurrentUserinformation.branch_code, _workContext.CurrentUserinformation.login_code.ToUpper(), 'N', commonValue.CurrencyFormat, "SYSDATE", commonValue.VoucherDate, masterColumnValue.MANUAL_NO, '1', commonValue.ExchangeRate, masterColumnValue.MANUAL_NO);
-                _dbContext.ExecuteSqlCommand(insertmasterQuery);
-
-                insertedToMaster = true;
-                return insertedToMaster;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-        public bool UpdateMasterTransaction(CommonFieldsForInventory commonUpdateValue)
-        {
-            try
-            {
-                bool insertedToMaster = false;
-                string query = $@"UPDATE MASTER_TRANSACTION SET VOUCHER_DATE={commonUpdateValue.VoucherDate},MODIFY_BY = '{_workContext.CurrentUserinformation.login_code.ToUpper()}',SYN_ROWID='{commonUpdateValue.ManualNumber}',REFERENCE_NO='{commonUpdateValue.ManualNumber}' , MODIFY_DATE = SYSDATE,CURRENCY_CODE='{commonUpdateValue.CurrencyFormat}',EXCHANGE_RATE={commonUpdateValue.ExchangeRate} where VOUCHER_NO='{commonUpdateValue.VoucherNumber}'  and COMPANY_CODE='{_workContext.CurrentUserinformation.company_code}'";
-                _dbContext.ExecuteSqlCommand(query);
-                insertedToMaster = true;
-                return insertedToMaster;
-            }
-            catch (Exception ex)
-            {
-                //throw new Exception(ex.StackTrace);
-                throw new Exception(ex.Message);
-            }
-        }
-
-        public List<Inventory> GetMasterTransactionByVoucherNo(string voucherNumber)
-        {
-            try
-            {
-                //var getPrevDataQuery = $@"SELECT VOUCHER_NO,SESSION_ROWID, CREATED_BY, TO_CHAR(CREATED_DATE, 'DD-MON-YY hh12:mi:ss PM') as CREATED_DATE FROM MASTER_TRANSACTION WHERE VOUCHER_NO= '{voucherNumber}'"; //previously
-
-                var getPrevDataQuery = $@"SELECT VOUCHER_NO,SESSION_ROWID, CREATED_BY, TO_CHAR(CREATED_DATE, 'DD-MON-YY') as CREATED_DATE FROM MASTER_TRANSACTION WHERE VOUCHER_NO= '{voucherNumber}'";
-                var defaultData = _dbContext.SqlQuery<Inventory>(getPrevDataQuery).ToList();
-                return defaultData;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-
-        }
-        public List<Products> GetProductDataByProductCode(string productcode)
-        {
-            try
-            {
-                var productdata = new List<Products>();
-                if (productcode != "")
-                {
-                    string query = $@"SELECT distinct  IT.ITEM_CODE AS ItemCode,IT.ITEM_EDESC AS ItemDescription,IT.INDEX_MU_CODE AS ItemUnit,
-                    IT.MULTI_MU_CODE AS MultiItemUnit,IC.CATEGORY_EDESC  AS Category,COALESCE(iiss.ITEM_SPECIFICATION,' ') as SPECIFICATION
-                    ,COALESCE(iiss.BRAND_NAME,' ') as BRAND_NAME,COALESCE(iiss.INTERFACE,' ') as INTERFACE,COALESCE(iiss.TYPE,' ') as TYP
-                    ,COALESCE(iiss.LAMINATION,' ') as LAMINATION ,COALESCE(iiss.ITEM_SIZE,' ') as ITEM_SIZE,COALESCE(iiss.THICKNESS,' ') as THICKNESS,COALESCE(iiss.COLOR,' ') as COLOR
-                     ,COALESCE(iiss.GRADE,' ') as GRADE  ,COALESCE(iiss.SIZE_LENGHT,0) as SIZE_LENGHT,COALESCE(iiss.SIZE_WIDTH,0) as SIZE_WIDTH
-                     FROM ip_item_master_setup IT, IP_CATEGORY_CODE IC,IP_ITEM_SPEC_SETUP iiss WHERE IT.deleted_flag = 'N' and IT.item_code=iiss.item_code and IT.company_code=iiss.company_code
-                     AND IT.CATEGORY_CODE= IC.CATEGORY_CODE AND IT.COMPANY_CODE = IC.COMPANY_CODE AND IT.COMPANY_CODE ='{_workContext.CurrentUserinformation.company_code}' AND IT.item_code ='{productcode}'";
-                    productdata = this._dbContext.SqlQuery<Products>(query).ToList();
-                    return productdata;
-                }
-                else
-                { return productdata; }
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        public List<Category> GetCategoryList()
-        {
-            try
-            {
-                string query = $@"SELECT DISTINCT CATEGORY_CODE AS CATEGORY,CATEGORY_EDESC  FROM IP_CATEGORY_CODE WHERE DELETED_FLAG = 'N' AND COMPANY_CODE='{_workContext.CurrentUserinformation.company_code}'";
-                List<Category> categories = this._dbContext.SqlQuery<Category>(query).ToList();
-                return categories;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-        public string CheckVoucherNoReferenced(string voucherno)
-        {
-            try
-            {
-                var Count_query = $@"select voucher_no from reference_detail where reference_no='{voucherno}'
-                          AND COMPANY_CODE = '{_workContext.CurrentUserinformation.company_code}'";
-                string Result = _dbContext.SqlQuery<string>(Count_query).FirstOrDefault();
-                return Result;
-            }
-            catch (Exception ex)
-            {
-
-                throw ex;
-            }
-
-        }
-        public bool deletevouchernoInv(string voucherno)
-        {
-                try
-                {
-                    var deletmaintableequery = $@"UPDATE sa_quotation_setup SET STATUS='D',MODIFIED_DATE=SYSDATE,MODIFIED_BY='{_workContext.CurrentUserinformation.login_code
-                        }' WHERE tender_no='{voucherno}' AND COMPANY_CODE='{_workContext.CurrentUserinformation.Company}'";
-                    var maintablerowCount = _dbContext.ExecuteSqlCommand(deletmaintableequery);
-
-                    if (maintablerowCount > 0)
-                    {
-                        var deletemastertable = $@"UPDATE MASTER_TRANSACTION SET DELETED_FLAG='Y', MODIFY_DATE=SYSDATE,MODIFY_BY='{_workContext.CurrentUserinformation.login_code}' WHERE VOUCHER_NO='{voucherno}' AND COMPANY_CODE='{_workContext.CurrentUserinformation.Company}'";
-                         _dbContext.ExecuteSqlCommand(deletemastertable);
-                    }
-                    return true;
-                }
-
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-        }
-        public List<COMMON_COLUMN> GetQuestOrderFormDetail(string voucherNo)
-        {
-            string fQuery = $@"SELECT form_code FROM form_setup where  quotation_flag = 'Y' and company_code='{_workContext.CurrentUserinformation.company_code}'";
-            string formCode = _dbContext.SqlQuery<string>(fQuery).FirstOrDefault();
-
-            string columname = $@"SELECT COLUMN_NAME, TABLE_NAME FROM FORM_DETAIL_SETUP WHERE FORM_CODE='{formCode}' and company_code='{_workContext.CurrentUserinformation.company_code}' ORDER BY SERIAL_NO ASC";
-            List<FORM_DETAIL_SETUP_COLUMN> columnameentity = this._dbContext.SqlQuery<FORM_DETAIL_SETUP_COLUMN>(columname).ToList();
-            var tableName = "";
-            List<string> columns = new List<string>();
-            StringBuilder sb = new StringBuilder();
-            var column = sb.ToString().TrimEnd(',');
-            //tableName = columnameentity[0].TABLE_NAME;
-            string Query = string.Empty;
-            StringBuilder condition = new StringBuilder();
-            foreach (var item in columnameentity)
-            {
-                columns.Add($"{item.COLUMN_NAME}");
-            }
-            //if (columns.Contains("QUOTE_NO"))
-            //{
-            //    column ="SQS.TENDER_NO AS QUOTE_NO,SQS.ISSUE_DATE AS QUOTE_DATE,SQS.VALID_DATE AS TO_DELIVERED_DATE,SQS.MANUAL_NO";
-            //    tableName ="SA_QUOTATION_SETUP SQS";
-            //    condition.Append("AND SQS.STATUS='E'");
-            //    Query = $@"SELECT {column} FROM {tableName} WHERE SQS.COMPANY_CODE='{_workContext.CurrentUserinformation.company_code}' and SQS.TENDER_NO='{voucherNo}' {condition.ToString()}";
-            //}
-            //if (columns.Contains("ITEM_CODE"))
-            //{
-            //    column = column + ",IMS.ITEM_EDESC,SQI.ITEM_CODE,SQI.SPECIFICATION,SQI.UNIT AS MU_CODE,SQI.QUANTITY,SQI.BRAND_NAME,SQI.INTERFACE,SQI.TYPE,SQI.LAMINATION,SQI.ITEM_SIZE,SQI.THICKNESS,SQI.IMAGE,SQI.REMARKS," +
-            //        "SQI.COLOR,SQI.GRADE,SQI.SIZE_LENGTH,SQI.SIZE_WIDTH,SQI.ID";
-            //    tableName = tableName + ", IP_ITEM_MASTER_SETUP IMS,SA_QUOTATION_ITEMS SQI";
-            //    condition.Append("AND SQI.ITEM_CODE=IMS.ITEM_CODE AND SQS.COMPANY_CODE=IMS.COMPANY_CODE AND  IMS.DELETED_FLAG='N' AND SQI.DELETED_FLAG='N' AND SQS.TENDER_NO=SQI.TENDER_NO");
-            //    Query = $@"SELECT {column} FROM {tableName} WHERE SQS.COMPANY_CODE='{_workContext.CurrentUserinformation.company_code}' and SQS.TENDER_NO='{voucherNo}' {condition.ToString()}";
-            //}
-            //if (columns.Contains("CATEGORY"))
-            //{
-            //    column = column + ",ICC.CATEGORY_EDESC AS CATEGORY";
-            //    tableName = tableName + ",IP_CATEGORY_CODE ICC";
-            //    condition.Append(" AND ICC.CATEGORY_CODE=SQI.CATEGORY AND ICC.DELETED_FLAG='N' AND IMS.COMPANY_CODE=ICC.COMPANY_CODE");
-            //    Query = $@"SELECT {column} FROM {tableName} WHERE SQS.COMPANY_CODE='{_workContext.CurrentUserinformation.company_code}' and SQS.TENDER_NO='{voucherNo}' {condition.ToString()}";
-            //}
-            Query = $@"SELECT sqs.tender_no AS quote_no, sqs.issue_date AS quote_date,sqs.valid_date AS to_delivered_date,sqi.id,sqs.remarks,
-    sqs.manual_no, ims.item_edesc,sqi.item_code, sqi.specification,sqi.unit AS mu_code,sqi.quantity, sqi.brand_name,sqi.interface,
-    sqi.type,sqi.lamination,sqi.item_size,sqi.thickness,sqi.image,sqi.remarks,sqi.color,sqi.grade,sqi.size_length,sqi.size_width,sqi.id,
-    icc.category_edesc   AS category FROM sa_quotation_setup     sqs JOIN sa_quotation_items sqi ON sqs.tender_no = sqi.tender_no
-    JOIN ip_item_master_setup ims ON sqi.item_code = ims.item_code  AND sqs.company_code = ims.company_code AND ims.deleted_flag = 'N'
-    LEFT JOIN ip_category_code icc ON icc.category_code = sqi.category AND ims.company_code = icc.company_code AND icc.deleted_flag = 'N'
-    WHERE  sqs.company_code = '{_workContext.CurrentUserinformation.company_code}' AND sqs.tender_no = '{voucherNo}' AND sqs.status = 'E' AND sqi.deleted_flag = 'N' order by sqi.id ";
-            var entity = this._dbContext.SqlQuery<COMMON_COLUMN>(Query).ToList();
-            return entity;
-        }
     }
 }

@@ -237,6 +237,54 @@ distributionModule.controller('CollectionCtrl', function ($scope, DistSetupServi
                     groupHeaderTemplate: "#= getDateFormat(value) #",
                     width: "80px"
                 },
+                {
+                    field: "SIGNATURE_IMAGE",
+                    title: "Signature",
+                    width: "85px",
+                    template: function (data) {
+                        var img = '';
+                        if (_.isEmpty(data.SIGNATURE_IMAGE))
+                            data.SIGNATURE_IMAGE = "nophoto";
+                        _.each(data.SIGNATURE_IMAGE.split(','), function (x, i) {
+                            var imgUrl = window.location.protocol + "//" + window.location.host + '/Areas/NeoErp.Distribution/Images/EntityImages/' + x;
+                            if (x == "nophoto")
+                                imgUrl = window.location.protocol + "//" + window.location.host + "/images/nophoto.png"; //"http://placehold.it/600x900";
+                            if (i == 0)
+                                img += '<a class="fancybox" href="' + imgUrl + '" data-fancybox="group_' + data.CREATED_DATE + data.SP_CODE + '" data-caption="' + data.SIGNATURE_IMAGE + '"> ' +
+                                    '<img src="' + imgUrl + '" class="img-responsive img-thumbnail" style="width:63px;height:35px;margin: 0 auto;" /> ' +
+                                    '</a >';
+                            else
+                                img += '<a class="fancybox" href="' + imgUrl + '" data-fancybox="group_' + data.CREATED_DATE + data.SP_CODE + '" class="sr-only" data-caption="' + data.SIGNATURE_IMAGE + '"> ' +
+                                    '<img src="' + imgUrl + '" class="img-responsive img-thumbnail" style="width:63px;height:35px;margin: 0 auto;" /> ' +
+                                    '</a >';
+                        });
+                        return img;
+                    },
+                },
+                {
+                    field: "CHEQUE_IMAGE",
+                    title: "Cheque",
+                    width: "85px",
+                    template: function (data) {
+                        var img = '';
+                        if (_.isEmpty(data.CHEQUE_IMAGE))
+                            data.CHEQUE_IMAGE = "nophoto";
+                        _.each(data.CHEQUE_IMAGE.split(','), function (x, i) {
+                            var imgUrl = window.location.protocol + "//" + window.location.host + '/Areas/NeoErp.Distribution/Images/EntityImages/' + x;
+                            if (x == "nophoto")
+                                imgUrl = window.location.protocol + "//" + window.location.host + "/images/nophoto.png"; //"http://placehold.it/600x900";
+                            if (i == 0)
+                                img += '<a class="fancybox" href="' + imgUrl + '" data-fancybox="group_' + data.CREATED_DATE + data.SP_CODE + '" data-caption="' + data.CHEQUE_IMAGE + '"> ' +
+                                    '<img src="' + imgUrl + '" class="img-responsive img-thumbnail" style="width:63px;height:35px;margin: 0 auto;" /> ' +
+                                    '</a >';
+                            else
+                                img += '<a class="fancybox" href="' + imgUrl + '" data-fancybox="group_' + data.CREATED_DATE + data.SP_CODE + '" class="sr-only" data-caption="' + data.CHEQUE_IMAGE + '"> ' +
+                                    '<img src="' + imgUrl + '" class="img-responsive img-thumbnail" style="width:63px;height:35px;margin: 0 auto;" /> ' +
+                                    '</a >';
+                        });
+                        return img;
+                    },
+                },
             ]
         })
     };

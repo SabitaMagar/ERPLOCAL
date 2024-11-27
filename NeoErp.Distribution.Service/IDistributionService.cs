@@ -51,6 +51,7 @@ namespace NeoErp.Distribution.Service
         List<SURVEY_COLUMN_MODEL> GetSurveyReportCol();
         List<SURVEY_COLUMN_MODEL> GetWebSurveyReportQUE(User userInfo);
         List<DistAreaModel> GetDistributionArea(User userInfo);
+        List<CustomerIModel> GetCustomersByArea(string areaCodes, User userInfo);
         List<DistAreaModel> GetIndividualGroup(User userInfo, string SingleAreaCode);
         List<SURVEY_REPORT_MODEL> GetSurveyReport(filterOption model);
         List<SURVEY_REPORT_AATA_MODEL> GetSurveyReportAata(filterOption model);

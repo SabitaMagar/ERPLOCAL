@@ -250,6 +250,11 @@ distributionModule.controller('ResellerCtrl', function ($scope, $http, ResellerS
         };
         //$("#distSubOutletSelect").data("kendoMultiSelect").dataSource.refresh();
     }
+    var bsFromDate = $('#FromDateVoucher').val(); // Get value from FromDateVoucher
+    var bsToDate = $('#ToDateVoucher').val();
+
+    var fromDate = moment(bsFromDate, 'YYYY-MMM-DD').format('DD-MMM-YYYY');
+    var toDate = moment(bsToDate, 'YYYY-MMM-DD').format('DD-MMM-YYYY');
 
     //grid
     var reportConfig = GetReportSetting("ResellerSetup");
@@ -266,6 +271,10 @@ distributionModule.controller('ResellerCtrl', function ($scope, $http, ResellerS
                 },
                 parameterMap: function (options, type) {
                     var paramMap = JSON.stringify($.extend(options, ReportFilter.filterAdditionalData()));
+                    //var paramMap = JSON.stringify($.extend(options, ReportFilter.filterAdditionalData(), {
+                    //    formDate: fromDate,
+                    //    ToDate: toDate
+                    //}));
                     delete paramMap.$inlinecount; // <-- remove inlinecount parameter.
                     delete paramMap.$format; // <-- remove format parameter.
                     return paramMap;
@@ -456,6 +465,14 @@ distributionModule.controller('ResellerCtrl', function ($scope, $http, ResellerS
                 field: "Created_by_name",
                 title: "Created By",
                 width: "9%",
+            },
+            {
+                field: "created_date",
+                title: "Created Date",
+                width: "9%",
+                template: function (dataItem) {
+                    return kendo.toString(new Date(dataItem.created_date), "dd-MMM-yyyy");
+                }
             },
             {
                 title: "Action",
@@ -1335,6 +1352,14 @@ distributionModule.controller('ResellerCtrl', function ($scope, $http, ResellerS
         $("#grid").data("kendoGrid").dataSource.read();
         $("#resellerSourceModal").modal('toggle');
     }
+
+    $("#applydp").on("click", function () {
+        var url = window.location.protocol + "//" + window.location.host + "/api/Setup/GetResellerList?Source=" + $scope.Source;
+        var grid = $("#grid").data("kendoGrid");
+        grid.dataSource.transport.options.read.url = url;
+        $("#grid").data("kendoGrid").dataSource.read();
+        $("#resellerSourceModal").modal('toggle');
+    });
 
     $scope.ClosedChangeEvt = function(val) {
         if (val)

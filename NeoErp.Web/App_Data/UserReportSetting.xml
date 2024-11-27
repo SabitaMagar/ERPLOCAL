@@ -105,20 +105,6 @@
       <QuantityRangeFilter></QuantityRangeFilter>
       <RateRangeFilter></RateRangeFilter>
     </Report>
-    <Report ID="CollectionsReport" Name="CollectionsReport">
-      <reportName>CollectionsReport</reportName>
-      <defaultPageSize>100</defaultPageSize>
-      <itemPerPage>100,500,1000,5000,10000</itemPerPage>
-      <dateFormat>dd-MMM-yyyy</dateFormat>
-      <theme>kendo.moonlight.min.css</theme>
-      <QuantityFigureFilter>Actual</QuantityFigureFilter>
-      <QuantityRoundUpFilter>0.00</QuantityRoundUpFilter>
-      <AmountFigureFilter>Actual</AmountFigureFilter>
-      <AmountRoundUpFilter>0.00</AmountRoundUpFilter>
-      <AmountRangeFilter></AmountRangeFilter>
-      <QuantityRangeFilter></QuantityRangeFilter>
-      <RateRangeFilter></RateRangeFilter>
-    </Report>
     <Report ID="SurveyReportAata" Name="SurveyReportAata">
       <reportName>SurveyReportAata</reportName>
       <defaultPageSize>100</defaultPageSize>
@@ -287,6 +273,24 @@
     </Report>
     <Report ID="SalesPersonPO" Name="SalesPersonPO">
       <hiddenColumnName>ORDER_DATE</hiddenColumnName>
+    </Report>
+    <Report ID="CollectionsReport" Name="CollectionsReport">
+      <reportName>CollectionsReport</reportName>
+      <defaultPageSize>100</defaultPageSize>
+      <itemPerPage>100,500,1000,5000,10000</itemPerPage>
+      <dateFormat>dd-MMM-yyyy</dateFormat>
+      <theme>kendo.blueopal.min.css</theme>
+      <ExchangeRate>1.00</ExchangeRate>
+      <QuantityFigureFilter>Actual</QuantityFigureFilter>
+      <QuantityRoundUpFilter>0.00</QuantityRoundUpFilter>
+      <AmountFigureFilter>Actual</AmountFigureFilter>
+      <AmountRoundUpFilter>0.00</AmountRoundUpFilter>
+      <AmountRangeFilter></AmountRangeFilter>
+      <QuantityRangeFilter></QuantityRangeFilter>
+      <RateRangeFilter></RateRangeFilter>
+    </Report>
+    <Report ID="DistributionSetup" Name="DistributionSetup">
+      <hiddenColumnName>GROUP_EDESC</hiddenColumnName>
     </Report>
   </User>
   <User ID="MOTI" Name="MOTI">

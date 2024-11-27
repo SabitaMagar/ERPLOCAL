@@ -31,7 +31,7 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string REJECT_FLAG { get; set; }
         public string DELETED_FLAG { get; set; }
         public string SYN_ROWID { get; set; }
-        public DateTime? MODIFY_DATE { get; set; }
+        public DateTime MODIFY_DATE { get; set; }
         public string MODIFY_BY { get; set; }
         public string BILLING_NAME { get; set; }
         public string DISPATCH_FROM { get; set; }
@@ -54,8 +54,8 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string CUSTOMER_CODE {get;set;}
         public string CUSTOMER_TYPE { get; set; }
         public string REMARKS { get; set; }
-        public string UPDATE_DATE { get; set; }
-        public string SAVED_DATE { get; set; }
+        public DateTime UPDATE_DATE { get; set; }
+        public DateTime SAVED_DATE { get; set; }
         public string ROUTE_CODE { get; set; }
         public string IS_VISITED { get; set; }
         public string COMPANY_CODE { get; set; }

@@ -47,9 +47,12 @@ namespace NeoErp.Distribution.Service.Model
         public int? GROUPID { get; set; }
         public String IS_GROUP { get; set; }
         public List<string> AREA { get; set; }
+        public List<string> CUSTOMER { get; set; }
         public List<string> ITEMS { get; set; }
         public string ITEM_CODE { get; set; }
         public string AREA_CODE { get; set; }
+        public string CUSTOMER_CODE { get; set; }
+
         public string AREA_NAME { get; set; }
         public string ACTIVE { get; set; }
         public string BRANDING { get; set; }

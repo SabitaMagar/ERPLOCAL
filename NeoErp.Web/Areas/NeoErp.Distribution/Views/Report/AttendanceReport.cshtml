@@ -564,23 +564,32 @@
                         template: "#= getTimeFormat(CHECKIN) #",
                         groupHeaderTemplate: "#= getTimeFormat(value) #",
                     },
-                    {
-                        field: "CHECKOUT",
-                        title: "EOD",
-                        hidden: true,
-                        template: "#= getTimeFormat(CHECKOUT) #",
-                        groupHeaderTemplate: "#= getTimeFormat(value) #",
-                        },  {
+                    //{
+                    //    field: "CHECKOUT",
+                    //    title: "EOD",
+                    //    hidden: true,
+                    //    template: "#= getTimeFormat(CHECKOUT) #",
+                    //    groupHeaderTemplate: "#= getTimeFormat(value) #",
+                        //    },  
+                        {
                         field: "ATTNCHECKIN_TIME",
                             title: "CheckIn",
                             template: "#= getTimeFormat(ATTNCHECKIN_TIME) #",
                             groupHeaderTemplate: "#= getTimeFormat(ATTNCHECKIN_TIME) #",
-                    }, {
+                        },
+                        {
                         field: "ATTNCHECKOUT",
-                        title: "Eod",
+                        title: "Check Out",
                         template: "#= getTimeFormat(ATTNCHECKOUT) #",
                         groupHeaderTemplate: "#= getTimeFormat(ATTNCHECKOUT) #",
-                    }]
+                        }
+                    //{
+                    //field: "ATTNCHECKOUT",
+                    //title: "Eod",
+                    //template: "#= getTimeFormat(CHECKOUT) #",
+                    //groupHeaderTemplate: "#= getTimeFormat(CHECKOUT) #",
+                    //    }
+                    ]
                 }, {
                     title: "VIST TIME",
                     columns: [{
@@ -607,6 +616,10 @@
                 //        title: "CheckOut",
                 //    }, ]
                 //},
+                {
+                    field: "REMARKS",
+                    title: "Remarks",
+                },
                 {
                     field: "GROUP_EDESC",
                     title: "Group",

@@ -537,7 +537,6 @@ namespace NeoErp.Controllers
         {
             try
             {
-
                 string xmlpath = Server.MapPath("~/App_Data/UserReportSetting.xml");
                 var xml = XDocument.Load(xmlpath);
                 var result = xml.Descendants("UserReportSetup")

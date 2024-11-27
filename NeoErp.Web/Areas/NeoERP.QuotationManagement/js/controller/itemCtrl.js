@@ -1,6 +1,5 @@
-﻿QMModule.controller('itemCtrl', function ($scope, $rootScope, $http, $routeParams, $window, $filter) {
-
-
+﻿
+QMModule.controller('itemCtrl', function ($scope, $rootScope, $http, $routeParams, $window, $filter) {
     $scope.childRowIndex;
     $scope.productDataSource = {
         type: "json",
@@ -92,24 +91,30 @@
     //    }
     //}
 
-
-
     $scope.ItemCodeOption = {
         dataSource: $scope.productDataSource,
         template: '<span>{{dataItem.ItemDescription}}</span>  --- ' +
             '<span>{{dataItem.Type}}</span>',
         dataBound: function (e) {
-
-            var index = this.element[0].attributes['product-index'].value;
-            var productLength = ((parseInt(index) + 1) * 3) - 1;
-            var product = $($(".cproducts")[productLength]).data("kendoComboBox");
-            if (product != undefined) {
-                product.setOptions({
-                    template: $.proxy(kendo.template("#= formatValue(ItemDescription,Type,this.text()) #"), product)
-                });
-                $scope.getmucode(index, $rootScope.ITEM_CODE_DEFAULTVAL);
-
+            if (this.element[0].attributes['location-index'] == undefined) {
+                var product = $($(".cproducts")).data("kendoComboBox");
             }
+            else {
+                var index = this.element[0].attributes['product-index'].value;
+                var productLength = ((parseInt(index) + 1) * 3) - 1;
+                var product = $($(".cproducts")[productLength]).data("kendoComboBox");
+            }
+            //DOne due to error of formatValue
+            //var index = this.element[0].attributes['product-index'].value;
+            //var productLength = ((parseInt(index) + 1) * 3) - 1;
+            //var product = $($(".cproducts")[productLength]).data("kendoComboBox");
+            //if (product != undefined) {
+            //    product.setOptions({
+            //        template: $.proxy(kendo.template("#=formatValue(ItemDescription,Type,this.text()) #"), product)
+            //    });
+            //    $scope.getmucode(index, $rootScope.ITEM_CODE_DEFAULTVAL);
+
+            //}
             setTimeout(function () {
                 if ($scope.havRefrence == 'Y' && $scope.freeze_master_ref_flag == "Y") {
                     $(".cproducts").prop('readonly', true);

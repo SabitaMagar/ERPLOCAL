@@ -247,16 +247,16 @@
         var SheetRow = [];//array to store the rows
         SheetRow.push({ //Header
             cells: [
-                { value: "Customer Name", background: "#A9A7A6", },
-                { value: "Customer Type", background: "#A9A7A6", },
-                { value: "Assign Route", background: "#A9A7A6", },
-                { value: "Assign To", background: "#A9A7A6", },
-                { value: "Visit Type", background: "#A9A7A6", },
-                { value: "Visited By", background: "#A9A7A6", },
+                { value: "Code", background: "#A9A7A6", },
+                { value: "Employee", background: "#A9A7A6", },
                 { value: "Date", background: "#A9A7A6", },
-                { value: "Time", background: "#A9A7A6", },
-                { value: "Distance(KM)", background: "#A9A7A6", },
-                { value: "Remarks", background: "#A9A7A6", },
+                { value: "Zone", background: "#A9A7A6", },
+                { value: "Address", background: "#A9A7A6", },
+                { value: "Contact", background: "#A9A7A6", },
+                { value: "Remarks", background: "#A9A7A6", }
+                //{ value: "Time", background: "#A9A7A6", },
+                //{ value: "Distance(KM)", background: "#A9A7A6", },
+                //{ value: "Remarks", background: "#A9A7A6", },
             ]
         });
         WriteData(e.data);
@@ -264,6 +264,8 @@
         //recursive function to write the grouped/ungrouped data
         function WriteData(array) {
             array.forEach(function (row, index) {
+                console.log(row);
+                console.log(row.items);
                 if (typeof (row.items) != "undefined") { //if array contains nested items, write a row with group field and enter recursion
                     Mvalue = row.value;
                     MField = row.field;
@@ -290,20 +292,21 @@
                     WriteData(row.items);
                 }
                 else {
-                    var dist = differenceDownload(row.CUST_LAT, row.CUST_LONG, row.VISIT_LAT, row.VISIT_LONG, 'K', row.Visit_Type);
-                    var distColor = dist < 0.3 ? "#008000" : "#ff0000";
+                    //var dist = differenceDownload(row.CUST_LAT, row.CUST_LONG, row.VISIT_LAT, row.VISIT_LONG, 'K', row.Visit_Type);
+                    //var distColor = dist < 0.3 ? "#008000" : "#ff0000";
                     SheetRow.push({ //Header
                         cells: [
-                            { value: row.CUSTOMER_NAME },
-                            { value: customerType(row.CUSTOMER_TYPE) },
-                            { value: (row.Assigned_ROUTE !== null && row.Assigned_ROUTE != '-') ? row.Assigned_ROUTE_NAME + '(' + row.Assigned_ROUTE + ')' : '-' },
-                            { value: row.Assigned_Employee },
-                            { value: row.Visit_Type },
-                            { value: row.VISIT_BY },
-                            { value: getDateFormat(row.ASSIGN_DATE) },
-                            { value: getTimeFormat(row.Visit_Time) },
-                            { value: dist, color: distColor },
-                            { value: row.REMARKS },
+                            { value: row.SP_CODE },
+                            { value: row.EMPLOYEE_EDESC},
+                            { value: getDateFormat(row.SUBMIT_DATE) },
+                            { value: row.GROUP_EDESC },
+                            { value: row.ADDRESS },
+                            { value: row.CONTACT },
+                            { value: row.REMARKS }
+
+                            //{ value: getDateFormat(row.ASSIGN_DATE) },
+                            //{ value: dist, color: distColor },
+                            //{ value: row.REMARKS },
                         ]
                     });
                 }
@@ -324,7 +327,7 @@
         //finally saving the excel sheet
         kendo.saveAs({
             dataURI: Workbook.toDataURL(),
-            fileName: "Visit Summary Report.xlsx"
+            fileName: "EOD Report.xlsx"
         });
     }
 
@@ -380,7 +383,7 @@
             }),
             toolbar: kendo.template($("#toolbar-template").html()),
             excel: {
-                fileName: "Visit Summary Report",
+                fileName: "EOD Report",
                 allPages: true,
             },
             excelExport: function (e) {

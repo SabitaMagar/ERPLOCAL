@@ -46,6 +46,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         List<DistributorItemModel> FetchDistributorItems(CommonRequestModel model, NeoErpCoreEntity dbContext);
         List<ResellerGroupModel> GetResellerGroups(CommonRequestModel model, NeoErpCoreEntity dbContext);
         List<ContractModel> GetContracts(CommonRequestModel model, NeoErpCoreEntity dbContext);
+
         #endregion Fetching Data
 
         #region Inserting Data
@@ -69,6 +70,8 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         Dictionary<string, string> SaveCompAns(CompAnsModel model, NeoErpCoreEntity dbContext);
         Dictionary<string, string> SaveDeviceLog(MobileLogModel model, NeoErpCoreEntity dbContext);
         Dictionary<string, string> SaveCrmTask(CrmModel model, NeoErpCoreEntity dbContext);
+        Dictionary<string, string> CreateDistributor(CreateDistributorModel model, NeoErpCoreEntity dbContext);
+
         Dictionary<string, string> SaveDistSalesReturn(DistributionSalesReturnModel returnModel, NeoErpCoreEntity dbContext);
         #endregion Inserting Data
     }

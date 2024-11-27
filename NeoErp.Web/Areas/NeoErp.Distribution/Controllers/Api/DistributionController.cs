@@ -258,6 +258,10 @@ namespace NeoErp.Distribution.Controllers.Api
             return this._distributionService.GetDistributionArea(_workContext.CurrentUserinformation);
 
         }
+        public IList<CustomerIModel> GetCustomersByArea(string areaCode)
+        {
+            return this._distributionService.GetCustomersByArea(areaCode, _workContext.CurrentUserinformation);
+        }
 
         public List<DistAreaModel> GetIndividualGroup(string SingleAreaCode)
         {

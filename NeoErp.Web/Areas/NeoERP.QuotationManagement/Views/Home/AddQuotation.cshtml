@@ -3,10 +3,10 @@
 }
 
 
-<link href="@Styles.Url("~/Areas/NeoERP.QuotationManagement/Content/Quotation.css")" rel="stylesheet" />
+<link href="@Styles.Url("~/Areas/NeoERP.QuotationManagement/Content/quotationSetup.css")" rel="stylesheet" />
 
 
-<div class="col-md-12 bodyController" id="AddQuotation">
+<div class="col-md-12 bodyController" ng-controller="AddQuotation">
     <div class="portlet light form-fit bordered bottomspance">
         <div class="portlet box green-box main">
             <div class="portlet-title">
@@ -14,51 +14,254 @@
                     <a class="btn-back pull-left" data-toggle="tooltip" data-placement="top" title="Back To Dashboard" href="/QuotationManagement/Home/Dashboard">
                         <i class="fa fa-arrow-circle-left"></i>
                     </a>
-                    <i class="fa fa-gift font-green-haze"></i>
+                    <i class="fa fa-gift font-white-haze"></i>
                     <span class="caption-subject font-white-haze bold uppercase">Add Quotation</span>
-                </div>
-
-                <div class="actions">
-                    <div class="btn-group menuDropdown" data-toggle="tooltip" title="Actions">
-                        <a class="btn btn-green btn-white-border" href="javascript:;" id="savedocumentformdata" ng-click="SaveDocumentFormData()" data-toggle="dropdown" aria-expanded="false" title="Save">
-                            <i class="fa fa-floppy-o"></i> Save
-                        </a>
-                        <a class="btn btn-red btn-white-border" href="javascript:;" ng-click="CancelForm()" data-toggle="dropdown" aria-expanded="false" title="Cancel">
-                            <i class="fa fa-times"></i> Cancel
-                        </a>
-                    </div>
                 </div>
             </div>
             <div class="portlet-body">
-                <div class="row boxbg">
-                    <div class="col-xs-11 col-sm-11 col-md-11 custom-col-width">
-                        <form id="documentformelementvalues" class="documentform" method="post" enctype="multipart/form-data">
-                            <div class="row masterDiv">
-                                @Html.Partial("~/Areas/NeoERP.QuotationManagement/Views/Shared/PartialView/_masterFieldPartial.cshtml")
+                <div class="row boxbg" style=" margin-top: 2rem;">
+                    <form id="quotationForm" class="quotationform" ng-submit="saveData()" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="tenderId" id="" value="{{ID}}" ng-model="ID">
+                        <div style="display:flex;margin-bottom:1rem;" class="col-md-12">
+                            <div class="form-group">
+                                <label for="address">Tender No </label>
+                                <input type="text" id="tenderNo" placeholder="" ng-model="TENDER_NO" name="quoteNo" class="form-control" required readonly />
                             </div>
-                            <div class="tabbable-line1 tabbox1" style="margin-top:7px;">
-                                <div class="tab-content d-tab-content">
-                                    <div class="table-responsive">
-                                        @{
-                                            @Html.Partial("~/Areas/NeoERP.QuotationManagement/Views/Shared/PartialView/_childFieldPartial.cshtml")
-                                        }
+                            <div class="form-group">
+                                <label>Date/Miti</label>
+                                <div style="display:flex;">
+                                    <input id="englishdatedocument" class="englishdate dateclass" kendo-date-picker onchange="setNepaliDateFromEnglish()"
+                                           ng-model="ISSUE_DATE" k-options="monthSelectorOptions" />
+                                    <div style="position: relative;">
+                                        <input type="text" id="issueNep" data-checkfor="englishdatedocument" onchange="ConvertNepToEng(this)"
+                                               class="nepali-calendar form-control dateclass" />
+                                        <i class="fa fa-calendar form-control-feedback calendar-icon-2"></i>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-xs-6 col-sm-4 col-md-4">
-                                        <div ng-repeat="element in MasterFormElement | orderBy: 'SERIAL_NO'" ng-if="element.COLUMN_NAME.indexOf('REMARKS') !== -1">
 
-                                            <label class="control-label" for="element">{{element.COLUMN_HEADER}} </label>
-
-                                            <textarea id="salestype" ng-model="masterModels[element.COLUMN_NAME]" name="salestype" class="form-control salestype" type="textarea" style="width: 98%; height:29px;" next-on-tab />
-                                        </div>
+                            <div class="form-group">
+                                <label for="validDt">To be Deliver Date</label><br />
+                                <div style="display:flex;">
+                                    <input id="validDt" class="englishdate dateclass" kendo-date-picker onchange="NepaliDateFromEnglish()"
+                                           ng-model="VALID_DT" k-options="monthSelectorOptions" />
+                                    <div style="position: relative;">
+                                        <input type="text" id="nepaliDate" data-checkfor="validDt" onchange="NepToEng(this)"
+                                               class="nep-calendar form-control dateclass" />
+                                        <i class="fa fa-calendar form-control-feedback calendar-icon-2"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="table-container" ng-init="setInitialWidth()">
+                                <div class="table-responsive">
+                                    <table class="table-bordered table-striped modal-table">
+                                        <tr>
+                                            <td style="width: 49px;" class="table-head sticky">S.N</td>
+                                            <td class="table-head sticky">Item Description</td>
+                                            <td class="table-head">
+                                                Specification
+                                                <span class="arrow-wrapper" title="More Specification">
+                                                    <span>
+                                                        <i class="fa fa-arrow-circle-left" ng-click="toggleDetails()" ng-show="showSpecificationDetail" aria-hidden="true"></i>
+                                                        <i class="fa fa-arrow-circle-right" ng-click="toggleDetails()" ng-hide="showSpecificationDetail" aria-hidden="true"></i>
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td class="table-head">Image</td>
+                                            <td class="table-head">Unit</td>
+                                            <td class="table-head">Quantity</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Category</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Brand Name</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Interface</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Type</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Lamination</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Item Size</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Thickness</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Color</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Grade</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Size Length</td>
+                                            <td ng-show="showSpecificationDetail" class="table-head">Size Width</td>
+
+                                            <td class="btn-action" ng-show="createEdit">&nbsp;</td>
+                                        </tr>
+                                        <tr ng-repeat="product in productFormList">
+                                            <td ng-show="idShowHide">
+                                                <input type="hidden" name="product_ID" id="product_ID_{{product.ID}}" value="{{product.ID}}" ng-model="product.TID">
+                                            </td>
+                                            <td class="sticky">
+                                                <input style="width:49px;" type="text" name="unit_{{product.ID}}" id="unit_{{product.ID}}" ng-model="product.ID" required="required" value="" readonly class="form-control">
+                                            </td>
+                                            <td class="sticky">
+                                                <select id="itemSelected" name="item_{{product.ID}}" kendo-drop-down-list
+                                                        k-options="ItemSelect"
+                                                        ng-change="updateUnit(product)"
+                                                        ng-model="product.ItemDescription"
+                                                        class="itemSelect">
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="specification_{{product.ID}}" id="specification_{{product.ID}}" ng-model="product.SPECIFICATION" required="required" class="form-control" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td style="display:flex;">
+                                                <input type="file" name="image_{{product.ID}}" id="image_{{product.ID}}" ng-model="product.IMAGE" class="form-control large-width">
+                                                <img ng-src="{{product.IMAGE_LINK}}" ng-if="product.IMAGE_NAME" style="max-width: 40px; max-height: 40px;">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="unit_{{product.ID}}" id="unit_{{product.ID}}" ng-model="product.UNIT" readonly class="form-control small-width" value="">
+                                            </td>
+                                            <td>
+                                                <input type="number" name="quantity_{{product.ID}}" min="0" id="quantity_{{product.ID}}" ng-model="product.QUANTITY" ng-change="updateAmount(product);updateTotal();updateQuantity()" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="category_{{product.ID}}" min="0" id="category_{{product.ID}}" ng-model="product.CATEGORY" class="form-control small-width" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="brandName_{{product.ID}}" id="brandName_{{product.ID}}" ng-model="product.BRAND_NAME" class="form-control small-width" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="interface_{{product.ID}}" id="interface_{{product.ID}}" ng-model="product.INTERFACE" class="form-control small-width" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="type_{{product.ID}}" id="type_{{product.ID}}" ng-model="product.TYPE" class="form-control small-width" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="lamination_{{product.ID}}" id="lamination_{{product.ID}}" ng-model="product.LAMINATION" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="itemSize_{{product.ID}}" min="0" id="itemSize_{{product.ID}}" ng-model="product.ITEM_SIZE" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="thickness_{{product.ID}}" min="0" id="thickness_{{product.ID}}" ng-model="product.THICKNESS" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="color_{{product.ID}}" id="color_{{product.ID}}" ng-model="product.COLOR" class="form-control small-width" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="text" name="lamination_{{product.ID}}" id="lamination_{{product.ID}}" ng-model="product.GRADE" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="number" name="sizeLength_{{product.ID}}" min="0" id="sizeLength_{{product.ID}}" ng-model="product.SIZE_LENGTH" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+                                            <td ng-show="showSpecificationDetail">
+                                                <input type="number" name="sizeHeight_{{product.ID}}" min="0" id="sizeHeight_{{product.ID}}" ng-model="product.SIZE_WIDTH" class="form-control small-width right-align" ng-readonly="panelMode === 'view'">
+                                            </td>
+
+                                            <td class="btn-action">
+                                                <a href="" id="add_child_element" name="add_child_element" class="buttonadd" ng-click="addRow()"><i class="fa fa-plus" data-toggle="tooltip" title="Add row"></i></a>
+                                                <a href="" id="remove_child_element" name="remove_child_element" class="buttondelete" ng-click="deleteRow($index)"><i class="fa fa-trash" data-toggle="tooltip" title="Delete row"></i></a>
+                                            </td>
+
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-3 col-md-3">
+                            <div>
+                                <label class="control-label">Remarks</label>
+                                <textarea id="remarks" ng-model="TXT_REMARKS" class="form-control salestype" type="textarea" style="width:90%; height:29px;" ng-readonly="panelMode === 'view'"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div style="display:flex;">
+                                <div class="col-md-9 text-right">
+                                </div>
+                                <div class="col-md-1 text-right">
+                                    <button type="button" id="cancelTarget" name="cancelTarget" class="btn btn-default btn-sm" ng-click="Cancel();">Cancel</button>
+                                </div>
+                                <div class="col-md-1 text-right">
+                                    <button type="submit" class="btn btn-success">{{saveAction}}</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
+
+<script>
+    function dateSet(date) {
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        date = date.getFullYear() + '/' +
+            (('' + month).length < 2 ? '0' : '') + month + '/' +
+            (('' + day).length < 2 ? '0' : '') + day;
+        return date;
+    }
+
+    function setNepaliDateFromEnglish() {
+        var engDate = $("#englishdatedocument").val();
+        var formattedDate = moment(engDate, 'M/D/YYYY').format('DD-MMM-YYYY');
+        $("#englishdatedocument").val(formattedDate);
+        var formattedEngDate = moment(engDate, 'M/D/YYYY').format('YYYY-MM-DD');
+        var nepaliDate = AD2BS(formattedEngDate);
+        $("#issueNep").val(nepaliDate);
+    }
+
+    function NepaliDateFromEnglish() {
+        var engDate = $("#validDt").val();
+        var formattedDate = moment(engDate, 'M/D/YYYY').format('DD-MMM-YYYY');
+        $("#validDt").val(formattedDate);
+
+        var formattedEngDate = moment(engDate, 'M/D/YYYY').format('YYYY-MM-DD');
+        var nepaliDate = AD2BS(formattedEngDate);
+        $("#nepaliDate").val(nepaliDate);
+
+        var issueDt = moment($("#englishdatedocument").val(), 'DD-MMM-YYYY');
+        var validUntilDt = moment(engDate, 'M/D/YYYY');
+
+        if (validUntilDt.isBefore(issueDt)) {
+            displayPopupNotification("To be Deliver Date cannot be greater than Date/Miti date.", "error");
+        }
+    }
+
+    function ConvertNepToEng(e) {
+        var date = BS2AD($("#issueNep").val());
+        var FormattedEngDate = moment(date).format('DD-MMM-YYYY');
+        $("#englishdatedocument").val(FormattedEngDate);
+    }
+
+    $(".nepali-calendar").nepaliDatePicker({
+        //  ndpEnglishInput: 'englishdatedocument',
+        npdMonth: true,
+        onFocus: true,
+        npdYear: true,
+        npdYearCount: 10,
+        altFormat: "dd-MMM-YYYY",
+        dateFormat: "dd-MMM-YYYY",
+        onChange: function (evt) {
+            var nepaliDate = $("#issueNep").val(); // Get the Nepali date value
+            var engDate = BS2AD(nepaliDate); // Convert Nepali date to English date
+            var formattedEngDate = moment(engDate).format('DD-MMM-YYYY'); // Format the English date
+            $("#englishdatedocument").val(formattedEngDate); // Update the English date input field
+        }
+    });
+
+    function NepToEng(e) {
+        var date = BS2AD($("#nepaliDate").val());
+        var FormattedEngDate = moment(date).format('DD-MMM-YYYY');
+        $("#validDt").val(FormattedEngDate);
+    }
+
+    $(".nep-calendar").nepaliDatePicker({
+        //  ndpEnglishInput: 'englishdatedocument',
+        npdMonth: true,
+        onFocus: true,
+        npdYear: true,
+        npdYearCount: 10,
+        altFormat: "dd-MMM-YYYY",
+        dateFormat: "dd-MMM-YYYY",
+        onChange: function (evt) {
+            var nepaliDate = $("#nepaliDate").val(); // Get the Nepali date value
+            var engDate = BS2AD(nepaliDate); // Convert Nepali date to English date
+            var formattedEngDate = moment(engDate).format('DD-MMM-YYYY'); // Format the English date
+            $("#validDt").val(formattedEngDate); // Update the English date input field
+        }
+    });
+</script>

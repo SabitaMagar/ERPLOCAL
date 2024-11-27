@@ -274,10 +274,17 @@
                 </div>
             </li>
             <li class="list-group-item">
-               Disable Location
+                Disable Location
                 <div class="TriSea-technologies-Switch pull-right">
                     <input id="someSwitchOptionDefaultDL" name="someSwitchOptionDefaultDL" type="checkbox" @((Model != null && Model.DISABLE_LOCATION == "Y") ? "checked" : "") />
                     <label for="someSwitchOptionDefaultDL" class="label-green"></label>
+                </div>
+            </li>
+            <li class="list-group-item">
+                Display priority
+                <div class="TriSea-technologies-Switch pull-right">
+                    <input id="someSwitchOptionDefaultDP" name="someSwitchOptionDefaultDP" type="checkbox" @((Model != null && Model.PO_PRIORITY == "Y") ? "checked" : "") />
+                    <label for="someSwitchOptionDefaultDP" class="label-green"></label>
                 </div>
             </li>
         </ul>
@@ -304,14 +311,41 @@
                 <label for="ConsolidateSwitch" class="label-green"></label>
             </div>
         </li>
-
+        <li class="list-group-item">
+            Display Sale Order Default Discount
+            <div class="TriSea-technologies-Switch pull-right">
+                <input id="TriDiscountSuccess" name="TriSea1" type="checkbox" @((Model != null && Model.SO_SYN_DISCOUNT == "Y") ? "checked" : "") />
+                <label for="TriDiscountSuccess" class="label-green"></label>
+            </div>
+        </li>
+        <li class="list-group-item">
+            Display Sale Order Custom Discount
+            <div class="TriSea-technologies-Switch pull-right">
+                <input id="TriDiscountInfo" name="TriSea1" type="checkbox" @((Model != null && Model.SO_CUSTOM_DISCOUNT == "Y") ? "checked" : "") />
+                <label for="TriDiscountInfo" class="label-green"></label>
+            </div>
+        </li>
+        <li class="list-group-item">
+            Reseller Discount?
+            <div class="TriSea-technologies-Switch pull-right">
+                <input id="TriResellerDiscount" name="TriSea1" type="checkbox" @((Model != null && Model.SO_RESELLER_DISCOUNT == "Y") ? "checked" : "") />
+                <label for="TriResellerDiscount" class="label-green"></label>
+            </div>
+        </li>
+        <li class="list-group-item">
+            Auto Sales Order?
+            <div class="TriSea-technologies-Switch pull-right">
+                <input id="TriSalesOrder" name="TriSea1" type="checkbox" @((Model != null && Model.SO_SALES_ORDER == "Y") ? "checked" : "") />
+                <label for="TriSalesOrder" class="label-green"></label>
+            </div>
+        </li>
         <li class="list-group-item">
             Select table to fetch rate
             @Html.DropDownListFor(x => x.SO_REPO_RATE_TABLE, salesTableOptions, new { @class = "form-control input-sm pull-right my-dropdown", @id = "SORateTableSetup" })
         </li>
         <li class="list-group-item">
             Select rate column
-            @Html.DropDownListFor(x => x.SO_REPO_RATE_COLUMN, salesRateColumn,  new { @class = "form-control input-sm pull-right my-dropdown", @id = "SORateColumnSetup" })
+            @Html.DropDownListFor(x => x.SO_REPO_RATE_COLUMN, salesRateColumn, new { @class = "form-control input-sm pull-right my-dropdown", @id = "SORateColumnSetup" })
         </li>
     </div>
     <div id="ClosingStockTab">
@@ -503,6 +537,34 @@
         else {
             var PO_CUSTOM_RATE = "N"
         }
+        if ($('input#TriDiscountSuccess').is(':checked')) {
+
+            var SO_SYN_DISCOUNT = "Y";
+        }
+        else {
+            var SO_SYN_DISCOUNT = "N"
+        }
+        if ($('input#TriDiscountInfo').is(':checked')) {
+
+            var SO_CUSTOM_DISCOUNT = "Y";
+        }
+        else {
+            var SO_CUSTOM_DISCOUNT = "N"
+        }
+        if ($('input#TriResellerDiscount').is(':checked')) {
+
+            var SO_RESELLER_DISCOUNT = "Y";
+        }
+        else {
+            var SO_RESELLER_DISCOUNT = "N"
+        }
+        if ($('input#TriSalesOrder').is(':checked')) {
+
+            var SO_SALES_ORDER = "Y";
+        }
+        else {
+            var SO_SALES_ORDER = "N"
+        }
         if ($('input#TriSeaWarning').is(':checked')) {
 
             var PO_REMARKS = "Y";
@@ -692,6 +754,13 @@
         else {
             var DISABLE_LOCATION = "N";
         }
+        //IP_PRIORITY_CODE
+        if ($('input#someSwitchOptionDefaultDP').is(':checked')) {
+            var PO_PRIORITY = "Y";
+        }
+        else {
+            var PO_PRIORITY = "N";
+        }
         if ($('input#LocationTrackSetup').is(':checked')) {
 
             var LO_BG_TRACK = "Y";
@@ -733,11 +802,16 @@
             PO_SALES_TYPE: PO_SALES_TYPE,
             SO_CREDIT_DAYS_CHK: SO_CREDIT_DAYS_CHK,
             SO_CONSOLIDATE_DEFAULT: SO_CONSOLIDATE_DEFAULT,
+            SO_SYN_DISCOUNT: SO_SYN_DISCOUNT,
+            SO_CUSTOM_DISCOUNT: SO_CUSTOM_DISCOUNT,
+            SO_SALES_ORDER: SO_SALES_ORDER,
+            SO_RESELLER_DISCOUNT: SO_RESELLER_DISCOUNT,
             ATN_DEFAULT: ATN_DEFAULT,
             ATN_IMAGE: ATN_IMAGE,
             SET_RES_MAP_WHOLESALER: SET_RES_MAP_WHOLESALER,
             PO_DISPLAY_DIST_ITEM: PO_DISPLAY_DIST_ITEM,
             DISABLE_LOCATION: DISABLE_LOCATION,
+            PO_PRIORITY: PO_PRIORITY,
             SQL_MULTIPLE_COMPANY: SQL_MULTIPLE_COMPANY,
             SQL_GROUP_MAP: SQL_GROUP_MAP,
             SQL_OPEN_ADDOUTLET: SQL_OPEN_ADDOUTLET,

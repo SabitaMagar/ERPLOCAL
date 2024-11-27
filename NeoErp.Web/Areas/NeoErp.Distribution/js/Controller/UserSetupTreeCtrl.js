@@ -4,7 +4,7 @@
     $scope.EmployeeMultiSelectName = "Employee";
     $scope.createPanel = true;
     $scope._old = {};
-
+    $scope.selectedArea = null;
     //load multiselect 
     $scope.EmployeeMultiSelect = {
         dataSource: new kendo.data.DataSource({
@@ -88,7 +88,7 @@
         headerTemplate: '<div class="col-md-offset-3"><strong>Area...</strong></div>',
         placeholder: "Select Area...",
         autoClose: false,
-        dataBound: function (e) {          
+        dataBound: function (e) {
             $("#" + e.sender.element[0].id + "_listbox").slimScroll({ 'height': '179px', 'scroll': 'scroll' });
         },
         dataSource: {
@@ -98,7 +98,7 @@
                     dataType: "json"
                 }
             }
-        },          
+        },
     };
 
     var productsDataSource = new kendo.data.DataSource({
@@ -109,18 +109,92 @@
             }
         }
     });
+    // Watch for changes in AreaMultiSelect
+    $scope.$watch('userSetupTree.AreaMultiSelect', function (newVal, oldVal) {
+        if (newVal !== oldVal) {
+            $scope.selectedArea = newVal;
+            var customerMultiSelect = $("#distCustomerSelect").data("kendoMultiSelect");
+
+            if (customerMultiSelect) {
+                // Clear previous values (optional)
+                customerMultiSelect.value([]);
+
+                // Force the customer MultiSelect to refresh its data
+                customerMultiSelect.dataSource.transport.read();
+                customerMultiSelect.dataSource.read();
+                customerMultiSelect.refresh();  // Ensures the MultiSelect UI updates
+            }
+        }
+    });
+
+    // Define customer MultiSelect options
+    $scope.distCustomerSelectOptions = {
+        dataTextField: "CUSTOMER_EDESC",
+        dataValueField: "CUSTOMER_CODE",
+        height: 600,
+        valuePrimitive: true,
+        filter: "contains",
+        headerTemplate: '<div class="col-md-offset-3"><strong>Customer...</strong></div>',
+        placeholder: "Select Customer...",
+        autoClose: false,
+        dataBound: function (e) {
+            $("#" + e.sender.element[0].id + "_listbox").slimScroll({ 'height': '179px', 'scroll': 'scroll' });
+        },
+        dataSource: new kendo.data.DataSource({
+            type: "json",
+            serverFiltering: true,
+            transport: {
+                read: {
+                    url: window.location.protocol + "//" + window.location.host + "/api/Distribution/GetCustomersByArea",
+                    type: "GET",
+                    dataType: "json",
+                    data: function () {
+                        var areaCodes = $scope.selectedArea ? $scope.selectedArea.map(function (area) {
+                            return "'" + area + "'"; // Wrap each area code in single quotes
+                        }).join(', ') : '';
+
+                        return { areaCode: areaCodes };
+                    }
+                }
+            }
+        })
+    };
+
+
+    //productsDataSource.fetch(function () {
+    //    $scope.distBrandSelectOptions = {
+    //        dataTextField: "BRAND_NAME",
+    //        dataValueField: "BRAND_NAME",
+    //        height: 600,
+    //        valuePrimitive: true,
+    //        headerTemplate: '<div class="col-md-offset-3"><strong>Brands...</strong></div>',
+    //        placeholder: "Select Brands...",
+    //        autoClose: false,
+    //        dataBound: function (e) {
+    //            $("#" + e.sender.element[0].id + "_listbox").slimScroll({ 'height': '179px', 'scroll': 'scroll' });
+    //        },
+    //        dataSource: new kendo.data.DataSource({
+    //            data: _.uniq(this.data(), "BRAND_NAME"),
+    //        }),
+    //        change: function () {
+    //            buildFilters(this.dataItems());
+    //        }
+    //    };
+    //});
 
     productsDataSource.fetch(function () {
         $scope.distBrandSelectOptions = {
             dataTextField: "BRAND_NAME",
-            dataValueField: "BRAND_NAME",
+            dataValueField: "ITEM_CODE",
             height: 600,
             valuePrimitive: true,
             headerTemplate: '<div class="col-md-offset-3"><strong>Brands...</strong></div>',
             placeholder: "Select Brands...",
             autoClose: false,
             dataBound: function (e) {
-                $("#" + e.sender.element[0].id + "_listbox").slimScroll({ 'height': '179px', 'scroll': 'scroll' });
+                       var current = this.value();
+                    this._savedOld = current.slice(0);
+                    $("#" + e.sender.element[0].id + "_listbox").slimScroll({ 'height': '179px', 'scroll': 'scroll' });
             },
             dataSource: new kendo.data.DataSource({
                 data: _.uniq(this.data(), "BRAND_NAME"),
@@ -168,7 +242,7 @@
         }
 
 
-    }; 
+    };
     function Clear() {
         $scope.userSetupTree = {};
         angular.element('#EmployeeMultiSelect').data("kendoMultiSelect").value([]);
@@ -221,7 +295,7 @@
             { field: "CONTACT_NO", title: "Contact No" }
         ],
     });
-    
+
     function DistributionDataSet() {
         var dataSource = new kendo.data.DataSource({
             transport: {
@@ -257,7 +331,7 @@
                     contentType: "application/json; charset=utf-8"
                 }
             },
-          
+
 
         });
         $scope._old.EmployeeMultiSelectData = $.extend(true, {}, angular.element('#EmployeeMultiSelect').data("kendoMultiSelect").dataSource.data());
@@ -273,32 +347,37 @@
         select: function (e) {
             var button = $(e.item);
             var row = $(e.target);
-            var dataItem = $("#treelist").data("kendoTreeList").dataItem(row);           
-           
+            var dataItem = $("#treelist").data("kendoTreeList").dataItem(row);
+
+            var areaMultiSelect = angular.element('#AreaMultiSelect').data("kendoMultiSelect");
+            $scope._old.areaMultiSelectData = $scope._old.areaMultiSelectData == undefined ? areaMultiSelect.dataSource.data() : $scope._old.areaMultiSelectData;
+            areaMultiSelect.setDataSource(new kendo.data.DataSource({
+                data: _.filter($scope._old.areaMultiSelectData, function (x) { return x.GROUPID == dataItem.GROUPID }),
+                //data: $scope._old.areaMultiSelectData,
+            }));
+
             if (button.text() == "Update") {
                 $scope.pageName = "Update User";
-                $scope.saveButtonText = "Update";               
+                $scope.saveButtonText = "Update";
                 var roleMultiSelect = angular.element('#RoleMultiSelect').data("kendoMultiSelect");
                 $scope._old.roleMultiSelect = $scope._old.roleMultiSelect == undefined ? roleMultiSelect.dataSource.data() : $scope._old.roleMultiSelect;
                 if (dataItem.ROLE_CODE !== undefined) {
-                    if (dataItem.ROLE_CODE == '2')
-                    {
+                    if (dataItem.ROLE_CODE == '2') {
                         //during the update time this function call
                         DistributionDataSet();
                         roleMultiSelect.setDataSource(new kendo.data.DataSource({
                             data: _.filter($scope._old.roleMultiSelect, function (x) { return x.ROLE_CODE == 2 })
-                        }));  
+                        }));
                     }
-                   
-                        
-                    else
-                    {
+
+
+                    else {
                         salesPersonDataSet();
                         roleMultiSelect.setDataSource(new kendo.data.DataSource({
                             data: _.filter($scope._old.roleMultiSelect, function (x) { return x.ROLE_CODE !== 2 })
-                        }));  
+                        }));
                     }
-                    
+
                 }
                 $scope.userSetupTree = {
                     attendanceCheckbox: dataItem.ATTENDENCE == 'Y' ? true : false,
@@ -316,23 +395,25 @@
                     RoleMultiSelect: [dataItem.ROLE_CODE],
                     AreaMultiSelect1: dataItem.AREA_CODE !== null ? dataItem.AREA_CODE.split(',') : [],
                     ItemCodeMultiSelect: dataItem.ITEM_CODE !== null ? dataItem.ITEM_CODE.split(',') : [],
+                    CustomerMultiSelect: dataItem.CUSTOMER_CODE !== null ? dataItem.CUSTOMER_CODE.split(',') : [],
+                    BrandMultiSelect: dataItem.ITEM_CODE !== null ? dataItem.ITEM_CODE.split(',') : [],
                 }
 
 
 
                 var employeeMultiSelect = angular.element('#EmployeeMultiSelect').data("kendoMultiSelect");
                 employeeMultiSelect.value($scope.userSetupTree.EmployeeMultiSelect);
-                employeeMultiSelect.enable(false);       
-                
-                var areaMultiSelect = angular.element('#AreaMultiSelect').data("kendoMultiSelect");
-                $scope._old.areaMultiSelectData =$scope._old.areaMultiSelectData == undefined ? areaMultiSelect.dataSource.data() : $scope._old.areaMultiSelectData;
-                areaMultiSelect.setDataSource(new kendo.data.DataSource({
-                   // data: _.filter($scope._old.areaMultiSelectData, function (x) { return x.GROUPID == dataItem.GROUPID}), 
-                    data: $scope._old.areaMultiSelectData,
-                }));
-                areaMultiSelect.value($scope.userSetupTree.AreaMultiSelect1);      
+                employeeMultiSelect.enable(false);
+
+                //var areaMultiSelect = angular.element('#AreaMultiSelect').data("kendoMultiSelect");
+                //$scope._old.areaMultiSelectData = $scope._old.areaMultiSelectData == undefined ? areaMultiSelect.dataSource.data() : $scope._old.areaMultiSelectData;
+                //areaMultiSelect.setDataSource(new kendo.data.DataSource({
+                //    data: _.filter($scope._old.areaMultiSelectData, function (x) { return x.GROUPID == dataItem.GROUPID}), 
+                //    //data: $scope._old.areaMultiSelectData,
+                //}));
+                areaMultiSelect.value($scope.userSetupTree.AreaMultiSelect1);
                 $scope.userSetupTree.AreaMultiSelect = $scope.userSetupTree.AreaMultiSelect1;
-                angular.element('#RoleMultiSelect').data("kendoMultiSelect").value($scope.userSetupTree.RoleMultiSelect);                
+                angular.element('#RoleMultiSelect').data("kendoMultiSelect").value($scope.userSetupTree.RoleMultiSelect);
                 angular.element('#userSetupTreeCreateModal').modal('show');
             }
             else if (button.text() == "Add") {
@@ -386,7 +467,7 @@
             else {
                 $scope.userSetupTree.MASTER_CODE = dataItem.GROUPID;
                 $scope.userSetupTree.MASTER_CUSTOMER_CODE = dataItem.CODE;
-            }           
+            }
             $scope.$apply();
 
         }
@@ -407,6 +488,7 @@
         obj.BRANDING = $scope.userSetupTree.brandingCheckbox ? 'Y' : 'N';
         obj.SUPER_USER = $scope.userSetupTree.superCheckbox ? 'Y' : 'N';
         obj.AREA = $scope.userSetupTree.AreaMultiSelect == null ? [] : $scope.userSetupTree.AreaMultiSelect;
+        obj.CUSTOMER = $scope.userSetupTree.CustomerMultiSelect == null ? [] : $scope.userSetupTree.CustomerMultiSelect;
         obj.GROUPID = $scope.userSetupTree.GROUPID;
         obj.BRAND = $scope.userSetupTree.BrandMultiSelect == null ? [] : $scope.userSetupTree.BrandMultiSelect;
         //obj.ITEMS = $scope.userSetupTree.ItemCodeMultiSelect == null ? [] : $scope.userSetupTree.ItemCodeMultiSelect;
@@ -457,7 +539,7 @@
     $scope.UpdateUserTreeOrder = function (e) {
         if (e.valid) {
             //check if destination is group   
-            
+
             if (e.destination != undefined) // && e.destination.IS_GROUP == 'Y'
                 e.source.GROUPID = e.destination.GROUPID;
             else
@@ -473,9 +555,9 @@
             //first remove all selected row
             $('tr.k-state-selected', '#treelist').removeClass('k-state-selected');
             //then display selected row
-            $(this).addClass("k-state-selected");            
+            $(this).addClass("k-state-selected");
         }
     });
-  
+
 
 });

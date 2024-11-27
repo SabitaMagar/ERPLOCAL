@@ -58,7 +58,15 @@ namespace NeoErp.Planning.Service.Models
     {
         public string ITEM_CODE { get; set; }
         public string ITEM_EDESC { get; set; }
+        public string MU_CODE { get; set; }
         public string MASTER_ITEM_CODE { get; set; }
         public string PRE_ITEM_CODE { get; set; }
+    }
+    public class CustomerGroupModel
+    {
+        public string CUSTOMER_CODE { get; set; }
+        public string CUSTOMER_EDESC { get; set; }
+        public string MASTER_CUSTOMER_CODE { get; set; }
+        public string PRE_CUSTOMER_CODE { get; set; }
     }
 }

@@ -12,6 +12,7 @@ using System.Data;
 using ExcelDataReader;
 using System.Web;
 using System.IO;
+using System.Data.OracleClient;
 
 namespace NeoErp.Planning.Service.Repository
 {
@@ -378,10 +379,8 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
             try
             {
                 var condition = string.Empty;
-                //if (empGroup != "" && empGroup != null)
-                //    condition = $@" AND LU.GROUPID ='{empGroup}'";
-                if (empGroup != "" && empGroup != null) 
-                    condition = $@" AND ES.PRE_EMPLOYEE_CODE in ({empGroup})";
+                if (empGroup != "" && empGroup != null)
+                    condition = $@" AND LU.GROUPID in ({empGroup})";
 
                 if (!string.IsNullOrWhiteSpace(filter))
                     filter = $@" AND LOWER(TRIM(ES.EMPLOYEE_EDESC)) LIKE '%{filter.ToLower()}%'";
@@ -390,20 +389,32 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
                 if (!string.IsNullOrWhiteSpace(_workcontext.CurrentUserinformation.sp_codes))
                     spFilter = $@" AND LU.SP_CODE IN ({_workcontext.CurrentUserinformation.sp_codes})";
 
-                string query = $@"SELECT DISTINCT SPM.SP_CODE SP_CODE,ES.EMPLOYEE_CODE EMPLOYEE_CODE,ES.EMPLOYEE_EDESC || ' ('||ES.EMPLOYEE_CODE||')' EMPLOYEE_EDESC,
+                string query = $@"SELECT DISTINCT ES.EMPLOYEE_CODE EMPLOYEE_CODE,ES.EMPLOYEE_EDESC || ' ('||ES.EMPLOYEE_CODE||')' EMPLOYEE_EDESC,
                     ES.EMPLOYEE_NDESC EMPLOYEE_NDESC,ES.GROUP_SKU_FLAG GROUP_SKU_FLAG,ES.MASTER_EMPLOYEE_CODE MASTER_EMPLOYEE_CODE,
-                    ES.PRE_EMPLOYEE_CODE PRE_EMPLOYEE_CODE
-                    FROM HR_EMPLOYEE_SETUP ES,DIST_SALESPERSON_MASTER SPM, DIST_LOGIN_USER LU
-                    WHERE SPM.SP_CODE = LU.SP_CODE
-                    AND ES.DELETED_FLAG='N' AND SPM.ACTIVE='Y'
-                    AND SPM.COMPANY_CODE = LU.COMPANY_CODE
-                    AND  ES.DELETED_FLAG='N' AND SPM.ACTIVE='Y'
-                    AND SPM.SP_CODE=ES.EMPLOYEE_CODE 
-                    AND ES.COMPANY_CODE = SPM.COMPANY_CODE
-                    AND LU.BRANDING='N'
-                    AND SPM.COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' {condition} {filter} {spFilter}
+                    ES.PRE_EMPLOYEE_CODE PRE_EMPLOYEE_CODE  FROM HR_EMPLOYEE_SETUP ES, DIST_LOGIN_USER LU
+                    WHERE   ES.DELETED_FLAG='N'   AND LU.SP_CODE=ES.EMPLOYEE_CODE   AND ES.COMPANY_CODE = LU.COMPANY_CODE
+                    AND LU.BRANDING='N' AND ES.COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' {condition} {filter} {spFilter}
                     ORDER BY LOWER(TRIM(ES.EMPLOYEE_EDESC || ' ('||ES.EMPLOYEE_CODE||')'))";
 
+                var result = this._dbContext.SqlQuery<EmployeeModels>(query).ToList();
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public List<EmployeeModels> getSNGEmployees(string filter, string empGroup)
+        {
+            try
+            {
+                var condition = string.Empty;
+                if (empGroup != "" && empGroup != null)
+                    condition = $@" AND PRE_EMPLOYEE_CODE in ({empGroup})";
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(EMPLOYEE_EDESC)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select * from HR_EMPLOYEE_SETUP where group_sku_flag='I' and deleted_flag='N' and COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' {filter} {condition}";
                 var result = this._dbContext.SqlQuery<EmployeeModels>(query).ToList();
                 return result;
             }
@@ -1061,11 +1072,14 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
 
             }
         }
-        public List<ItemGroupModel> GetItemGroup()
+        public List<ItemGroupModel> GetItemGroup(string filter)
         {
             try
             {
-                string query = $@"select item_code,item_edesc,MASTER_ITEM_CODE,PRE_ITEM_CODE from ip_item_master_setup where GROUP_SKU_FLAG='G' and  DELETED_FLAG = 'N' AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}'";
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(item_edesc)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select item_code,item_edesc,MASTER_ITEM_CODE,PRE_ITEM_CODE from ip_item_master_setup where GROUP_SKU_FLAG='G' and  DELETED_FLAG = 'N' AND CATEGORY_CODE='FG' AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {filter} ORDER BY ITEM_CODE";
                 List<ItemGroupModel> itemGroup = this._dbContext.SqlQuery<ItemGroupModel>(query).ToList();
                 return itemGroup;
             }
@@ -1074,17 +1088,19 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
                 throw new Exception(ex.Message);
             }
         }
-        public List<ItemGroupModel> GetItemLists(string itmGroup)
+        public List<ItemGroupModel> GetItemLists(string filter,string itmGroup)
         {
             try
             {
                 var condition = string.Empty;
-                //if (empGroup != "" && empGroup != null)
-                //    condition = $@" AND LU.GROUPID ='{empGroup}'";
+
                 if (itmGroup != "" && itmGroup != null)
                     condition = $@" AND PRE_ITEM_CODE in ({itmGroup})";
 
-                string query = $@"select item_code,item_edesc from ip_item_master_setup where GROUP_SKU_FLAG='I' and  DELETED_FLAG = 'N' AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {condition}";
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(item_edesc)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select item_code,item_edesc,INDEX_MU_CODE as mu_code from ip_item_master_setup where GROUP_SKU_FLAG='I' and  DELETED_FLAG = 'N' AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {condition} {filter} ORDER BY ITEM_CODE";
                 List<ItemGroupModel> itemGroup = this._dbContext.SqlQuery<ItemGroupModel>(query).ToList();
                 return itemGroup;
             }
@@ -1093,12 +1109,87 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
                 throw new Exception(ex.Message);
             }
         }
-        public List<EmployeeModels> GetGroupEmployees()
+        public List<CustomerGroupModel> GetCustomerLists(string filter,string cusGroup)
         {
             try
             {
-                string query = $@"select * from HR_EMPLOYEE_SETUP where group_sku_flag='G' and COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}'";
-                var result = this._dbContext.SqlQuery<EmployeeModels>(query).ToList();
+                var condition = string.Empty;
+                if (cusGroup != "" && cusGroup != null)
+                    condition = $@" AND ddm.GROUPID in ({cusGroup})";
+
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(scs.CUSTOMER_EDESC)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select scs.customer_code,scs.customer_edesc from dist_distributor_master ddm, sa_customer_setup scs where scs.customer_code=ddm.distributor_code and scs.company_code=ddm.company_code and scs.branch_code=ddm.branch_code
+                and scs.deleted_flag='N' and ddm.deleted_flag='N' AND ddm.COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {condition} {filter} ORDER BY scs.CUSTOMER_CODE ";
+                List<CustomerGroupModel> customers = this._dbContext.SqlQuery<CustomerGroupModel>(query).ToList();
+                return customers;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public List<CustomerGroupModel> GetCustomerSNGLists(string filter, string cusGroup)
+        {
+            try
+            {
+                var condition = string.Empty;
+                if (cusGroup != "" && cusGroup != null)
+                    condition = $@" AND PRE_CUSTOMER_CODE in ({cusGroup})";
+
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(CUSTOMER_EDESC)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select CUSTOMER_CODE,CUSTOMER_EDESC,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE from sa_customer_setup where GROUP_SKU_FLAG='I' and  DELETED_FLAG = 'N'  AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {condition} {filter} ORDER BY CUSTOMER_CODE ";
+                List<CustomerGroupModel> itemGroup = this._dbContext.SqlQuery<CustomerGroupModel>(query).ToList();
+                return itemGroup;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public List<CustomerGroup> GetCustomerGroup(string filter)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(GROUP_EDESC)) LIKE '%{filter.ToLower()}%'";
+                string query = $@"select GROUPID as GROUP_ID,GROUP_EDESC,GROUP_CODE from dist_group_master where DELETED_FLAG = 'N'  AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {filter} ORDER BY GROUP_ID";
+                List<CustomerGroup> customerGroup = this._dbContext.SqlQuery<CustomerGroup>(query).ToList();
+                return customerGroup;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public List<CustomerSNGroup> GetCustomerSNGGroup(string filter)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(CUSTOMER_EDESC)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select CUSTOMER_CODE as GROUP_ID,CUSTOMER_EDESC as GROUP_EDESC,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE from sa_customer_setup where GROUP_SKU_FLAG='G' and  DELETED_FLAG = 'N'  AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' {filter} ORDER BY CUSTOMER_CODE ";
+                List<CustomerSNGroup> cusGroup = this._dbContext.SqlQuery<CustomerSNGroup>(query).ToList();
+                return cusGroup;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public List<CustomerSNGroup> GetGroupEmployees(string filter)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter = $@" AND LOWER(TRIM(EMPLOYEE_EDESC)) LIKE '%{filter.ToLower()}%'";
+
+                string query = $@"select employee_code as GROUP_ID,employee_edesc as GROUP_EDESC,MASTER_EMPLOYEE_CODE as MASTER_CUSTOMER_CODE,PRE_EMPLOYEE_CODE as PRE_CUSTOMER_CODE from HR_EMPLOYEE_SETUP where group_sku_flag='G' and deleted_flag='N' and COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' {filter}";
+                var result = this._dbContext.SqlQuery<CustomerSNGroup>(query).ToList();
                 return result;
             }
             catch (Exception)
@@ -1106,5 +1197,311 @@ FROM DIST_ROUTE_PLAN WHERE  DELETED_FLAG='N' AND COMPANY_CODE = '{company_code}'
                 throw;
             }
         }
+        public List<HolidayModel> GetHolidayDetails(string fromDate, string toDate)
+        {
+            try
+            {
+                string query = $@"WITH date_range AS (
+                    SELECT
+                        START_DATE + LEVEL - 1 AS holiday_date
+                    FROM
+                        hris_holiday_master_setup where status='E'
+                    CONNECT BY LEVEL <= (END_DATE - START_DATE + 1)
+                )
+                SELECT distinct TO_CHAR(holiday_date, 'YYYY-MON-DD') AS holiday_date
+                FROM date_range
+                WHERE holiday_date BETWEEN TO_DATE('{fromDate}', 'DD-MON-YYYY') AND TO_DATE('{toDate}', 'DD-MON-YYYY') order by holiday_date";
+                var result = this._dbContext.SqlQuery<HolidayModel>(query).ToList();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        public string saveTargetData(ProfileModel model)
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    string message = "";
+                    if (model.Employees.Count > 0)
+                    {
+                        if (model.TargetType == "SAL")
+                        {
+                            saveData(model);
+                        }
+                        else
+                        {
+                            saveColData(model);
+                        }
+                    }
+                    else
+                    {
+                        if (model.FLAG == "SNG")
+                        {
+                            model.Employees = getSynergyEmployees(model.EmployeeMasterGroup);
+                        }
+                        else
+                        {
+                            model.Employees = getEmployees(model.EmployeeMasterGroup);
+                        }
+                        if (model.TargetType == "SAL")
+                        {
+                            saveData(model);
+                        }
+                        else
+                        {
+                            saveColData(model);
+                        }
+                    }
+                    transaction.Commit();
+                    message = "success";
+                    return message;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return ex.ToString();
+                }
+            }
+        }
+        public string updateTargetData(ProfileModel model)
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    var Query = $@"DELETE FROM IP_TARGET_SETUP WHERE TARGET_ID='{model.TargetId}' AND COMPANY_CODE='{ _workcontext.CurrentUserinformation.company_code}'";
+                    _dbContext.ExecuteSqlCommand(Query);
+                    string message = "";
+                    if (model.Employees.Count > 0)
+                    {
+                        if (model.TargetType == "SAL")
+                        {
+                            saveData(model);
+                        }
+                        else
+                        {
+                            saveColData(model);
+                        }
+                    }
+                    else
+                    {
+                        if (model.FLAG == "SNG")
+                        {
+                            model.Employees = getSynergyEmployees(model.EmployeeMasterGroup);
+                        }
+                        else
+                        {
+                            model.Employees = getEmployees(model.EmployeeMasterGroup);
+                        }
+                        if (model.TargetType == "SAL")
+                        {
+                            saveData(model);
+                        }
+                        else
+                        {
+                            saveColData(model);
+                        }
+                    }
+                    transaction.Commit();
+                    message = "success";
+                    return message;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return ex.ToString();
+                }
+            }
+        }
+        public bool saveData(ProfileModel model)
+        {
+            try
+            {   if(model.TargetId==0)
+                {
+                    string query = $@"SELECT COALESCE(MAX(TARGET_ID), 0) + 1 AS TARGET_ID FROM IP_TARGET_SETUP where deleted_flag='N'";
+                    model.TargetId = this._dbContext.SqlQuery<int>(query).FirstOrDefault();
+                }
+                foreach (var employee in model.Employees)
+                {
+                    int currentMonth = 1;
+                    foreach (var data in model.GridData)
+                    {
+                        string insertQuery = $@"
+                                        INSERT INTO ip_target_setup
+                                        (
+                                            TARGET_ID,MONTH, MASTER_CODE, TARGET_TYPE, SUB_TARGET_TYPE, MU_CODE, 
+                                            TARGET_QUANTITY, TARGET_AMOUNT, TARGET_NAME, FROM_DATE, 
+                                            END_DATE, COMPANY_CODE, BRANCH_CODE, ASSIGN_EMPLOYEE, 
+                                            CREATED_DATE, CREATED_BY, DELETED_FLAG,EMPLOYEE_GROUP,ITEM_GROUP,DATE_FILTER,CUSTOMER_GROUP,FLAG
+                                        )
+                                        VALUES
+                                        ({model.TargetId},'{currentMonth}','{data.ItemCode}','{model.TargetType}','{model.SubTargetType}','{data.muCode}', 
+                                            {data.Quantity}, {data.Amount},'{model.TargetName}','{data.Date}', 
+                                            '{data.Date}','{ _workcontext.CurrentUserinformation.company_code}','{_workcontext.CurrentUserinformation.branch_code}','{employee}',
+                                            trunc(sysdate),'{_workcontext.CurrentUserinformation.User_id}','N','{model.EmployeeGroup}','{model.ItemGroup}','{model.DateFilter}','{model.CustomerGroup}','{model.FLAG}')";
+                        _dbContext.ExecuteSqlCommand(insertQuery);
+                        currentMonth++;
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+        public bool saveColData(ProfileModel model)
+        {
+            try
+            {
+                if (model.TargetId == 0)
+                {
+                    string query = $@"SELECT COALESCE(MAX(TARGET_ID), 0) + 1 AS TARGET_ID FROM IP_TARGET_SETUP where deleted_flag='N'";
+                    model.TargetId = this._dbContext.SqlQuery<int>(query).FirstOrDefault();
+                }
+                int currentMonth = 1;
+                    foreach (var data in model.GridData)
+                    {
+                        string insertQuery = $@"
+                                        INSERT INTO ip_target_setup
+                                        (
+                                            TARGET_ID,MONTH, MASTER_CODE, TARGET_TYPE, SUB_TARGET_TYPE, MU_CODE, 
+                                            TARGET_QUANTITY, TARGET_AMOUNT, TARGET_NAME, FROM_DATE, 
+                                            END_DATE, COMPANY_CODE, BRANCH_CODE, ASSIGN_EMPLOYEE, 
+                                            CREATED_DATE, CREATED_BY, DELETED_FLAG,EMPLOYEE_GROUP,ITEM_GROUP,DATE_FILTER,CUSTOMER_GROUP,FLAG
+                                        )
+                                        VALUES
+                                        ({model.TargetId},'{currentMonth}','{data.ItemCode}','{model.TargetType}','{model.SubTargetType}','{data.muCode}', 
+                                            {data.Quantity}, {data.Amount},'{model.TargetName}','{data.Date}', 
+                                            '{data.Date}','{ _workcontext.CurrentUserinformation.company_code}','{_workcontext.CurrentUserinformation.branch_code}','{data.ItemCode}', 
+                                            trunc(sysdate),'{_workcontext.CurrentUserinformation.User_id}','N','{model.EmployeeGroup}','{model.ItemGroup}','{model.DateFilter}','{model.CustomerGroup}','{model.FLAG}')";
+                        _dbContext.ExecuteSqlCommand(insertQuery);
+                        currentMonth++;
+                    }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+        public List<string> getEmployees(string empGroup)
+        {
+            try
+            {
+                var condition = string.Empty;
+
+                // Check if empGroup is not null or empty and format the condition accordingly
+                if (!string.IsNullOrEmpty(empGroup))
+                {
+                    condition = $@" AND LU.GROUPID in ({empGroup})";
+                }
+
+                string query = $@"SELECT DISTINCT ES.EMPLOYEE_CODE
+                          FROM HR_EMPLOYEE_SETUP ES
+                          JOIN DIST_LOGIN_USER LU ON LU.SP_CODE=ES.EMPLOYEE_CODE AND LU.COMPANY_CODE=ES.COMPANY_CODE
+                          WHERE ES.DELETED_FLAG='N' 
+                          AND LU.BRANDING='N'
+                          AND ES.COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' 
+                          {condition}
+                          ORDER BY LOWER(TRIM(' ('||ES.EMPLOYEE_CODE||')'))";
+
+                var result = this._dbContext.SqlQuery<string>(query).ToList();
+                return result;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+        public List<string> getSynergyEmployees(string empGroup)
+        {
+            try
+            {
+                var condition = string.Empty;
+                if (empGroup != "" && empGroup != null)
+                    condition = $@" AND PRE_EMPLOYEE_CODE in ({empGroup})";
+
+                string query = $@"select distinct EMPLOYEE_CODE from HR_EMPLOYEE_SETUP where group_sku_flag='I' and deleted_flag='N' and COMPANY_CODE = '{_workcontext.CurrentUserinformation.company_code}' {condition}";
+                var result = this._dbContext.SqlQuery<string>(query).ToList();
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public List<TARGET_PLAN> getAllTargets()
+        {
+            var company_code = this._workcontext.CurrentUserinformation.company_code;
+            var sqlquery = $@"SELECT DISTINCT TARGET_ID,TARGET_NAME, MIN(FROM_DATE) AS FROM_DATE,MAX(END_DATE) AS END_DATE
+                            FROM IP_TARGET_SETUP WHERE DELETED_FLAG = 'N' AND COMPANY_CODE='{company_code}' GROUP BY TARGET_ID, TARGET_NAME ORDER BY TARGET_ID DESC";
+            var target = _dbContext.SqlQuery<TARGET_PLAN>(sqlquery).ToList();
+            return target;
+        }
+        public string UpdateTarget(string targetId)
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                var message = "";
+                try
+                {
+                    var updateQuery = $@"UPDATE IP_TARGET_SETUP SET DELETED_FLAG='Y' WHERE TARGET_ID='{targetId}' AND COMPANY_CODE='{ _workcontext.CurrentUserinformation.company_code}'";
+                        _dbContext.ExecuteSqlCommand(updateQuery);
+                    transaction.Commit();
+                    message = "success";
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    message = "failed";
+                }
+                return message;
+            }
+        }
+        public TARGET_DETAILS GetTargetData(string targetId)
+        {
+            var targetDataQuery = $@"SELECT its.target_id, its.target_name, its.month,its.master_code as code,its.flag,
+               CASE WHEN its.sub_target_type = 'CUS' AND scs.customer_code IS NOT NULL THEN scs.customer_edesc
+            WHEN its.sub_target_type = 'ITM' AND itm.item_code IS NOT NULL THEN itm.item_edesc
+            WHEN its.target_type = 'COL' AND hr.employee_code IS NOT NULL THEN hr.employee_edesc
+               END AS master_code, its.target_type, its.sub_target_type, its.mu_code, its.target_quantity,its.item_group,its.employee_group,its.customer_group,
+               its.target_amount, its.from_date, its.end_date, its.company_code, its.branch_code, its.assign_employee, its.created_date, its.created_by, its.deleted_flag
+            FROM ip_target_setup its
+            LEFT JOIN hr_employee_setup hr ON hr.employee_code = its.master_code AND hr.company_code = its.company_code
+            LEFT JOIN ip_item_master_setup itm ON itm.item_code = its.master_code AND itm.company_code = its.company_code
+            LEFT JOIN sa_customer_setup scs ON scs.customer_code = its.master_code AND scs.company_code = its.company_code
+            WHERE its.company_code ='{_workcontext.CurrentUserinformation.company_code}' AND its.target_id = {targetId}  AND its.deleted_flag = 'N' order by its.from_date,
+            CASE 
+            WHEN its.sub_target_type = 'CUS' AND scs.customer_code IS NOT NULL THEN scs.customer_edesc
+            WHEN its.sub_target_type = 'ITM' AND itm.item_code IS NOT NULL THEN itm.item_edesc
+            WHEN its.target_type = 'COL' AND hr.employee_code IS NOT NULL THEN hr.employee_edesc
+            END";
+            var targetData = _dbContext.SqlQuery<TargetData>(targetDataQuery).ToList();
+            // Fetch DateFilter
+            var dateFilterQuery = $@"SELECT TARGET_ID, MIN(FROM_DATE) AS START_DATE, MAX(END_DATE) AS LAST_DATE,DATE_FILTER
+                             FROM IP_TARGET_SETUP 
+                             WHERE DELETED_FLAG = 'N' 
+                             AND TARGET_ID={targetId} 
+                             AND COMPANY_CODE='{_workcontext.CurrentUserinformation.company_code}' 
+                             GROUP BY TARGET_ID,DATE_FILTER 
+                             ORDER BY TARGET_ID DESC";
+            var dateFilter = _dbContext.SqlQuery<DateFilter>(dateFilterQuery).ToList();
+
+            // Create response object
+            var response = new TARGET_DETAILS
+            {
+                TargetData = targetData,
+                DateFilter = dateFilter
+            };
+
+            return response;
+        }
+
     }
 }

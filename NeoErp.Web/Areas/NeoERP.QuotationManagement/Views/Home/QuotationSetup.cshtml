@@ -1,172 +1,99 @@
 ﻿@{
     Layout = null;
 }
+@using NeoERP.QuotationManagement.Service.Models
+@model List<Company>
 
 <link href="@Styles.Url("~/Areas/NeoERP.QuotationManagement/Content/quotationSetup.css")" rel="stylesheet" />
-<style>
-    .gridebox {
-        border: solid #ddd 1px !important;
-    }
 
-    #kGrid {
-        font-size: 9px;
-    }
-
-    .topmargin {
-        margin-top: 10px;
-    }
-
-    .mbutton:hover {
-        color: #333;
-        text-decoration: none;
-    }
-
-    .tblbox input[type="search"] {
-        border: solid #ddd 1px !important;
-        max-height: 23px !important;
-    }
-
-    .customized-tbl th {
-        font-size: 12px !important;
-        border-bottom: none !important;
-    }
-
-    .customized-tbl td {
-        font-size: 11px !important;
-    }
-
-    .customized-tbl tfoot th {
-        border-top: solid #ddd 1px !important;
-    }
-
-    .mbutton i {
-        color: #666;
-        font-size: 18px !important;
-    }
-
-    .k-ff input.k-textbox {
-        float: right;
-        margin-bottom: 5px;
-        font-size: 11px;
-    }
-
-    .gridebox .k-header {
-        font-size: 12px !important;
-    }
-
-    .minpadding {
-        padding: 0px 6px 10px !important;
-    }
-
-
-        .minpadding .caption {
-            padding: 5px 0px !important;
-        }
-
-        .minpadding .topmargin {
-            margin-top: 6px !important;
-        }
-
-        .minpadding .caption-subject {
-            font-size: 14px !important;
-        }
-
-    .tooltip {
-        position: absolute !important;
-        z-index: 800000 !important;
-    }
-
-    .dataserarch-input {
-        margin-top: 2px;
-    }
-</style>
 
 <div class="col-md-12 bodyController" ng-controller="quotationSetup">
     <div class="portlet light form-fit bordered bottomspance">
-        <div class="portlet">
-            <div class="portlet-body">
-                <div id="splitter" kendo-splitter k-orientation="orientation" k-rebind="orientation">
-                    <div>
-                        <div class="portlet box green-box tab-box">
-                            <div class="portlet-title">
-                                <div class="caption">
-                                    <a class="btn-back pull-left" data-toggle="tooltip" data-placement="top" title="Back To Dashboard" ng-click="BackFromMenu()">
-                                        <i class="fa fa-arrow-circle-left"></i>
-                                    </a>
-                                    <i class="fa fa-gift font-green-haze"></i>
-                                    <span class="caption-subject font-white-haze bold uppercase">Add Quotation</span>
-                                </div>
-                                <a class="btn btn-sm btn-theme" style="float:right; margin:1px 0px 0px 0px" data-toggle="tooltip" data-placement="left" title="Add" href="/QuotationManagement/Home/Index#!QM/AddQuotation">
-                                    <i class="fa fa-plus-circle" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                            <div class="portlet-body">
-                                <div class="">
-                                    <div class="dataserarch-input">
-                                        <input class="k-textbox" type="text" id="txtSearchString" name="search" placeholder="enter search text..." style="z-index:1000;margin:3px;" />
-                                    </div>
-                                    <div class="row kendo_table">
-                                        <kendo-grid options="grid" id="grid"></kendo-grid>
-                                        @Html.Partial("~/Views/Shared/Controls/_GridToolbar.cshtml")
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <div class="portlet box green-box main">
+            <div class="portlet-title">
+                <div class="caption">
+                    <a class="btn-back pull-left" data-toggle="tooltip" data-placement="top" title="Back To Dashboard" href="/QuotationManagement/Home/Dashboard">
+                        <i class="fa fa-arrow-circle-left"></i>
+                    </a>
+                    <i class="fa fa-gift font-white-haze"></i>
+                    <span class="caption-subject font-white-haze bold uppercase">Quotation Setup</span>
+                </div>
+            </div> 
+        </div>
+
+        <div class="portlet-body light bg-inverse" ng-show="tablePanel">
+            <div class="row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                <div class="col-md-3" style="flex: 1;">
+                    <div class="topsearch" style="display: block;">
+                        <input class="k-textbox txtSearchString" type="text" id="itemtxtSearchString" ng-model="txtSearchString" name="search" placeholder="Search...." style="width: 35%;" />
+                    </div>
+                </div>
+                <div class="col-md-4" style="flex: none;">
+                    <div class="actions text-right">
+                        <a class="btn dark-green btn-sm addcolor" id="createbtn" ng-disabled="treenodeselected" ng-click="AddButtonClickEvent()" data-loading-text="<i class='fa fa-spinner fa-spin'></i> Processing..." href="javascript:;" style="margin-left: 0;">
+                            <i class="fa fa-plus"></i> NEW
+                        </a>
                     </div>
                 </div>
             </div>
+            <div id="kGrid"></div>
         </div>
     </div>
 </div>
 
 <script>
-    $("#txtSearchString").keyup(function () {
-        debugger;
-        var val = $(this).val();
-        var grid = $("#grid").data("kendoGrid");
-        var tempServerFilter = grid.dataSource.options.serverFiltering;
-        grid.dataSource.options.serverFiltering = false;
-        var filter = [];
-        $.each(grid.columns, function (i, v) {
-            if (v.field != undefined) {
-                var searchText = $.trim($("#txtSearchString").val());
-                var model = grid.dataSource.options.schema.model.fields[v.field];
-                var type = "string";
-                if (model != undefined)
-                    type = model.type;
-                if (type === "string")
-                    filter.push({ field: v.field, operator: "contains", value: searchText });
-                else if (type === "number")
-                    filter.push({ field: v.field, operator: "eq", value: searchText });
-                else if (type === "date") {
-                    var dateValue = new Date(searchText);
-                    searchText = dateValue == "Invalid Date" ? searchText : dateValue;
-                    filter.push({ field: v.field, operator: "eq", value: searchText });
-                }
-            }
+    function dateSet(date) {
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        date = date.getFullYear() + '/' +
+            (('' + month).length < 2 ? '0' : '') + month + '/' +
+            (('' + day).length < 2 ? '0' : '') + day;
+        return date;
+    }
+    function setNepaliDateFromEnglish() {
+        var engDate = $("#englishdatedocument").val();
+        var formattedDate = moment(engDate, 'M/D/YYYY').format('DD-MMM-YYYY');
+        $("#englishdatedocument").val(formattedDate);
+        var formattedEngDate = moment(engDate, 'M/D/YYYY').format('YYYY-MM-DD');
+        var nepaliDate = AD2BS(formattedEngDate);
+        $("#nepaliDate").val(nepaliDate);
+    }
+    function formatValidDate() {
+        var engDate = $("#validDt").val();
+        var formattedDate = moment(engDate, 'M/D/YYYY').format('DD-MMM-YYYY');
+        $("#validDt").val(formattedDate);
 
-        });
-        var filter = {
-            logic: "or",
-            filters: filter,
+        var issueDt = moment($("#englishdatedocument").val(), 'DD-MMM-YYYY');
+        var validUntilDt = moment(engDate, 'M/D/YYYY');
+
+        if (validUntilDt.isBefore(issueDt)) {
+            displayPopupNotification("To be Deliver Date cannot be greater than  Date/Miti date.","error");
         }
-
-        grid.dataSource.filter(filter);
-
-        if ($("#txtSearchString").val().length == 0)
-            grid.dataSource.filter([]);
-        grid.bind("dataBound", function () {
-            grid.dataSource.options.serverFiltering = tempServerFilter;
-        });
-    });
-
-    //function redirectEditOrder(orderNo) {
-    //    window.location.href = "/DocumentTemplate/Home/Index#!DT/formtemplates/" + document.ttt + "/" + orderNo + ""
-    //    productAutocomplete();
+    }
+    //function showMessage(message) {
+    //    var popMessageElement = $(".popContainer .popContent .popMessage");
+    //    popMessageElement.text(message);
+    //    $(".popContainer").show();
     //}
-    //tooltip script
-    $('a').tooltip();
-    $(document).ready(function () {
-        $('[data-toggle="tooltip"]').tooltip();
+
+    function ConvertNepToEng(e) {
+        var date = BS2AD($("#nepaliDate").val());
+        var FormattedEngDate = moment(date).format('DD-MMM-YYYY');
+        $("#englishdatedocument").val(FormattedEngDate);
+    }
+    $(".nepali-calendar").nepaliDatePicker({
+        //  ndpEnglishInput: 'englishdatedocument',
+        npdMonth: true,
+        onFocus: true,
+        npdYear: true,
+        npdYearCount: 10,
+        altFormat: "dd-MMM-YYYY",
+        dateFormat: "dd-MMM-YYYY",
+        onChange: function (evt) {
+            var nepaliDate = $("#nepaliDate").val(); // Get the Nepali date value
+            var engDate = BS2AD(nepaliDate); // Convert Nepali date to English date
+            var formattedEngDate = moment(engDate).format('DD-MMM-YYYY'); // Format the English date
+            $("#englishdatedocument").val(formattedEngDate); // Update the English date input field
+        }
     });
 </script>

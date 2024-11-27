@@ -1127,7 +1127,6 @@
     }
 
     function detailInit(e) {
-        console.log(e);
         var detailRow = e.detailRow;
         var Rowdata = e.data;
         var id = Rowdata.ORDER_NO;
@@ -1254,6 +1253,8 @@
             pageSize: reportConfig.defaultPageSize,
             pageable: true,
         });
+        console.log(detailRow);
+        console.log(dataSourceITem);
         detailRow.find(".orders").kendoGrid({
             dataSource: dataSourceITem,
             //height: 400,

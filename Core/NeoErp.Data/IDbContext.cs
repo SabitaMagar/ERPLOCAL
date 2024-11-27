@@ -15,6 +15,7 @@ namespace NeoErp.Data
         /// </summary>
         /// <typeparam name="TEntity">Entity type</typeparam>
         /// <returns>DbSet</returns>
+        /// 
         IDbSet<TEntity> Set<TEntity>() where TEntity : BaseEntity;
 
         /// <summary>
@@ -70,5 +71,6 @@ namespace NeoErp.Data
         /// Gets or sets a value indicating whether auto detect changes setting is enabled (used in EF)
         /// </summary>
         bool AutoDetectChangesEnabled { get; set; }
+        Database Database { get; }
     }
 }

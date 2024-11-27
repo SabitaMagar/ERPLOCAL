@@ -291,10 +291,6 @@ namespace NeoErp.Models.Settings
             }
             return menuControlList;
         }
-
-
-       
-
         public string getChangeMenuOrder(List<MenuOrderModels> modal)
         {
             var num = 0;

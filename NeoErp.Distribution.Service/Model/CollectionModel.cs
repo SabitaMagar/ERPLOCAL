@@ -30,6 +30,10 @@ namespace NeoErp.Distribution.Service.Model
         public string DELETED_FLAG { get; set; }
         public string CREATED_DATE { get; set; }
         public string SAVE_FLAG { get; set; }
+        public string CHEQUE_IMAGE { get; set; }
+        public string SIGNATURE_IMAGE { get; set; }
+        public string CASH_IMAGE { get; set; }
+
     }
     public class DivisionModel
     {

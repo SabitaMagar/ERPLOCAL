@@ -14,8 +14,8 @@
     }
 
     /*.page-bar {
-        margin-bottom: 0px !important;
-    }*/
+            margin-bottom: 0px !important;
+        }*/
 
     .k-grid table {
         table-layout: fixed;
@@ -25,8 +25,8 @@
         background-color: red;
     }
     /*#grid thead{
-              font-size:11px;
-         }*/
+                  font-size:11px;
+             }*/
     .k-grid td {
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -145,10 +145,10 @@
             border-color: #4d90fe;
         }
     /*.k-list-container
-           {
-               max-height:150px !important;
-               overflow-y:auto !important;
-           }*/
+               {
+                   max-height:150px !important;
+                   overflow-y:auto !important;
+               }*/
 
 
 
@@ -204,10 +204,10 @@
             background: inherit;
             left: 12px;
         }
-        
-      /*#ResellerCreateForm .k-multiselect-wrap li {
-    margin: 2px 2px 1px 4px !important;
-}*/
+
+    /*#ResellerCreateForm .k-multiselect-wrap li {
+        margin: 2px 2px 1px 4px !important;
+    }*/
     #ResellerCreateForm .k-multiselect-wrap.k-floatwrap {
         height: auto !important;
     }
@@ -256,10 +256,14 @@
                 <div class="btn-group" style="margin-top:10px;">
                     <input id="avatar" type="file" name="avatar" style="width:185px;" />
                 </div>
+
                 <div class="btn-group">
                     <a href="javascript:void(0)" id="uploadExcel" class="pull-right btn btn-circle btn-icon-only btn-default">
                         <i class="fa fa-upload"></i>
                     </a>
+                </div>
+                <div class="btn-group">
+                    @Html.Partial("~/Views/Shared/Controls/DateField.cshtml", false)
                 </div>
                 <div class="btn-group">
                     <a target="_self" class="pull-right btn btn-circle btn-icon-only btn-default" href="~/Pictures/Distribution/Format/ResellerFormat.xlsx" data-toggle="tooltip" title="Download Excel Format.." download>
@@ -373,7 +377,7 @@
                                                 <span ng-show="ResellerCreateForm.ResellerNumber.$error.email">*</span>
                                             </span>
                                         </label>
-                                        <input id="ResellerNumber" type="number" name="ResellerNumber" data-ng-model="ResellerNumber" class="form-control  ng-pristine ng-empty ng-invalid ng-invalid-required ng-touched" placeholder="Number" string-to-number/>
+                                        <input id="ResellerNumber" type="number" name="ResellerNumber" data-ng-model="ResellerNumber" class="form-control  ng-pristine ng-empty ng-invalid ng-invalid-required ng-touched" placeholder="Number" string-to-number />
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-4">
@@ -586,6 +590,9 @@
 
     </div>
 </div>
+<script src="@Scripts.Url("~/JS/reportFilter.js")"></script>
+<script src="@Scripts.Url("~/JS/DateFilter.js")" type="text/javascript"></script>
+<script src="@Scripts.Url("~/Areas/NeoErp.Distribution/js/MenuNavigation.js?V2")"></script>
 <script>
     var a = location.hash;
     var b = location.pathname;
@@ -639,7 +646,11 @@
             alert("FormData is not supported.");
         }
     });
+    $(document).ready(function () {
+        DateFilter.init(function () {
+            consolidate.init(function () {
+                BindGrid();
+            });
+        });
+    });
 </script>
-<script src="@Scripts.Url("~/JS/reportFilter.js")"></script>
-
-<script src="@Scripts.Url("~/Areas/NeoErp.Distribution/js/MenuNavigation.js?V2")"></script>

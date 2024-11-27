@@ -20,11 +20,6 @@ namespace NeoErp.Distribution.Controllers.Api
             this._workContext = workContext;
         }
         [HttpGet]
-
-
-
-
-
         public List<UserSetupModel> GetUserList()
         {
             var data = _objectEntity.GetAllUserList(_workContext.CurrentUserinformation);

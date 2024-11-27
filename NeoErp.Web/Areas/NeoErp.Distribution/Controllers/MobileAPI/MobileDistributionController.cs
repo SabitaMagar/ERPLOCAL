@@ -36,9 +36,19 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                 try
                 {
 
-                    if (System.Web.HttpContext.Current.Request.ContentType.Contains("multipart/form-data"))
+                   if (System.Web.HttpContext.Current.Request.ContentType.Contains("multipart/form-data"))
                     {
                         var ValueForm = System.Web.HttpContext.Current.Request.Form;
+                        // Create a dictionary to hold form data
+                        var formData = new Dictionary<string, string>();
+
+                        // Iterate through the form collection and add key-value pairs to the dictionary
+                        foreach (string key in ValueForm)
+                        {
+                            formData.Add(key, ValueForm[key]);
+                        }
+                        // Serialize the dictionary to JSON
+                        string json = JsonConvert.SerializeObject(formData);
                         System.Web.HttpFileCollection hfc = System.Web.HttpContext.Current.Request.Files;
                         var data = this._actionSelector.SelectAction(ValueForm, hfc, _dbContext);
                         Output.result = data;
@@ -97,7 +107,10 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
 
                             newToken = token.SelectToken("createReseller");
                             var Resellers = (newToken == null || !newToken.HasValues) ? new List<CreateResellerModel>() : newToken.ToObject<List<CreateResellerModel>>();
-
+                            /*sashi*/
+                            newToken = token.SelectToken("createDistributor");
+                            var Distributors = (newToken == null || !newToken.HasValues) ? new List<CreateDistributorModel>() : newToken.ToObject<List<CreateDistributorModel>>();
+                            /*sashi*/
                             newToken = token.SelectToken("schemes");
                             var Schemes = (newToken == null || !newToken.HasValues) ? new List<SchemeModel>() : newToken.ToObject<List<SchemeModel>>();
 
@@ -463,7 +476,6 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                                 catch (Exception ex) { }
                             }
 
-
                             //cancel purchase orders updates
                             var cancelPurchaseOrderRes = new Dictionary<string, string>();  
                             foreach (var item in cancledPurchaseOrder)
@@ -559,7 +571,6 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                                 }
                                 catch (Exception ex) { }
                             }
-
                             //update reseller stocks
                             var resellerStockRes = new Dictionary<string, string>();
                             foreach (var item in ResellerStock)
@@ -591,7 +602,29 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                                     }
                                 }
                             }
+                            /*sashi*/
+                            // Add Distributor
+                            //update dealer stocks
+                            var createDistributorDis = new Dictionary<string, string>();
+                            foreach (var item in Distributors)
+                            {
+                                try
+                                {
+                                    var result = this._service.CreateDistributor(item, _dbContext);
+                                    createDistributorDis = createDistributorDis.Concat(result).ToDictionary(x => x.Key, x => x.Value);
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (ex.Message == "EXISTS")
+                                    {
+                                        var result = new Dictionary<string, string>();
+                                        result.Add(item.Sync_Id, "Distributor already exists with same pan number");
+                                        createDistributorDis = createDistributorDis.Concat(result).ToDictionary(x => x.Key, x => x.Value);
+                                    }
+                                }
+                            }
 
+                            /*sashi*/
                             //Schemes
                             var schemeRes = new Dictionary<string, string>();
                             foreach (var item in Schemes)
@@ -695,7 +728,24 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                             Output.error = "";
                         }
                         #endregion Offline services
-
+                        //#region Profile Details
+                        //else if (action.Equals("profileDetails", StringComparison.OrdinalIgnoreCase))
+                        //{
+                        //    ProfileDetailsModel model = token.ToObject<ProfileDetailsModel>();
+                        //    var data = new Dictionary<string, object>();
+                        //    if (model == null)
+                        //    {
+                        //        throw new ArgumentException("Model is null or empty");
+                        //    }
+                        //    else
+                        //    {
+                        //        data = _service.SynProfileData(model, _dbContext);
+                        //    }
+                        //    Output.result = data;
+                        //    Output.response = true;
+                        //    Output.error = "";
+                        //}
+                        //#endregion Profile Details
                         else //go for online processing
                         {
                             if (token is JObject)
@@ -723,7 +773,7 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                     }
                     trans.Commit();
                 }
-                catch (JsonReaderException)
+                catch (JsonReaderException ex)
                 {
                     Output.result = new List<object>();
                     Output.response = false;
@@ -745,7 +795,6 @@ namespace NeoErp.Distribution.Controllers.MobileAPI
                     Output.response = false;
                 }
             }
-
             return Output;
         }
     }

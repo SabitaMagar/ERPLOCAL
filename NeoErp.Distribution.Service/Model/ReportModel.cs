@@ -310,6 +310,8 @@ namespace NeoErp.Distribution.Service.Model
         public DateTime? LAST_CALL { get; set; }
         public DateTime? ATTNCHECKOUT { get; set; }
         public string ROUTE_NAME { get; set; }
+        public string REMARKS { get; set; }
+
 
     }
 

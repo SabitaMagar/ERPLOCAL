@@ -298,7 +298,7 @@ namespace NeoErp.Distribution.Controllers.Api
                             //}
 
                             //apprAmt = dataupdate.APPROVEQTY + modelrequest[count].APPROVEQTY;
-                            var partialUpdate = $@"UPDATE DIST_IP_SSD_PURCHASE_ORDER SET REJECT_FLAG='N',APPROVE_QTY = {apprQty}, APPROVE_AMT = {apprAmt}, QUANTITY={modelrequest[count].QUANTITY - modelrequest[count].APPROVEQTY} WHERE ORDER_NO = {modelrequest[count].ORDER_NO} and ITEM_CODE = {modelrequest[count].ITEM_CODE}";
+                            var partialUpdate = $@"UPDATE DIST_IP_SSD_PURCHASE_ORDER SET REJECT_FLAG='N',APPROVE_QTY = {apprQty}, APPROVE_AMT = {apprAmt}, QUANTITY={modelrequest[count].QUANTITY - modelrequest[count].APPROVEQTY},SALES_ORDER_NO='{data}' WHERE ORDER_NO = {modelrequest[count].ORDER_NO} and ITEM_CODE = {modelrequest[count].ITEM_CODE}";
                             var Pupdate = _objectEntity.ExecuteSqlCommand(partialUpdate);
                             count++;
                         }

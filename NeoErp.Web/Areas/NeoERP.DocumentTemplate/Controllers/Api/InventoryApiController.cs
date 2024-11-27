@@ -1322,7 +1322,8 @@ namespace NeoERP.DocumentTemplate.Controllers.Api
                             return Request.CreateResponse(HttpStatusCode.InternalServerError, new { MESSAGE = "ERROR", STATUS_CODE = (int)HttpStatusCode.InternalServerError });
                         }
                     }
-                    return Request.CreateResponse(HttpStatusCode.OK, new { MESSAGE = msg, STATUS_CODE = (int)HttpStatusCode.OK, VoucherNo = VoucherNumberGeneratedNo, SessionNo = newvoucherNo, VoucherDate = primarydate, FormCode = model.Form_Code });
+                    return Request.CreateResponse(HttpStatusCode.OK, new { MESSAGE = msg, STATUS_CODE = (int)HttpStatusCode.OK, VoucherNo = VoucherNumberGeneratedNo, 
+                        No = newvoucherNo, VoucherDate = primarydate, FormCode = model.Form_Code });
                 }
                 catch (Exception ex)
                 {

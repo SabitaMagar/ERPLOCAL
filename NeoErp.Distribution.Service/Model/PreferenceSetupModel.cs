@@ -52,5 +52,10 @@ namespace NeoErp.Distribution.Service.Model
         public string DISABLE_LOCATION { get; set; }
         public string SO_REPO_RATE_TABLE { get; set; }
         public string SO_REPO_RATE_COLUMN { get; set; }
+        public string SO_SYN_DISCOUNT { get; set; }
+        public string SO_CUSTOM_DISCOUNT { get; set; }
+        public string PO_PRIORITY { get; set; }
+        public string SO_RESELLER_DISCOUNT { get; set; }
+        public string SO_SALES_ORDER { get; set; }
     }
 }

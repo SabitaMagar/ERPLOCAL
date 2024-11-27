@@ -24,7 +24,6 @@ QMModule.config(function ($routeProvider, $locationProvider) {
     });
     $routeProvider.when('/AddQuotation', {
         templateUrl: '/QuotationManagement/Home/AddQuotation',
-        controller: 'AddQuotation'
     });
 
     $routeProvider.when('/QuotationDetail/:id',
@@ -62,7 +61,7 @@ QMModule.config(function ($routeProvider, $locationProvider) {
 
                 return '/QuotationManagement/Home/ViewQuotation?id=' + stateParams.id;
             },
-            controller: 'AddQuotation',
+            controller: 'ViewQuotation',
             resolve: {
                 module: function ($route) { return $route.current.params.id; }
             }
@@ -74,7 +73,7 @@ QMModule.config(function ($routeProvider, $locationProvider) {
 
                 return '/QuotationManagement/Home/EditQuotation?id=' + stateParams.id;
             },
-            controller: 'AddQuotation',
+            controller: 'EditQuotation',
             resolve: {
                 module: function ($route) { return $route.current.params.id; }
             }

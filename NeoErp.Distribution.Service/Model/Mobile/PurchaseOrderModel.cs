@@ -11,6 +11,7 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string reseller_code { get; set; }
         public string distributor_code { get; set; }
         public string type { get; set; }
+        public string login_code { get; set; }
         public string Order_No { get; set; }
         public string Order_Date { get; set; }
         public string Dispatch_From { get; set; }
@@ -22,16 +23,21 @@ namespace NeoErp.Distribution.Service.Model.Mobile
     {
         public string item_code { get; set; }
         public string mu_code { get; set; }
+        public string form_code { get; set; }
         public int quantity { get; set; }
         public string reject_flag { get; set; }
         public decimal rate { get; set; }
+        public decimal discountRate { get; set; }
+        public decimal discountPercentage { get; set; }
+        public decimal discount { get; set; }
         public string billing_name { get; set; }
         public string remarks { get; set; }
         public string party_type_code { get; set; }
         public string Sync_Id { get; set; }
-        public string Po_Shipping_Address { get; set; }
-        public string Po_Shipping_Contact { get; set; }
-        public string Po_Sales_Type { get; set; }
+        public string PRIORITY_STATUS_CODE { get; set; }
+        public string CITY_CODE { get; set; }
+        public string SHIPPING_CONTACT { get; set; }
+        public string SALES_TYPE_CODE { get; set; }
     }
 
     public class CancelledProductModal

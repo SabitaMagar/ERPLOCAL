@@ -211,6 +211,18 @@ planningModule.config(function ($routeProvider, $locationProvider, $httpProvider
             templateUrl: '/Planning/DistributionPlaning/CreateTargetSetup',
             controller: 'TargetSetup'
         });
+    $routeProvider.when('/ViewTarget/:targetId',
+         {
+             templateUrl: function (stateParams) {
+                 return '/Planning/DistributionPlaning/ViewTarget?targetId=' + stateParams.targetId;
+              },
+        });
+    $routeProvider.when('/EditTarget/:targetId',
+        {
+            templateUrl: function (stateParams) {
+                return '/Planning/DistributionPlaning/EditTarget?targetId=' + stateParams.targetId;
+            },
+        });
     // plan report
     $routeProvider.when('/MonthlyWiseSalesPlanReport',
         {

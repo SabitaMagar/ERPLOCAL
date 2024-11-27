@@ -107,10 +107,16 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     throw new Exception("No records found");
                 Output = data;
             }
+            //else if (Action.Equals("fetchTransactions", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    TransactionRequestModel model = token.ToObject<TransactionRequestModel>();
+            //    var data = _mobileService.FetchTransactions(model, dbContext);
+            //    Output = data;
+            //}
             else if (Action.Equals("fetchTransactions", StringComparison.OrdinalIgnoreCase))
             {
                 TransactionRequestModel model = token.ToObject<TransactionRequestModel>();
-                var data = _mobileService.FetchTransactions(model, dbContext);
+                var data = _mobileService.FetchSubLedgers(model, dbContext);
                 Output = data;
             }
             else if (Action.Equals("fetchTransactionsMoveAnislis", StringComparison.OrdinalIgnoreCase))
@@ -239,20 +245,52 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 Output = data;
 
             }
-            else if (Action.Equals("profile", StringComparison.OrdinalIgnoreCase))
-            {
-                ProfileDetails model = token.ToObject<ProfileDetails>();
-                var data = new Dictionary<string, object>();
-                data = _mobileService.fetchProfileDetails(model, dbContext);
-                Output = data;
+            //else if (Action.Equals("profile", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    ProfileDetails model = token.ToObject<ProfileDetails>();
+            //    var data = new Dictionary<string, object>();
+            //    data = _mobileService.fetchProfileDetails(model, dbContext);
+            //    Output = data;
+            //}
 
+            else if (Action.Equals("profileDetails", StringComparison.OrdinalIgnoreCase))
+            {
+                ProfileDetailsModel model = token.ToObject<ProfileDetailsModel>();
+                var data = new Dictionary<string, object>();
+                data = _mobileService.SynProfileData(model, dbContext);
+                Output = data; 
+            }
+            else if (Action.Equals("AreaCustomerWise", StringComparison.OrdinalIgnoreCase))
+            {
+                ProfileDetailsModel model = token.ToObject<ProfileDetailsModel>();
+                var data = new Dictionary<string, object>();
+                data = _mobileService.SynAreaCustomerData(model, dbContext);
+                Output = data;
+            }
+            else if (Action.Equals("ProductQuantityWise", StringComparison.OrdinalIgnoreCase))
+            {
+                ProfileDetailsModel model = token.ToObject<ProfileDetailsModel>();
+                var data = new Dictionary<string, object>();
+                data = _mobileService.SynProductQuantityData(model, dbContext);
+                Output = data;
+            }
+            else if (Action.Equals("SalesVsCollection", StringComparison.OrdinalIgnoreCase))
+            {
+                ProfileDetailsModel model = token.ToObject<ProfileDetailsModel>();
+                var data = _mobileService.fetchSalesVsCollectionData(model, dbContext);
+                Output = data;
+            }
+            else if (Action.Equals("LatestClosingStock", StringComparison.OrdinalIgnoreCase))
+            {
+                ClosingStockModel model = token.ToObject<ClosingStockModel>();
+                var data = _mobileService.fetchLatestClosingStock(model, dbContext);
+                Output = data;
             }
             else if (Action.Equals("fetchSchemeReportData", StringComparison.OrdinalIgnoreCase))
             {
                 SchemeReportRequestModel model = token.ToObject<SchemeReportRequestModel>();
                 var data = _mobileService.fetchSchemeReportData(model, dbContext);
                 Output = data;
-
             }
 
             #endregion Fetching
@@ -288,12 +326,12 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 var data = _mobileService.NewPurchaseOrder(model, dbContext);
                 Output = data;
             }
-            else if (Action.Equals("newCollection", StringComparison.OrdinalIgnoreCase))
-            {
-                CollectionRequestModel model = token.ToObject<CollectionRequestModel>();
-                var data = _mobileService.NewCollection(model, dbContext);
-                Output = data;
-            }
+            //else if (Action.Equals("newCollection", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    CollectionRequestModel model = token.ToObject<CollectionRequestModel>();
+            //    var data = _mobileService.NewCollection(model, dbContext);
+            //    Output = data;
+            //}
             else if (Action.Equals("newMarketingInformation", StringComparison.OrdinalIgnoreCase))
             {
                 InformationSaveModel model = token.ToObject<InformationSaveModel>();
@@ -377,7 +415,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 }
                 if (listModel.Count > 0)
                     listModel[0].Remarks = remarks;
-                var mailStatus = _mobileService.SendEODMail(listModel, dbContext);
+                //var mailStatus = _mobileService.SendEODMail(listModel, dbContext);
 
                 Output = result;
             }
@@ -447,6 +485,105 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 }
                 Output = this._mobileService.CreateReseller(model, Files, coll, dbContext);
             }
+            else if (Action.Equals("createDistributor", StringComparison.OrdinalIgnoreCase))
+            {
+                var model = new CreateDistributorModel()
+                {
+                    user_id = Form["user_id"],
+                    distributor_name = Form["distributor_name"],
+                    area_code = Form["area_code"],
+                    address = Form["address"],
+                    pan = Form["pan_no"],
+                    //wholeseller = Form["wholeseller"],
+                    //type_id = Form["type_id"],
+                    //subtype_id = Form["subtype_id"],
+                    Group_id = Form["group_Id"],
+                    distributor_code = Form["distributor_code"],
+                    //wholeseller_code = Form["wholeseller_code"],
+                    Distributor_contact = Form["Distributor_contact"],
+                    COMPANY_CODE = Form["COMPANY_CODE"],
+                    BRANCH_CODE = Form["BRANCH_CODE"],
+                    DISTRIBUTOR_TYPE_ID = Form["DISTRIBUTOR_TYPE_ID"],
+                    DISTRIBUTOR_SUBTYPE_ID = Form["DISTRIBUTOR_SUBTYPE_ID"],
+                    latitude = Form["latitude"],
+                    longitude = Form["longitude"],
+                    email = Form["email"] ?? "",
+                    ROUTE_CODE = Form["ROUTE_CODE"] ?? "",
+                };
+                for (int i = 0; ; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(Form["contact[" + i + "][name]"]))
+                        break;
+                    var con = new ContactModel
+                    {
+                        contact_suffix = Form["contact[" + i + "][contact_suffix]"],
+                        designation = Form["contact[" + i + "][designation]"],
+                        name = Form["contact[" + i + "][name]"],
+                        number = Form["contact[" + i + "][number]"],
+                        primary = Form["contact[" + i + "][primary]"],
+                    };
+                    model.contact.Add(con);
+                }
+                var coll = new Dictionary<string, string>();
+                foreach (string tagName in Files)
+                {
+
+                    //String data = tagName + "[description]";
+                    //System.Diagnostics.Debug.WriteLine(tagName + "[description]");
+                    coll.Add(tagName, Form[tagName + "[description]"]);
+                }
+                Output = this._mobileService.CreateDistributor(model, Files, coll, dbContext);
+            }
+            else if (Action.Equals("newCollection", StringComparison.OrdinalIgnoreCase))
+            {
+
+
+                //VALUES('{model.sp_code}', '{model.entity_code}', '{model.entity_type}', '{model.bill_no}', '{model.cheque_no}', '{model.bank_name}', '{model.amount}', '{model.payment_mode}', TO_DATE('{model.cheque_clearance_date}', 'dd-mm-yyyy'),
+                // '{model.cheque_deposit_bank}', '{model.latitude}', '{model.longitude}', '{model.remarks}', '{model.created_by}', 'N', '{model.COMPANY_CODE}', '{model.BRANCH_CODE}')";
+
+                var model = new CollectionRequestModel()
+                {
+                    sp_code = Form["sp_code"],
+                    entity_code = Form["entity_code"],
+                    entity_type = Form["entity_type"],
+                    bill_no = Form["bill_no"],
+                    cheque_no = Form["cheque_no"],
+                    bank_name = Form["bank_name"],
+                    amount = Form["amount"],
+                    payment_mode = Form["payment_mode"],
+                    cheque_clearance_date = Form["cheque_clearance_date"],
+                    cheque_deposit_bank = Form["cheque_deposit_bank"],
+                    latitude = Form["latitude"],
+                    longitude = Form["longitude"],
+                    remarks = Form["remarks"],
+                    created_by = Form["created_by"],
+                    COMPANY_CODE = Form["COMPANY_CODE"],
+                    BRANCH_CODE = Form["BRANCH_CODE"],
+                    otp_code = Form["OTP_CODE"]
+                };
+
+                //for (int i = 0; ; i++)
+                //{
+                //    if (string.IsNullOrWhiteSpace(Form["contact[" + i + "][name]"]))
+                //        break;
+                //    var con = new ContactModel
+                //    {
+                //        contact_suffix = Form["contact[" + i + "][contact_suffix]"],
+                //        designation = Form["contact[" + i + "][designation]"],
+                //        name = Form["contact[" + i + "][name]"],
+                //        number = Form["contact[" + i + "][number]"],
+                //        primary = Form["contact[" + i + "][primary]"],
+                //    };
+                //    model.contact.Add(con);
+                //}
+                //var coll = new Dictionary<string, string>();
+                //foreach (string tagName in Files)
+                //{
+                //    coll.Add(tagName, Form[tagName + "[description]"]);
+                //}
+                Output = this._mobileService.NewCollection(model, Files, dbContext);
+            }
+
             else if (Action.Equals("uploadEntityMedia", StringComparison.OrdinalIgnoreCase))
             {
                 var model = new EntityRequestModel()
@@ -567,43 +704,88 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             else if (Action.Equals("uploadSalesReturnMedia", StringComparison.OrdinalIgnoreCase))
             {
                 var time = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
-                //var salesReturn = new EntityRequestModel()
-                //{
-                //    ACC_CODE = Form["SP_CODE"],
-                //    COMPANY_CODE = Form["COMPANY_CODE"],
-                //    BRANCH_CODE = Form["BRANCH_CODE"],
-                //    entity_code = Form["SP_CODE"],
-                //    user_id = Form["user_id"],
-                //    Saved_Date = time,
-                //    item_code = Form["itemcode[0]"]
-                //};
-                //attenModel.entity_type = Form["ENTITY_TYPE"];
+                var coll = new Dictionary<string, string>();
+                var model = new DistributionSalesReturnModel()
+                {
+                    ORDER_NO = Form["ORDER_NO"],
+                    COMPANY_CODE = Form["COMPANY_CODE"],
+                    BRANCH_CODE = Form["BRANCH_CODE"],
+                    CUSTOMER_CODE = Form["CUSTOMER_CODE"],
+                    user_id = Form["user_id"],
+                    P_KEY = Form["P_KEY"],
+                    ORDER_DATE = DateTime.Parse(Form["ORDER_DATE"]),
+                    ENTITY_TYPE = Form["ENTITY_TYPE"],
+                    RESELLER_CODE = Form["RESELLER_CODE"],
+                    CONDITION = Form["CONDITION"],
+                    COMPLAIN_TYPE = Form["COMPLAIN_TYPE"],
+                    SERIOUSNESS = Form["SERIOUSNESS"],
+                    REMARKS_DIST = Form["REMARKS_DIST"],
+                    REMARKS_ASM = Form["REMARKS_ASM"],
+                    CREATED_BY = Form["SP_CODE"],
+                    CREATED_DATE = DateTime.Parse(Form["CREATED_DATE"]),
+                    SAVED_DATE = DateTime.Parse(Form["SAVED_DATE"]),
+                    CURRENCY_CODE = Form["CURRENCY_CODE"],
+                    EXCHANGE_RATE = Form["EXCHANGE_RATE"],
+                    APPROVED_FLAG = Form["APPROVED_FLAG"],
+                    DISPATCH_FLAG = Form["DISPATCH_FLAG"],
+                    WHOLESELLER_CODE = Form["WHOLESELLER_CODE"],
+                    ACKNOWLEDGE_FLAG = Form["ACKNOWLEDGE_FLAG"],
+                    REJECT_FLAG = Form["REJECT_FLAG"],
+                    DELETED_FLAG = Form["DELETED_FLAG"],
+                    SYN_ROWID = Form["SYN_ROWID"],
+                    MODIFY_DATE = DateTime.Parse(Form["MODIFY_DATE"]),
+                    MODIFY_BY = Form["MODIFY_BY"],
+                    BILLING_NAME = Form["BILLING_NAME"],
+                    DISPATCH_FROM = Form["DISPATCH_FROM"]
+                };
+                for (int i = 0; ; i++)
+                {
+                    if (string.IsNullOrEmpty(Form["products[" + i + "][SYNC_ID]"]))
+                    {
+                        break;
+                    }
+                    var con = new SalesReturnProductInfo
+                    {
+                        SYNC_ID = Form["products[" + i + "][SYNC_ID]"],
+                        MU_CODE = Form["products[" + i + "][MU_CODE]"],
+                        ITEM_CODE = Form["products[" + i + "][ITEM_CODE]"],
+                        MBF_DATA = Form["products[" + i + "][MBF_DATA]"],
+                        EXP_DATE = Form["products[" + i + "][EXP_DATE]"],
+                        BATCH_NO = Form["products[" + i + "][BATCH_NO]"],
+                        QUANTITY = Form["products[" + i + "][QUANTITY]"],
+                        SHIPPING_CONTACT = Form["products[" + i + "][SHIPPING_CONTACT]"],
+                        BILLING_NAME = Form["products[" + i + "][BILLING_NAME]"],
+                        PARTY_TYPE_CODE = Form["products[" + i + "][PARTY_TYPE_CODE]"]
+                    };
+                    string descriptionValue = Form[$"products[{i}][DESCRIPTION]"];
+                    if (!string.IsNullOrEmpty(descriptionValue))
+                    {
+                        var descriptions = descriptionValue.Split(',');
 
-               
-
-                //descriptions
-                //var coll = new Dictionary<string, string>();
-               // int i = 0;
-                Output = this._mobileService.UploadDistSalesReturnPic(Form, Files, dbContext);
-                //foreach (string tagName in Files)
-                //{
-                //    coll.Add(tagName, Form[$"description"]);
-
-                //    var salesReturn = new EntityRequestModel()
-                //    {
-                //        ACC_CODE = Form["SP_CODE"],
-                //        COMPANY_CODE = Form["COMPANY_CODE"],
-                //        BRANCH_CODE = Form["BRANCH_CODE"],
-                //        entity_code = Form["SP_CODE"],
-                //        user_id = Form["user_id"],
-                //        Saved_Date = time,
-                //        item_code = Form["itemcode["+ i + "]"]
-                //    };
-                //    Output = this._mobileService.UploadDistSalesReturnPic(salesReturn, Files, coll, dbContext);
-                //    i++;
-                //}
-
-
+                        for (int j = 0; j < descriptions.Length; j++)
+                        {
+                            string imageKey = $"products[{i}][IMAGES][{j}]";
+                            string value = descriptions[j];
+                            if (string.IsNullOrEmpty(value))
+                            {
+                                break;
+                            }
+                            coll.Add(imageKey, value);
+                        }
+                    }
+                    //for (int k = 0; ; k++)
+                    //{
+                    //    string imageKey = $"products[{i}][IMAGES][{k}]";
+                    //    string imageValue = Form["products[" + i + "][DESCRIPTION][" + k + "]"];
+                    //    if (string.IsNullOrEmpty(imageValue))
+                    //    {
+                    //        break;
+                    //    }
+                    //}
+                    model.products.Add(con);
+                }
+    
+                Output = this._mobileService.UploadDistSalesReturnPic(model, Files, coll,dbContext);
             }
             else
                 throw new Exception("Invalid Action");

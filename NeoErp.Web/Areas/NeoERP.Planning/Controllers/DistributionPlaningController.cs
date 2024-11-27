@@ -37,14 +37,6 @@ namespace NeoERP.Planning.Controllers
         {
             return PartialView();
         }
-        public ActionResult TargetSetup()
-        {
-            return PartialView();
-        }
-        public ActionResult CreateTargetSetup()
-        {
-            return PartialView();
-        }
         public ActionResult RouteList()
         {
             return PartialView();
@@ -96,6 +88,23 @@ namespace NeoERP.Planning.Controllers
 
                 throw;
             }
+        }
+        public ActionResult TargetSetup()
+        {
+            return PartialView();
+        }
+        public ActionResult CreateTargetSetup()
+        {
+            return PartialView();
+        }
+
+        public ActionResult ViewTarget(string targetId)
+        {
+            return PartialView();
+        }
+        public ActionResult EditTarget(string targetId)
+        {
+            return PartialView();
         }
     }
 }

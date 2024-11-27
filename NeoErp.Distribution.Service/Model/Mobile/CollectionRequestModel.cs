@@ -20,5 +20,7 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string amount { get; set; }
         public string remarks { get; set; }
         public string created_by { get; set; }
+        public string otp_code { get; set; }
+
     }
 }

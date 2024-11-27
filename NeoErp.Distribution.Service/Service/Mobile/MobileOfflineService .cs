@@ -17,7 +17,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
         private const string CATEGORY_CODE = "FG";
         private const string GROUP_SKU_FLAG = "I";
         private readonly string UploadPath = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath + @"Areas\NeoErp.Distribution\Images";
-
+        public NeoErpCoreEntity _objectEntity = new NeoErpCoreEntity();
         public List<string> GetSyncIds(string tableName, List<string> SyncIds, NeoErpCoreEntity dbContext)
         {
             if (tableName == "DIST_SALES_RETURN")
@@ -51,26 +51,27 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             return result;
         }
 
-        private List<ItemModelNew> FetchAllCompanyItems(string companyCode, NeoErpCoreEntity dbContext,PreferenceModel pref)
+        private List<ItemModelNew> FetchAllCompanyItems(VisitPlanRequestModel model, NeoErpCoreEntity dbContext,PreferenceModel pref)
         {
             string conversionClause = "";
             string CompanyFilter = "";
             if (pref.SQL_NN_CONVERSION_UNIT_FACTOR == "Y")
                 conversionClause = "AND IUS.MU_CODE IS NOT NULL AND IUS.CONVERSION_FACTOR IS NOT NULL";
-            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
             var Query = $@"SELECT IM.ITEM_CODE, IM.ITEM_EDESC, ISS.BRAND_NAME, IM.INDEX_MU_CODE AS UNIT, IM.INDEX_MU_CODE AS MU_CODE, MC.MU_EDESC, IUS.MU_CODE CONVERSION_UNIT,TO_CHAR(IUS.CONVERSION_FACTOR) CONVERSION_FACTOR, IM.COMPANY_CODE, IM.BRANCH_CODE
 				FROM IP_ITEM_MASTER_SETUP IM
 				  LEFT JOIN IP_MU_CODE MC ON MC.MU_CODE = IM.INDEX_MU_CODE AND MC.COMPANY_CODE = IM.COMPANY_CODE
 				  INNER JOIN IP_ITEM_SPEC_SETUP ISS ON ISS.ITEM_CODE = IM.ITEM_CODE AND ISS.COMPANY_CODE = IM.COMPANY_CODE AND TRIM(ISS.BRAND_NAME) IS NOT NULL
 				  LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = ISS.ITEM_CODE AND IUS.COMPANY_CODE = ISS.COMPANY_CODE
-				WHERE 1 = 1
-				AND IM.COMPANY_CODE IN ({CompanyFilter}) AND IM.CATEGORY_CODE IN (select CATEGORY_CODE from IP_CATEGORY_CODE WHERE CATEGORY_TYPE IN ('FG','TF', 'HA') AND COMPANY_CODE='{companyCode}') AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N'
+                  LEFT JOIN DIST_USER_ITEM_MAPPING duim on duim.item_code = iss.item_code AND duim.company_code = iss.company_code
+				WHERE 1 = 1	AND IM.COMPANY_CODE IN ({CompanyFilter}) AND IM.CATEGORY_CODE IN (select CATEGORY_CODE from IP_CATEGORY_CODE WHERE CATEGORY_TYPE IN ('FG','TF', 'HA') AND COMPANY_CODE='{model.COMPANY_CODE}')
+                AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N' and duim.sp_code='{model.spcode}' and duim.deleted_flag='N'
                 {conversionClause}
 				ORDER BY IM.COMPANY_CODE, IM.BRANCH_CODE, UPPER(IM.ITEM_EDESC) ASC";
             var data = dbContext.SqlQuery<ItemModelNew>(Query).ToList();
             return data;
         }
-        private List<ItemModelNew> FetchAllSchemeItems(string companyCode, NeoErpCoreEntity dbContext, PreferenceModel pref)
+        private List<ItemModelNew> FetchAllSchemeItems(VisitPlanRequestModel model, NeoErpCoreEntity dbContext, PreferenceModel pref)
         {
             string conversionClause = "";
             string CompanyFilter = "";
@@ -96,28 +97,29 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 item_category_code = "";
             }
-            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
             var Query = $@"SELECT IM.ITEM_CODE, IM.ITEM_EDESC, ISS.BRAND_NAME, IM.INDEX_MU_CODE AS UNIT, IM.INDEX_MU_CODE AS MU_CODE, MC.MU_EDESC, IUS.MU_CODE CONVERSION_UNIT,TO_CHAR(IUS.CONVERSION_FACTOR) CONVERSION_FACTOR, IM.COMPANY_CODE, IM.BRANCH_CODE
 				FROM IP_ITEM_MASTER_SETUP IM
                   INNER JOIN BRD_CONTRACT_SCHEME_ITEM BCI ON IM.ITEM_CODE = BCI.ITEM_CODE AND BCI.COMPANY_CODE = IM.COMPANY_CODE
 				  LEFT JOIN IP_MU_CODE MC ON MC.MU_CODE = IM.INDEX_MU_CODE AND MC.COMPANY_CODE = IM.COMPANY_CODE
 				  INNER JOIN IP_ITEM_SPEC_SETUP ISS ON ISS.ITEM_CODE = IM.ITEM_CODE AND ISS.COMPANY_CODE = IM.COMPANY_CODE 
 				  LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = ISS.ITEM_CODE AND IUS.COMPANY_CODE = ISS.COMPANY_CODE
+                  LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = iss.item_code AND duim.company_code = iss.company_code
 				WHERE 1 = 1
 				AND IM.COMPANY_CODE IN ({CompanyFilter}) AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N'
-                {conversionClause} {item_category_code}
+                {conversionClause} {item_category_code} and duim.sp_code='{model.spcode}' and duim.deleted_flag='N'
 				ORDER BY IM.COMPANY_CODE, IM.BRANCH_CODE, UPPER(IM.ITEM_EDESC) ASC";
             var data = dbContext.SqlQuery<ItemModelNew>(Query).ToList();
             return data;
         }
 
-        private List<ItemModelNew> FetchAllSchemeGiftItems(string companyCode, NeoErpCoreEntity dbContext, PreferenceModel pref)
+        private List<ItemModelNew> FetchAllSchemeGiftItems(VisitPlanRequestModel model, NeoErpCoreEntity dbContext, PreferenceModel pref)
         {
             string conversionClause = "";
             string CompanyFilter = "";
             if (pref.SQL_NN_CONVERSION_UNIT_FACTOR == "Y")
                 conversionClause = "AND IUS.MU_CODE IS NOT NULL AND IUS.CONVERSION_FACTOR IS NOT NULL";
-            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
 
             string item_category_code = "";
             try
@@ -145,29 +147,31 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 				  LEFT JOIN IP_MU_CODE MC ON MC.MU_CODE = IM.INDEX_MU_CODE AND MC.COMPANY_CODE = IM.COMPANY_CODE
 				  INNER JOIN IP_ITEM_SPEC_SETUP ISS ON ISS.ITEM_CODE = IM.ITEM_CODE AND ISS.COMPANY_CODE = IM.COMPANY_CODE 
 				  LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = ISS.ITEM_CODE AND IUS.COMPANY_CODE = ISS.COMPANY_CODE
+                LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = iss.item_code AND duim.company_code = iss.company_code
 				WHERE 1 = 1
 				AND IM.COMPANY_CODE IN ({CompanyFilter}) --AND IM.CATEGORY_CODE = '{CATEGORY_CODE}'
-                AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N'
+                AND IM.GROUP_SKU_FLAG = '{GROUP_SKU_FLAG}' AND IM.DELETED_FLAG = 'N' and duim.sp_code='{model.spcode}' and duim.deleted_flag='N'
                 {conversionClause} 
 				ORDER BY IM.COMPANY_CODE, IM.BRANCH_CODE, UPPER(IM.ITEM_EDESC) ASC";
             var data = dbContext.SqlQuery<ItemModelNew>(Query).ToList();
             return data;
         }
 
-        private List<ItemModelRate> FetchAllCompanyBranchItemRate(string companyCode, NeoErpCoreEntity dbContext,PreferenceModel pref)
+        private List<ItemModelRate> FetchAllCompanyBranchItemRate(VisitPlanRequestModel model, NeoErpCoreEntity dbContext,PreferenceModel pref)
         {
-            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
             var Query = string.Empty;
             if (pref.PO_RATE_TABLE == "IP_ITEM_RATE_SCHEDULE_SETUP")
                 Query = $@"SELECT DISTINCT A.CS_CODE CUSTOMER_CODE,A.COMPANY_CODE,A.ITEM_CODE,
                             TO_CHAR(NVL(A.STANDARD_RATE, 0)) SALES_RATE,TO_CHAR(NVL(A.MRP_RATE,0)) MRP_RATE,
                             TO_CHAR(NVL(A.RETAIL_PRICE,0)) RETAIL_PRICE,TO_CHAR(A.EFFECTIVE_DATE) APPLY_DATE
-                    FROM IP_ITEM_RATE_SCHEDULE_SETUP A
+                    FROM IP_ITEM_RATE_SCHEDULE_SETUP A,
+                    LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = a.item_code AND duim.company_code = a.company_code
                     WHERE EFFECTIVE_DATE = (SELECT MAX(TO_DATE(EFFECTIVE_DATE)) FROM IP_ITEM_RATE_SCHEDULE_SETUP 
                             WHERE ITEM_CODE = A.ITEM_CODE 
                             AND CS_CODE=A.CS_CODE
                             AND COMPANY_CODE = A.COMPANY_CODE )
-                    AND A.COMPANY_CODE IN ({CompanyFilter})
+                    AND A.COMPANY_CODE IN ({CompanyFilter}) and duim.sp_code='{model.spcode}' and duim.deleted_flag='N'
                     ORDER BY A.ITEM_CODE,A.CS_CODE";
             else
                 Query = $@"SELECT B.COMPANY_CODE, B.BRANCH_CODE, A.ITEM_CODE, TO_CHAR(NVL(B.{pref.PO_RATE_COLUMN}, 0)) SALES_RATE, TO_CHAR(A.APPLY_DATE) APPLY_DATE
@@ -181,73 +185,77 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                             AND B.COMPANY_CODE IN ({CompanyFilter})
                             AND B.BRANCH_CODE = A.BRANCH_CODE
                             AND SALES_RATE <> 0
-                            ORDER BY B.COMPANY_CODE, B.BRANCH_CODE, TO_NUMBER(A.ITEM_CODE)";
+                            LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = a.item_code AND duim.company_code = a.company_code    
+                            where duim.sp_code='{model.spcode}' and duim.deleted_flag='N' ORDER BY B.COMPANY_CODE, B.BRANCH_CODE, TO_NUMBER(A.ITEM_CODE)";
             var data = dbContext.SqlQuery<ItemModelRate>(Query).ToList();
             return data;
         }
 
-        private List<SubLedgerMapModel> FetchAllCompanySubLedgerMap(string companyCode, NeoErpCoreEntity dbContext,PreferenceModel pref)
+        private List<SubLedgerMapModel> FetchAllCompanySubLedgerMap(VisitPlanRequestModel model, NeoErpCoreEntity dbContext,PreferenceModel pref)
         {
-            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
 
             var Query = $@"SELECT SLM.ACC_CODE, SLM.SUB_CODE, CS.PARTY_TYPE_CODE AS DEFAULT_PARTY_TYPE_CODE, SLM.COMPANY_CODE
                 FROM FA_SUB_LEDGER_MAP SLM
                 INNER JOIN SA_CUSTOMER_SETUP CS ON TRIM(CS.LINK_SUB_CODE) = TRIM(SLM.SUB_CODE) AND CS.GROUP_SKU_FLAG = 'I' AND CS.COMPANY_CODE = SLM.COMPANY_CODE
+                LEFT join DIST_USER_AREAS  dua on dua.customer_code=cs.customer_code AND dua.company_code = slm.company_code
                 WHERE SUBSTR(SLM.SUB_CODE, 1, 1) = 'C'
-                AND SLM.COMPANY_CODE IN({CompanyFilter})
+                AND SLM.COMPANY_CODE IN({CompanyFilter}) and dua.sp_code='{model.spcode}' and dua.deleted_flag='N'
                 ORDER BY TO_NUMBER(SLM.ACC_CODE), TO_NUMBER(SUBSTR(SLM.SUB_CODE, 2)), SLM.COMPANY_CODE";
             var data = dbContext.SqlQuery<SubLedgerMapModel>(Query).ToList();
             return data;
         }
 
-        private List<PartyTypeModel> FetchAllCompanyPartyType(string companyCode, NeoErpCoreEntity dbContext,PreferenceModel pref)
+        private List<PartyTypeModel> FetchAllCompanyPartyType(VisitPlanRequestModel model, NeoErpCoreEntity dbContext,PreferenceModel pref)
         {
-            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
-            var query = $@"SELECT PARTY_TYPE_CODE, PARTY_TYPE_EDESC PARTY_TYPE_NAME, TO_CHAR(CREDIT_DAYS) CREDIT_DAYS,
-                        TO_CHAR(CREDIT_LIMIT) CREDIT_LIMIT, COMPANY_CODE FROM IP_PARTY_TYPE_CODE
-                        WHERE COMPANY_CODE IN ({CompanyFilter}) AND DELETED_FLAG = 'N'";
+            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
+            var query = $@"SELECT a.party_type_code,a.party_type_edesc party_type_name, to_char(a.credit_days) credit_days,to_char(a.credit_limit) credit_limit,
+                    a.company_code FROM ip_party_type_code a
+                    left join sa_customer_setup b on a.party_type_code=b.party_type_code and a.company_code=b.company_code
+                    left join dist_user_areas c on c.customer_code=b.customer_code and  c.company_code=b.company_code
+                    WHERE
+                    a.company_code IN ({CompanyFilter} ) and b.group_sku_flag='I' and b.deleted_flag = 'N' and b.active_flag='Y' AND a.deleted_flag = 'N' 
+                    and c.deleted_flag = 'N' and c.sp_code='{model.spcode}'";
             var data = dbContext.SqlQuery<PartyTypeModel>(query).ToList();
             return data;
         }
 
-        private List<CustomerModel> FetchAllCompanySaCustomer(string companyCode, NeoErpCoreEntity dbContext, PreferenceModel pref)
+        private List<CustomerModel> FetchAllCompanySaCustomer(VisitPlanRequestModel model, NeoErpCoreEntity dbContext, PreferenceModel pref)
         {
-            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
 
             ////old query by Himal dai
 
-            //var Query = $@"SELECT CUSTOMER_CODE, CUSTOMER_EDESC CUSTOMER_NAME, REGD_OFFICE_EADDRESS ADDRESS, PARTY_TYPE_CODE, LINK_SUB_CODE, ACC_CODE,
-            //     TO_CHAR(CREDIT_DAYS) CREDIT_DAYS, To_CHAR(CREDIT_LIMIT) CREDIT_LIMIT, COMPANY_CODE, BRANCH_CODE
-            //    FROM SA_CUSTOMER_SETUP 
-            //    WHERE GROUP_SKU_FLAG = 'I'
-            //    AND COMPANY_CODE IN ({CompanyFilter})
-            //    AND DELETED_FLAG = 'N'";
+            var Query = $@"SELECT a.customer_code, a.customer_edesc customer_name,a.regd_office_eaddress   address,a.party_type_code,
+            a.link_sub_code,a.acc_code, to_char(a.credit_days) credit_days,to_char(a.credit_limit) credit_limit,a.company_code, a.branch_code
+            FROM sa_customer_setup a left join dist_user_areas b on a.customer_code=b.customer_code and a.company_code=b.company_code
+            WHERE  a.group_sku_flag = 'I' AND a.company_code IN ({CompanyFilter})  AND a.deleted_flag = 'N'  and b.sp_code='{model.spcode}'  AND  b.deleted_flag = 'N'";
 
             //new query by Bikalp dai
-            var Query = $@"SELECT DP.CUSTOMER_CODE,CS.CUSTOMER_EDESC CUSTOMER_NAME,CS.REGD_OFFICE_EADDRESS ADDRESS,DP.PARTY_TYPE_CODE,CS.LINK_SUB_CODE, CS.ACC_CODE,
-                 TO_CHAR(CS.CREDIT_DAYS) CREDIT_DAYS, To_CHAR(CS.CREDIT_LIMIT) CREDIT_LIMIT, CS.COMPANY_CODE, CS.BRANCH_CODE
-                FROM FA_SUB_LEDGER_DEALER_MAP DP ,IP_PARTY_TYPE_CODE IP,SA_CUSTOMER_SETUP CS
-                WHERE IP.COMPANY_CODE=DP.COMPANY_CODE
-                AND IP.PARTY_TYPE_CODE=DP.PARTY_TYPE_CODE
-                AND CS.CUSTOMER_CODE=DP.CUSTOMER_CODE
-                AND CS.COMPANY_CODE=IP.COMPANY_CODE
-                AND DP.DELETED_FLAG='N'
-                AND IP.PARTY_TYPE_FLAG='D'
-                AND DP.COMPANY_CODE IN ({CompanyFilter})";
+            //var Query = $@"SELECT DP.CUSTOMER_CODE,CS.CUSTOMER_EDESC CUSTOMER_NAME,CS.REGD_OFFICE_EADDRESS ADDRESS,DP.PARTY_TYPE_CODE,CS.LINK_SUB_CODE, CS.ACC_CODE,
+            //     TO_CHAR(CS.CREDIT_DAYS) CREDIT_DAYS, To_CHAR(CS.CREDIT_LIMIT) CREDIT_LIMIT, CS.COMPANY_CODE, CS.BRANCH_CODE
+            //    FROM FA_SUB_LEDGER_DEALER_MAP DP ,IP_PARTY_TYPE_CODE IP,SA_CUSTOMER_SETUP CS
+            //    WHERE IP.COMPANY_CODE=DP.COMPANY_CODE
+            //    AND IP.PARTY_TYPE_CODE=DP.PARTY_TYPE_CODE
+            //    AND CS.CUSTOMER_CODE=DP.CUSTOMER_CODE
+            //    AND CS.COMPANY_CODE=IP.COMPANY_CODE
+            //    AND DP.DELETED_FLAG='N'
+            //    AND IP.PARTY_TYPE_FLAG='D'
+            //    AND DP.COMPANY_CODE IN ({CompanyFilter})";
             var data = dbContext.SqlQuery<CustomerModel>(Query).ToList();
             return data;
         }
 
-        private List<AreaResponseModel> FetchAllCompanyArea(string companyCode, NeoErpCoreEntity dbContext, PreferenceModel pref)
+        private List<AreaResponseModel> FetchAllCompanyArea(VisitPlanRequestModel model, NeoErpCoreEntity dbContext, PreferenceModel pref)
         {
-            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{companyCode}'";
+            var CompanyFilter = pref.SQL_MULTIPLE_COMPANY == "Y" ? "SELECT COMPANY_CODE FROM COMPANY_SETUP" : $"'{model.COMPANY_CODE}'";
             string Query = $@"SELECT A.AREA_CODE,A.AREA_NAME,A.ZONE_CODE,A.DISTRICT_CODE,A.VDC_CODE,A.REG_CODE,
                        B.ZONE_NAME,B.DISTRICT_NAME,B.VDC_NAME,B.REG_NAME,A.COMPANY_CODE,TO_CHAR(A.GROUPID) GROUP_ID
-                FROM DIST_AREA_MASTER A,DIST_ADDRESS_MASTER B
-                WHERE (A.DISTRICT_CODE = B.DISTRICT_CODE
+                FROM DIST_AREA_MASTER A,DIST_ADDRESS_MASTER B,dist_user_areas  c
+                WHERE (A.DISTRICT_CODE = B.DISTRICT_CODE and a.area_code = c.area_code and a.company_code = c.company_code
                 AND  A.REG_CODE = B.REG_CODE
                 AND  A.ZONE_CODE = B.ZONE_CODE
-                AND COMPANY_CODE IN ({CompanyFilter})
+                AND a.COMPANY_CODE IN ({CompanyFilter}) and c.sp_code='{model.spcode}' and c.deleted_flag='N'
                 AND  A.VDC_CODE = B.VDC_CODE) ORDER BY UPPER(A.AREA_NAME) ASC";
             var data = dbContext.SqlQuery<AreaResponseModel>(Query).ToList();
             return data;
@@ -293,30 +301,36 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             return data;
         }
 
-        private List<CompetitorItemModel> GetCompItems(string CompanyCode, NeoErpCoreEntity dbContext)
+        private List<CompetitorItemModel> GetCompItems(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
         {
-            var data = dbContext.SqlQuery<CompetitorItemModel>($"SELECT DISTINCT ITEM_ID AS ITEM_CODE,ITEM_EDESC FROM DIST_COMP_ITEM_MASTER WHERE DELETED_FLAG= 'N'").ToList();
+            string Query = $@"SELECT DISTINCT a.item_id AS item_code, a.item_edesc
+            FROM dist_comp_item_master a left join DIST_USER_ITEM_MAPPING b on a.item_id=b.item_code and a.company_code=b.company_code
+            WHERE  a.deleted_flag = 'N' and b.deleted_flag = 'N' and b.sp_code='{model.spcode}' and a.company_code in ('{model.COMPANY_CODE}')";
+            var data = dbContext.SqlQuery<CompetitorItemModel>(Query).ToList();
             return data;
         }
         
-        private List<CompetitorItemMapModel> GetCompItemMaps(string CompanyCode, NeoErpCoreEntity dbContext)
+        private List<CompetitorItemMapModel> GetCompItemMaps(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
         {
             string Query = $@"SELECT IMS.ITEM_EDESC, DIM.ITEM_CODE,
                              WM_CONCAT (DIM.COMP_ITEM_ID) COMP_ITEM_CODES
                         FROM DIST_COMP_ITEM_MAP DIM INNER JOIN DIST_COMP_ITEM_MASTER DCM ON DCM.ITEM_ID = DIM.COMP_ITEM_ID AND DCM.COMPANY_CODE = DIM.COMPANY_CODE
                              INNER JOIN IP_ITEM_MASTER_SETUP IMS ON IMS.ITEM_CODE = DIM.ITEM_CODE AND IMS.COMPANY_CODE = DIM.COMPANY_CODE
-                        WHERE IMS.DELETED_FLAG = 'N'
+                            LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = dim.item_code AND duim.company_code = dim.company_code 
+                        WHERE IMS.DELETED_FLAG = 'N' duim.deleted_flag = 'N' and dim.company_code in ('{model.COMPANY_CODE}') and duim.sp_code='{model.spcode}'
                              AND DCM.DELETED_FLAG = 'N'
-                             --AND DIM.COMPANY_CODE = '{CompanyCode}'
                     GROUP BY IMS.ITEM_EDESC, DIM.ITEM_CODE
                     ORDER BY ITEM_CODE";
             var data = dbContext.SqlQuery<CompetitorItemMapModel>(Query).ToList();
             return data;
         }
 
-        private List<CompetitorItemFields> GetCompItemFields(string CompanyCode, NeoErpCoreEntity dbContext)
+        private List<CompetitorItemFields> GetCompItemFields(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
         {
-            var data = dbContext.SqlQuery<CompetitorItemFields>($"SELECT FIELD_ID QUESTION_ID, ITEM_CODE,COL_NAME,COL_DATA_TYPE FROM DIST_COMP_FIELDS WHERE COMPANY_CODE = '{CompanyCode}'").ToList();
+            var query = $@"SELECT a.FIELD_ID QUESTION_ID, a.ITEM_CODE,a.COL_NAME,a.COL_DATA_TYPE FROM DIST_COMP_FIELDS a
+                LEFT JOIN DIST_USER_ITEM_MAPPING b on a.item_code=b.item_code and a.company_code=b.company_code
+                WHERE a.COMPANY_CODE in  ('{model.COMPANY_CODE}') and b.sp_code='{model.spcode}'";
+            var data = dbContext.SqlQuery<CompetitorItemFields>(query).ToList();
             return data;
         }
 
@@ -735,7 +749,6 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 
         //    return Result;
         //}
-
         public List<VisitEntityModel> GetVisitPlan(VisitPlanRequestModel model, NeoErpCoreEntity dbContext, PreferenceModel pref)
         {
             string Superuser;
@@ -1402,6 +1415,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                      LEFT JOIN DIST_ROUTE_MASTER RM ON RM.ROUTE_CODE = RE.ROUTE_CODE AND RM.COMPANY_CODE = DM.COMPANY_CODE
                      INNER JOIN IP_PARTY_TYPE_CODE PT ON PT.PARTY_TYPE_CODE = DM.DEALER_CODE AND PT.COMPANY_CODE = DM.COMPANY_CODE
                      INNER JOIN DIST_AREA_MASTER AM ON AM.AREA_CODE = DM.AREA_CODE AND AM.COMPANY_CODE = DM.COMPANY_CODE
+                    left join dist_user_areas dua on dua.AREA_CODE = DM.AREA_CODE AND dua.COMPANY_CODE = DM.COMPANY_CODE
                      LEFT JOIN (SELECT A.SP_CODE, A.CUSTOMER_CODE, A.CUSTOMER_TYPE, A.COMPANY_CODE, C.EMPLOYEE_EDESC AS LAST_VISIT_BY, A.IS_VISITED AS LAST_VISIT_STATUS,
                                   (CASE 
                                     WHEN A.IS_VISITED IS NULL THEN 'X' 
@@ -1426,7 +1440,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                                   ), 
                                   A.REMARKS
                                ) LT
-                       ON LT.CUSTOMER_CODE = DM.DEALER_CODE AND LT.COMPANY_CODE = DM.COMPANY_CODE)
+                       ON LT.CUSTOMER_CODE = DM.DEALER_CODE AND LT.COMPANY_CODE = DM.COMPANY_CODE where dua.sp_code='{spCode}' and dua.deleted_flag='N')
                 UNION
                   (SELECT
                      DM.DISTRIBUTOR_CODE AS CODE,
@@ -1448,6 +1462,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                      LEFT JOIN DIST_ROUTE_MASTER RM ON RM.ROUTE_CODE = RE.ROUTE_CODE AND RM.COMPANY_CODE = DM.COMPANY_CODE
                      LEFT JOIN SA_CUSTOMER_SETUP CS ON CS.CUSTOMER_CODE = DM.DISTRIBUTOR_CODE AND CS.COMPANY_CODE = DM.COMPANY_CODE
                      INNER JOIN DIST_AREA_MASTER AM ON AM.AREA_CODE = DM.AREA_CODE AND AM.COMPANY_CODE = DM.COMPANY_CODE
+                    left join dist_user_areas dua on dua.AREA_CODE = DM.AREA_CODE AND dua.COMPANY_CODE = DM.COMPANY_CODE
                      LEFT JOIN (SELECT A.SP_CODE, A.CUSTOMER_CODE, A.CUSTOMER_TYPE, A.COMPANY_CODE, C.EMPLOYEE_EDESC AS LAST_VISIT_BY, A.IS_VISITED AS LAST_VISIT_STATUS,
                                   (CASE 
                                     WHEN A.IS_VISITED IS NULL THEN 'X' 
@@ -1473,7 +1488,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                                   A.REMARKS
                                ) LT
                        ON LT.CUSTOMER_CODE = DM.DISTRIBUTOR_CODE AND LT.COMPANY_CODE = DM.COMPANY_CODE
-                        WHERE DM.ACTIVE = 'Y' AND DM.DELETED_FLAG = 'N')
+                        WHERE DM.ACTIVE = 'Y' AND DM.DELETED_FLAG = 'N' and dua.sp_code='{spCode}' and dua.deleted_flag='N')
                   UNION
                   (SELECT
                      REM.RESELLER_CODE AS CODE,
@@ -1486,17 +1501,17 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                      'reseller' AS TYPE,
                      REM.WHOLESELLER AS WHOLESELLER,
                      '' AS DEFAULT_PARTY_TYPE_CODE,
-                     DISTRIBUTOR_CODE AS PARENT_DISTRIBUTOR_CODE,
+                      DISTRIBUTOR_CODE        AS parent_distributor_code,
                      CS.CUSTOMER_EDESC AS PARENT_DISTRIBUTOR_NAME,
                      LT.LAST_VISIT_DATE, LT.LAST_VISIT_BY, LT.LAST_VISIT_STATUS, NVL(LT.IS_VISITED, 'X') AS IS_VISITED, LT.REMARKS,
                      REM.COMPANY_CODE, REM.BRANCH_CODE,
                      DOT.TYPE_EDESC,DOS.SUBTYPE_EDESC
                    FROM DIST_RESELLER_MASTER REM
-
                      LEFT JOIN DIST_ROUTE_ENTITY RE ON RE.ENTITY_CODE = REM.RESELLER_CODE AND RE.ENTITY_TYPE = 'R' AND RE.COMPANY_CODE = REM.COMPANY_CODE
                      LEFT JOIN DIST_ROUTE_MASTER RM ON RM.ROUTE_CODE = RE.ROUTE_CODE AND RM.COMPANY_CODE = REM.COMPANY_CODE
                      INNER JOIN DIST_AREA_MASTER AM ON AM.AREA_CODE = REM.AREA_CODE AND AM.COMPANY_CODE = REM.COMPANY_CODE
                      LEFT JOIN SA_CUSTOMER_SETUP CS ON CS.CUSTOMER_CODE = REM.DISTRIBUTOR_CODE AND CS.COMPANY_CODE = REM.COMPANY_CODE
+                    left join dist_user_areas dua on dua.AREA_CODE = REM.AREA_CODE AND dua.COMPANY_CODE = REM.COMPANY_CODE
                      LEFT JOIN (SELECT A.SP_CODE, A.CUSTOMER_CODE, A.CUSTOMER_TYPE, A.COMPANY_CODE, C.EMPLOYEE_EDESC AS LAST_VISIT_BY, A.IS_VISITED AS LAST_VISIT_STATUS,
                                  (CASE 
                                         WHEN A.IS_VISITED IS NULL THEN 'X' 
@@ -1524,7 +1539,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                                ) LT ON LT.CUSTOMER_CODE = REM.RESELLER_CODE AND LT.COMPANY_CODE = REM.COMPANY_CODE
                LEFT JOIN DIST_OUTLET_TYPE DOT ON REM.OUTLET_TYPE_ID=DOT.TYPE_ID AND REM.COMPANY_CODE=DOT.COMPANY_CODE
                LEFT JOIN DIST_OUTLET_SUBTYPE DOS ON REM.OUTLET_SUBTYPE_ID=DOS.SUBTYPE_ID AND REM.COMPANY_CODE=DOS.COMPANY_CODE
-               WHERE REM.ACTIVE = 'Y' AND REM.IS_CLOSED = 'N'
+               WHERE REM.ACTIVE = 'Y' AND REM.IS_CLOSED = 'N' and dua.sp_code='{spCode}' and dua.deleted_flag='N'
                 {entityFIlter}) )
                 WHERE COMPANY_CODE IN ({CompanyFilter})
                 ORDER BY TYPE";
@@ -1574,6 +1589,24 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             if (Items.Count <= 0)
                 throw new Exception("No records found");
             return Items;
+        }
+        private List<DiscountModel> FetchDiscount(string companyCode,string branchCode, NeoErpCoreEntity dbContext, PreferenceModel pref)
+        {
+          var Query = $@"SELECT distinct iids.cs_code AS customer_code,iids.item_code,iids.discount_rate,iids.discount_percent,iids.form_code,iids.mu_code,'Y' AS synergy_flag
+                FROM  ip_item_discount_schedule   iids
+                LEFT JOIN form_branch_map   fbm ON iids.form_code = fbm.form_code AND iids.company_code = fbm.company_code
+                WHERE iids.company_code in ('{companyCode}')  AND fbm.branch_code in ('{branchCode}') AND iids.deleted_flag = 'N' AND fbm.deleted_flag = 'N'
+                union 
+                SELECT distinct iids.cs_code AS customer_code,iius.item_code, ROUND(nvl(iius.fraction,0) / nvl(iius.conversion_factor,1) * nvl(iids.discount_rate,0), 2) AS discount_rate,
+                iids.discount_percent,iids.form_code,iius.mu_code,'Y' AS synergy_flag
+                FROM  ip_item_discount_schedule   iids
+                LEFT JOIN form_branch_map  fbm ON iids.form_code = fbm.form_code AND iids.company_code = fbm.company_code
+                LEFT JOIN ip_item_unit_setup iius ON iius.item_code = iids.item_code AND iids.company_code = iius.company_code
+                WHERE iids.company_code in ('{companyCode}') AND fbm.branch_code in ('{branchCode}') AND iius.deleted_flag = 'N' AND iids.deleted_flag = 'N' AND fbm.deleted_flag = 'N'";
+            var data = dbContext.SqlQuery<DiscountModel>(Query).ToList();
+            if (data.Count <= 0)
+                throw new Exception("No records found");
+            return data;
         }
 
         public QuestionResponseModel FetchAllQuestions(QuestionRequestModel model, NeoErpCoreEntity dbContext)
@@ -1736,7 +1769,59 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             }
             return result;
         }
-
+        public List<UpdateResponseModel> FetchUpdates(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string updateQuery = $@"SELECT ID,CODE,TYPE_EDESC,DELETED_FLAG FROM DIST_UPDATE_TYPE WHERE COMPANY_CODE='{model.COMPANY_CODE}' AND DELETED_FLAG='N' ORDER BY UPPER(TYPE_EDESC) ASC";
+            var result = dbContext.SqlQuery<UpdateResponseModel>(updateQuery).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<ComplainTypeModel> FetchComplainTypes(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string updateQuery = $@"SELECT ID,COMPLAIN_CODE,COMPLAIN_TYPE,COMPANY_CODE FROM dist_complain_type WHERE COMPANY_CODE='{model.COMPANY_CODE}' AND DELETED_FLAG='N' ORDER BY UPPER(COMPLAIN_TYPE) ASC";
+            var result = dbContext.SqlQuery<ComplainTypeModel>(updateQuery).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<SeriousessTypeModel> FetchSeriousnessTypes(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string updateQuery = $@"SELECT ID,CODE,SERIOUSNESS_TYPE,COMPANY_CODE FROM dist_seriousness_type WHERE COMPANY_CODE='{model.COMPANY_CODE}' AND DELETED_FLAG='N' ORDER BY UPPER(SERIOUSNESS_TYPE) ASC";
+            var result = dbContext.SqlQuery<SeriousessTypeModel>(updateQuery).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<ReturnConditionModel> FetchReturnCondition(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string updateQuery = $@"SELECT ID,CODE,RETURN_TYPE,COMPANY_CODE FROM dist_return_condition WHERE COMPANY_CODE='{model.COMPANY_CODE}' AND DELETED_FLAG='N' ORDER BY UPPER(RETURN_TYPE) ASC";
+            var result = dbContext.SqlQuery<ReturnConditionModel>(updateQuery).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<DATERANGE> FetchDateRange(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string query = $@"select RANGENAME,TO_CHAR(STARTDATE, 'DD-MON-YYYY') as STARTDATE,TO_CHAR(ENDDATE, 'DD-MON-YYYY') as ENDDATE from V_DATE_RANGE order by sortorder";
+            var result = dbContext.SqlQuery<DATERANGE>(query).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
+        public List<Priority> FetchPriorityData(CommonRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            string updateQuery = $@"Select
+                        COALESCE(PRIORITY_CODE,' ') as PRIORITY_CODE, 
+                        COALESCE(PRIORITY_EDESC,' ') as PRIORITY_EDESC,
+                        COMPANY_CODE as COMPANY_CODE 
+                        from IP_PRIORITY_CODE
+                        where DELETED_FLAG='N' and COMPANY_CODE='{model.COMPANY_CODE}'  ORDER BY UPPER(PRIORITY_EDESC) ASC";
+            var result = dbContext.SqlQuery<Priority>(updateQuery).ToList();
+            if (result.Count <= 0)
+                throw new Exception("No records found");
+            return result;
+        }
         public ClosingStockResponseModel GetEntityItemByBrand(ClosingStockRequestModel model, NeoErpCoreEntity dbContext)
         {
             ClosingStockResponseModel result = new ClosingStockResponseModel();
@@ -1812,6 +1897,38 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             result.mu_code = this.FetchMU(model, dbContext);
             return result;
         }
+        public Dictionary<string, Dictionary<string, MuCodeResponseModel>> FetchMU(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            Dictionary<string, MuCodeResponseModel> result = new Dictionary<string, MuCodeResponseModel>();
+            var pref = FetchPreferences(model.COMPANY_CODE, dbContext);
+            var conversionClause = "";
+            if ("Y" == pref.SQL_NN_CONVERSION_UNIT_FACTOR)
+            {
+                conversionClause = "AND IUS.MU_CODE IS NOT NULL AND IUS.CONVERSION_FACTOR IS NOT NULL";
+            }
+            string MuQuery = $@"SELECT IMS.ITEM_CODE, IMS.ITEM_EDESC, IMS.INDEX_MU_CODE, IUS.MU_CODE, TO_CHAR(IUS.CONVERSION_FACTOR) AS CONVERSION_FACTOR
+                FROM IP_ITEM_MASTER_SETUP IMS 
+                LEFT JOIN IP_ITEM_UNIT_SETUP IUS
+                ON IUS.ITEM_CODE = IMS.ITEM_CODE AND IUS.COMPANY_CODE = IMS.COMPANY_CODE
+                LEFT JOIN DIST_USER_ITEM_MAPPING duim ON duim.item_code = ius.item_code AND duim.company_code = ius.company_code 
+                WHERE 1 = 1
+                AND IMS.COMPANY_CODE = '{model.COMPANY_CODE}'
+                AND IMS.CATEGORY_CODE IN ('FG', 'HA')
+                AND IMS.GROUP_SKU_FLAG = 'I' and duim.sp_code='{model.spcode}' and duim.deleted_flag='N'
+                AND IMS.DELETED_FLAG = 'N'
+                {conversionClause}
+                ORDER BY UPPER(IMS.ITEM_EDESC), UPPER(IMS.INDEX_MU_CODE), UPPER(MU_CODE)";
+            var allMu = dbContext.SqlQuery<MuCodeResponseModel>(MuQuery);
+            foreach (var Mu in allMu)
+            {
+                if (Mu.MU_CODE != null)
+                    Mu.CONVERSION_UNIT_FACTOR.Add(Mu.MU_CODE, Mu.CONVERSION_FACTOR);
+                result.Add(Mu.ITEM_CODE, Mu);
+            }
+            var finalResult = new Dictionary<string, Dictionary<string, MuCodeResponseModel>>();
+            finalResult.Add("UNIT", result);
+            return finalResult;
+        }
 
         public Dictionary<string, Dictionary<string, MuCodeResponseModel>> FetchMU(CommonRequestModel model, NeoErpCoreEntity dbContext)
         {
@@ -1829,7 +1946,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 WHERE 1 = 1
                 AND IMS.COMPANY_CODE = '{model.COMPANY_CODE}'
                 AND IMS.CATEGORY_CODE IN ('FG', 'HA')
-                AND IMS.GROUP_SKU_FLAG = 'I'
+                AND IMS.GROUP_SKU_FLAG = 'I' 
                 AND IMS.DELETED_FLAG = 'N'
                 {conversionClause}
                 ORDER BY UPPER(IMS.ITEM_EDESC), UPPER(IMS.INDEX_MU_CODE), UPPER(MU_CODE)";
@@ -2692,7 +2809,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //All company Areas
             try
             {
-                var areasData = FetchAllCompanyArea(model.COMPANY_CODE, dbContext, pref);
+                var areasData = FetchAllCompanyArea(model, dbContext, pref);
                 result.Add("AREA", new
                 {
                     result = areasData,
@@ -2704,7 +2821,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("AREA", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2725,7 +2842,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("VISIT_PLAN", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2748,7 +2865,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("BRD_VISIT_PLAN", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2771,7 +2888,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("OTHER_VISIT_PLAN", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2797,11 +2914,30 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     error = ex.Message
                 });
             }
-
+            //Discount
+            try
+            {
+                var discountData = FetchDiscount(model.COMPANY_CODE, model.BRANCH_CODE, dbContext, pref);
+                result.Add("DISCOUNT", new
+                {
+                    result = discountData,
+                    response = discountData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+            catch (Exception ex)
+            {
+                result.Add("DISCOUNT", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
             //Item list with their respective Brand
             try
             {
-                var itemData = FetchAllCompanyItems(model.COMPANY_CODE, dbContext, pref);
+                var itemData = FetchAllCompanyItems(model, dbContext, pref);
                 result.Add("ITEM", new
                 {
                     result = itemData,
@@ -2814,7 +2950,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("ITEM", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2822,7 +2958,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //Item list for scheme
             try
             {
-                var itemData = FetchAllSchemeItems(model.COMPANY_CODE, dbContext, pref);
+                var itemData = FetchAllSchemeItems(model, dbContext, pref);
                 result.Add("SCHEME_ITEM", new
                 {
                     result = itemData,
@@ -2835,7 +2971,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("SCHEME_ITEM", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2843,7 +2979,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //Gift Item list for scheme
             try
             {
-                var itemData = FetchAllSchemeGiftItems(model.COMPANY_CODE, dbContext, pref);
+                var itemData = FetchAllSchemeGiftItems(model, dbContext, pref);
                 result.Add("SCHEME_GIFT_ITEM", new
                 {
                     result = itemData,
@@ -2856,7 +2992,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("SCHEME_GIFT_ITEM", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2864,7 +3000,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //Rate of item per branch
             try
             {
-                var rateData = FetchAllCompanyBranchItemRate(model.COMPANY_CODE, dbContext, pref);
+                var rateData = FetchAllCompanyBranchItemRate(model, dbContext, pref);
                 result.Add("RATE", new
                 {
                     result = rateData,
@@ -2877,7 +3013,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("RATE", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2926,7 +3062,28 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     error = ex.Message
                 });
             }
+            //Distributors sashi
+                try
+                {
+                    var outletData = FetchOutlets(model, dbContext);
+                    result.Add("distributor", new
+                    {
+                        result = outletData,
+                        response = outletData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
 
+                catch (Exception ex)
+                {
+                    result.Add("distributor", new
+                    {
+                        result = new object(),
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            
             //General and Tabular Questions Lists
             try
             {
@@ -2952,7 +3109,11 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("QUESTION", new
                 {
-                    result = new object(),
+                    result = new 
+                    {
+                        general = new List<GeneralModel>(), 
+                        tabular = new Dictionary<string, TabularModel>() 
+                    },
                     response = false,
                     error = ex.Message
                 });
@@ -2963,7 +3124,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 if (model.user_type == "B")
                     throw new Exception("Branding user");
-                var subLedgerMapData = FetchAllCompanySubLedgerMap(model.COMPANY_CODE, dbContext, pref);
+                var subLedgerMapData = FetchAllCompanySubLedgerMap(model, dbContext, pref);
                 result.Add("SUB_LEDGER_MAP", new
                 {
                     result = subLedgerMapData,
@@ -2975,7 +3136,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("SUB_LEDGER_MAP", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -2986,7 +3147,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 if (model.user_type == "B")
                     throw new Exception("Branding user");
-                var partyTypeData = FetchAllCompanyPartyType(model.COMPANY_CODE, dbContext, pref);
+                var partyTypeData = FetchAllCompanyPartyType(model, dbContext, pref);
                 result.Add("PARTY_TYPE", new
                 {
                     result = partyTypeData,
@@ -2998,7 +3159,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("PARTY_TYPE", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3009,7 +3170,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 if (model.user_type == "B")
                     throw new Exception("Branding user");
-                var saCustomerData = FetchAllCompanySaCustomer(model.COMPANY_CODE, dbContext, pref);
+                var saCustomerData = FetchAllCompanySaCustomer(model, dbContext, pref);
                 result.Add("SA_CUSTOMER", new
                 {
                     result = saCustomerData,
@@ -3021,7 +3182,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("SA_CUSTOMER", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3052,7 +3213,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("IMAGE_CATEGORY", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3075,7 +3236,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DISTRIBUTOR_ITEMS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3098,7 +3259,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("RESELLER_ENTITIES", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3121,7 +3282,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_GROUPS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3142,7 +3303,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_NOTIFICATIONS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3151,7 +3312,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //COMP_ITEMS
             try
             {
-                var CompItems = GetCompItems(model.COMPANY_CODE, dbContext);
+                var CompItems = GetCompItems(model, dbContext);
                 result.Add("DIST_COMP_ITEMS", new
                 {
                     result = CompItems,
@@ -3163,7 +3324,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_COMP_ITEMS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3172,7 +3333,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //COMP_ITEM_maps
             try
             {
-                var CompItems = GetCompItemMaps(model.COMPANY_CODE, dbContext);
+                var CompItems = GetCompItemMaps(model, dbContext);
                 result.Add("DIST_COMP_ITEM_MAP", new
                 {
                     result = CompItems,
@@ -3184,7 +3345,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_COMP_ITEM_MAP", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3193,7 +3354,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             //COMP_ITEM_FIELDS
             try
             {
-                var CompItemFields = GetCompItemFields(model.COMPANY_CODE, dbContext);
+                var CompItemFields = GetCompItemFields(model, dbContext);
                 result.Add("DIST_COMP_ITEM_FIELDS", new
                 {
                     result = CompItemFields,
@@ -3205,7 +3366,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_COMP_ITEM_FIELDS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3226,12 +3387,137 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("DIST_GROUP_MAP", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
             }
+            //UPDATE_STATUS
+            try
+            {
+                var updateData = FetchUpdates(model, dbContext);
+                result.Add("UPDATE_STATUS", new
+                {
+                    result = updateData,
+                    response = updateData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
 
+            catch (Exception ex)
+            {
+                result.Add("UPDATE_STATUS", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
+            //COMPLAIN_TYPES
+            try
+            {
+                var complainData = FetchComplainTypes(model, dbContext);
+                result.Add("COMPLAIN_TYPE", new
+                {
+                    result = complainData,
+                    response = complainData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+
+            catch (Exception ex)
+            {
+                result.Add("COMPLAIN_TYPE", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
+            //SERIOUSNESS_TYPES
+            try
+            {
+                var SeriousnessData = FetchSeriousnessTypes(model, dbContext);
+                result.Add("SERIOUSNESS_TYPES", new
+                {
+                    result = SeriousnessData,
+                    response = SeriousnessData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+
+            catch (Exception ex)
+            {
+                result.Add("SERIOUSNESS_TYPES", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
+            //Date Range
+            try
+            {
+                var dateData = FetchDateRange(model, dbContext);
+                result.Add("DATE_RANGE", new
+                {
+                    result = dateData,
+                    response = dateData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+
+            catch (Exception ex)
+            {
+                result.Add("DATE_RANGE", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
+            //RETURN_CONDITION_TYPES
+            try
+            {
+                var ReturnTypesData = FetchReturnCondition(model, dbContext);
+                result.Add("RETURN_CONDITION_TYPES", new
+                {
+                    result = ReturnTypesData,
+                    response = ReturnTypesData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+
+            catch (Exception ex)
+            {
+                result.Add("RETURN_CONDITION_TYPES", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
+            //PRIORITY_STATUS
+            try
+            {
+                var priorityData = FetchPriorityData(model, dbContext);
+                result.Add("PRIORITY_STATUS", new
+                {
+                    result = priorityData,
+                    response = priorityData.Count > 0 ? true : false,
+                    error = ""
+                });
+            }
+
+            catch (Exception ex)
+            {
+                result.Add("PRIORITY_STATUS", new
+                {
+                    result = new object[] { },
+                    response = false,
+                    error = ex.Message
+                });
+            }
             var prefs = FetchPreferences(model.COMPANY_CODE, dbContext);
             if (prefs.PO_SALES_TYPE.Trim().ToUpper() == "Y")
             {
@@ -3250,7 +3536,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SA_SALES_TYPE", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3274,7 +3560,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SHIPPING_ADDRESS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3296,7 +3582,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("SCHEMES", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3317,7 +3603,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 result.Add("CRM_TASKS", new
                 {
-                    result = new object(),
+                    result = new object[] { },
                     response = false,
                     error = ex.Message
                 });
@@ -3343,7 +3629,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var areasData = FetchAllCompanyArea(model.COMPANY_CODE, dbContext, pref);
+                    var areasData = FetchAllCompanyArea(model, dbContext, pref);
                     result.Add("AREA", new
                     {
                         result = areasData,
@@ -3355,7 +3641,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("AREA", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3381,7 +3667,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("VISIT_PLAN", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3431,7 +3717,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("BRD_VISIT_PLAN", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3456,7 +3742,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("OTHER_VISIT_PLAN", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3486,13 +3772,35 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                     });
                 }
             }
-
+            //Discount
+            if (model.entities.Any(x => x.Equals("DISCOUNT", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var discountData = FetchDiscount(model.COMPANY_CODE, model.BRANCH_CODE, dbContext, pref);
+                    result.Add("DISCOUNT", new
+                    {
+                        result = discountData,
+                        response = discountData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+                catch (Exception ex)
+                {
+                    result.Add("DISCOUNT", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
             //Item list with their respective Brand
             if (model.entities.Any(x => x.Equals("ITEM", StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {
-                    var itemData = FetchAllCompanyItems(model.COMPANY_CODE, dbContext, pref);
+                    var itemData = FetchAllCompanyItems(model, dbContext, pref);
                     result.Add("ITEM", new
                     {
                         result = itemData,
@@ -3505,7 +3813,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("ITEM", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3537,7 +3845,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var itemData = FetchAllSchemeItems(model.COMPANY_CODE, dbContext, pref);
+                    var itemData = FetchAllSchemeItems(model, dbContext, pref);
                     result.Add("SCHEME_ITEM", new
                     {
                         result = itemData,
@@ -3550,7 +3858,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SCHEME_ITEM", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3560,7 +3868,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var itemData = FetchAllSchemeGiftItems(model.COMPANY_CODE, dbContext, pref);
+                    var itemData = FetchAllSchemeGiftItems(model, dbContext, pref);
                     result.Add("SCHEME_GIFT_ITEM", new
                     {
                         result = itemData,
@@ -3573,7 +3881,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SCHEME_GIFT_ITEM", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3584,7 +3892,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var rateData = FetchAllCompanyBranchItemRate(model.COMPANY_CODE, dbContext, pref);
+                    var rateData = FetchAllCompanyBranchItemRate(model, dbContext, pref);
                     result.Add("RATE", new
                     {
                         result = rateData,
@@ -3597,7 +3905,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("RATE", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3622,7 +3930,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("MU", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3647,13 +3955,159 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("OUTLET", new
                     {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
+            //Distributors sashi
+            if (model.entities.Any(x => x.Equals("distributor", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var outletData = FetchOutlets(model, dbContext);
+                    result.Add("distributor", new
+                    {
+                        result = outletData,
+                        response = outletData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+
+                catch (Exception ex)
+                {
+                    result.Add("distributor", new
+                    {
                         result = new object(),
                         response = false,
                         error = ex.Message
                     });
                 }
             }
+            //DIST_UPDATE_TYPE
+            if (model.entities.Any(x => x.Equals("UPDATE_STATUS", StringComparison.OrdinalIgnoreCase)))
+            {
+                //UPDATE_STATUS
+                try
+                {
+                    var updateData = FetchUpdates(model, dbContext);
+                    result.Add("UPDATE_STATUS", new
+                    {
+                        result = updateData,
+                        response = updateData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
 
+                catch (Exception ex)
+                {
+                    result.Add("UPDATE_STATUS", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
+            //PRIORITY_STATUS
+            if (model.entities.Any(x => x.Equals("PRIORITY_STATUS", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var priorityData = FetchPriorityData(model, dbContext);
+                    result.Add("PRIORITY_STATUS", new
+                    {
+                        result = priorityData,
+                        response = priorityData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+
+                catch (Exception ex)
+                {
+                    result.Add("PRIORITY_STATUS", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
+
+            //COMPLAIN_TYPE
+            if (model.entities.Any(x => x.Equals("COMPLAIN_TYPE", StringComparison.OrdinalIgnoreCase)))
+            {
+                //UPDATE_STATUS
+                try
+                {
+                    var complainData = FetchComplainTypes(model, dbContext);
+                    result.Add("COMPLAIN_TYPE", new
+                    {
+                        result = complainData,
+                        response = complainData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+
+                catch (Exception ex)
+                {
+                    result.Add("COMPLAIN_TYPE", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
+            //SERIOUSNESS_TYPES
+            if (model.entities.Any(x => x.Equals("SERIOUSNESS_TYPES", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var seriousnessData = FetchSeriousnessTypes(model, dbContext);
+                    result.Add("SERIOUSNESS_TYPES", new
+                    {
+                        result = seriousnessData,
+                        response = seriousnessData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+
+                catch (Exception ex)
+                {
+                    result.Add("SERIOUSNESS_TYPES", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
+            //RETURN_CONDITION_TYPES
+            if (model.entities.Any(x => x.Equals("RETURN_CONDITION_TYPES", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var ReturnConditionData = FetchReturnCondition(model, dbContext);
+                    result.Add("RETURN_CONDITION_TYPES", new
+                    {
+                        result = ReturnConditionData,
+                        response = ReturnConditionData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
+
+                catch (Exception ex)
+                {
+                    result.Add("RETURN_CONDITION_TYPES", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
             //General and Tabular Questions Lists
             if (model.entities.Any(x => x.Equals("QUESTION", StringComparison.OrdinalIgnoreCase)))
             {
@@ -3685,7 +4139,11 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("QUESTION", new
                     {
-                        result = new object(),
+                        result = new
+                        {
+                            general = new List<GeneralModel>(),
+                            tabular = new Dictionary<string, TabularModel>()
+                        },
                         response = false,
                         error = ex.Message
                     });
@@ -3699,7 +4157,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     if (model.user_type == "B")
                         throw new Exception("Branding user");
-                    var subLedgerMapData = FetchAllCompanySubLedgerMap(model.COMPANY_CODE, dbContext, pref);
+                    var subLedgerMapData = FetchAllCompanySubLedgerMap(model, dbContext, pref);
                     result.Add("SUB_LEDGER_MAP", new
                     {
                         result = subLedgerMapData,
@@ -3711,7 +4169,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SUB_LEDGER_MAP", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3725,7 +4183,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     if (model.user_type == "B")
                         throw new Exception("Branding user");
-                    var partyTypeData = FetchAllCompanyPartyType(model.COMPANY_CODE, dbContext, pref);
+                    var partyTypeData = FetchAllCompanyPartyType(model, dbContext, pref);
                     result.Add("PARTY_TYPE", new
                     {
                         result = partyTypeData,
@@ -3737,7 +4195,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("PARTY_TYPE", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3751,7 +4209,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     if (model.user_type == "B")
                         throw new Exception("Branding user");
-                    var saCustomerData = FetchAllCompanySaCustomer(model.COMPANY_CODE, dbContext, pref);
+                    var saCustomerData = FetchAllCompanySaCustomer(model, dbContext, pref);
                     result.Add("SA_CUSTOMER", new
                     {
                         result = saCustomerData,
@@ -3763,7 +4221,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SA_CUSTOMER", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3796,7 +4254,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("IMAGE_CATEGORY", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3822,7 +4280,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DISTRIBUTOR_ITEMS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3848,7 +4306,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("RESELLER_ENTITIES", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3874,7 +4332,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_GROUPS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3898,7 +4356,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_NOTIFICATIONS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3910,7 +4368,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var CompItems = GetCompItems(model.COMPANY_CODE, dbContext);
+                    var CompItems = GetCompItems(model, dbContext);
                     result.Add("DIST_COMP_ITEMS", new
                     {
                         result = CompItems,
@@ -3922,19 +4380,42 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_COMP_ITEMS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
                 }
             }
+            //DATE RANGE
+            if (model.entities.Any(x => x.Equals("DATE_RANGE", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var dateData = FetchDateRange(model, dbContext);
+                    result.Add("DATE_RANGE", new
+                    {
+                        result = dateData,
+                        response = dateData.Count > 0 ? true : false,
+                        error = ""
+                    });
+                }
 
+                catch (Exception ex)
+                {
+                    result.Add("DATE_RANGE", new
+                    {
+                        result = new object[] { },
+                        response = false,
+                        error = ex.Message
+                    });
+                }
+            }
             //COMP_ITEM_maps
             if (model.entities.Any(x => x.Equals("DIST_COMP_ITEM_MAP", StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {
-                    var CompItems = GetCompItemMaps(model.COMPANY_CODE, dbContext);
+                    var CompItems = GetCompItemMaps(model, dbContext);
                     result.Add("DIST_COMP_ITEM_MAP", new
                     {
                         result = CompItems,
@@ -3946,7 +4427,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_COMP_ITEM_MAP", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3958,7 +4439,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             {
                 try
                 {
-                    var CompItemFields = GetCompItemFields(model.COMPANY_CODE, dbContext);
+                    var CompItemFields = GetCompItemFields(model, dbContext);
                     result.Add("DIST_COMP_ITEM_FIELDS", new
                     {
                         result = CompItemFields,
@@ -3970,7 +4451,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_COMP_ITEM_FIELDS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -3994,7 +4475,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("DIST_GROUP_MAP", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -4019,7 +4500,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SA_SALES_TYPE", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -4043,7 +4524,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SHIPPING_ADDRESS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -4067,7 +4548,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("SCHEMES", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -4091,7 +4572,7 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 {
                     result.Add("CRM_TASKS", new
                     {
-                        result = new object(),
+                        result = new object[] { },
                         response = false,
                         error = ex.Message
                     });
@@ -4100,6 +4581,8 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 
             return result;
         }
+
+
 
         public List<SPEntityModel> FetchSpPartyType(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
         {
@@ -4282,13 +4765,38 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             var data = dbContext.SqlQuery<ResellerEntityModel>(query).ToList();
             return data;
         }
-
+        public List<ResellerEntityModel> FetchResellerEntity(VisitPlanRequestModel model, PreferenceModel pref, string spCode, NeoErpCoreEntity dbContext)
+        {
+            var entityFIlter = "";
+            if (pref.SQL_COMPANY_ENTITY == "N")
+                entityFIlter = $@" AND REM.AREA_CODE IN (SELECT AREA_CODE FROM DIST_AREA_MASTER WHERE GROUPID IN
+                        (SELECT MAPPED_GROUPID FROM DIST_GROUP_MAPPING WHERE GROUPID = 
+                        (SELECT GROUPID FROM DIST_LOGIN_USER WHERE SP_CODE = '{spCode}') UNION (SELECT GROUPID FROM DIST_LOGIN_USER WHERE SP_CODE = '{spCode}')))";
+            var query = $@"SELECT DRE.RESELLER_CODE,DRE.ENTITY_CODE,DRE.ENTITY_TYPE,DRE.COMPANY_CODE
+                FROM DIST_RESELLER_ENTITY DRE
+                INNER JOIN DIST_RESELLER_MASTER REM ON DRE.RESELLER_CODE = REM.RESELLER_CODE AND DRE.COMPANY_CODE = REM.COMPANY_CODE
+                LEFT JOIN dist_user_areas dua on  dua.customer_code = dre.entity_code AND dua.company_code = dre.company_code
+                WHERE DRE.DELETED_FLAG='N' and dua.deleted_flag = 'N' and dua.sp_code='{model.spcode}'
+                AND DRE.COMPANY_CODE='{model.COMPANY_CODE}'
+                AND REM.IS_CLOSED = 'N'
+                AND DRE.ENTITY_TYPE='D'
+                AND REM.ACTIVE = 'Y' {entityFIlter}";
+            var data = dbContext.SqlQuery<ResellerEntityModel>(query).ToList();
+            return data;
+        }
         public List<DistributorItemModel> FetchDistributorItems(CommonRequestModel model, NeoErpCoreEntity dbContext)
         {
             var data = dbContext.SqlQuery<DistributorItemModel>($"SELECT DISTRIBUTOR_CODE,ITEM_CODE,COMPANY_CODE FROM DIST_DISTRIBUTOR_ITEM WHERE DELETED_FLAG='N' AND COMPANY_CODE='{model.COMPANY_CODE}'").ToList();
             return data;
         }
-
+        public List<DistributorItemModel> FetchDistributorItems(VisitPlanRequestModel model, NeoErpCoreEntity dbContext)
+        {
+            var query = $@"SELECT a.distributor_code,a.item_code,a.company_code
+                FROM dist_distributor_item a left join DIST_USER_ITEM_MAPPING b on a.item_code=b.item_code and a.company_code=b.company_code
+                WHERE a.deleted_flag = 'N' and b.deleted_flag = 'N' and b.sp_code='{model.spcode}' AND a.company_code in  '{model.COMPANY_CODE}'";
+            var data = dbContext.SqlQuery<DistributorItemModel>(query).ToList();
+            return data;
+        }
         public List<ResellerGroupModel> GetResellerGroups(CommonRequestModel model, NeoErpCoreEntity dbContext)
         {
             string Query = $"SELECT GROUPID,GROUP_EDESC,GROUP_CODE FROM DIST_GROUP_MASTER WHERE DELETED_FLAG='N' AND COMPANY_CODE='{model.COMPANY_CODE}' ORDER BY TRIM(GROUP_EDESC) ASC";
@@ -4520,30 +5028,82 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             var today = $"TO_DATE('{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}','MM/dd/yyyy hh24:mi:ss')";
             model.Saved_Date = string.IsNullOrWhiteSpace(model.Saved_Date) ? today : $"TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')";
             var OrderDate = string.IsNullOrWhiteSpace(model.Order_Date) ? today : $"TO_DATE('{model.Order_Date}','MM/dd/yyyy hh24:mi:ss')";
-            foreach (var item in model.products)
-            {
-                item.party_type_code = item.party_type_code ?? "";
-                string InsertQuery = string.Empty;
-                string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.item_code}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
-                decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
-                item.rate = item.rate == 0 ? SP : item.rate;
-                var total = item.rate * item.quantity;
+            var serialnumber = 1;
+                    try
+                    {
+                        foreach (var item in model.products)
+                        {
+                            item.party_type_code = item.party_type_code ?? "";
+                            string InsertQuery = string.Empty;
+                            string priceQuery = $"SELECT NVL(SALES_PRICE,0) SALES_PRICE FROM IP_ITEM_MASTER_SETUP WHERE ITEM_CODE = '{item.item_code}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+                            decimal SP = dbContext.SqlQuery<decimal>(priceQuery).FirstOrDefault();
+                            item.rate = item.rate == 0 ? SP : item.rate;
+                            var total = item.rate * item.quantity;
+                            var discount = item.discount + item.discountRate * item.quantity + (item.discountPercentage * total / 100);
+                            total = Math.Round(total - discount, 2);
 
-                if (model.type.Equals("P", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
-                    || model.type.Equals("D", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
-                    InsertQuery = $@"INSERT INTO DIST_IP_SSD_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO)
-                            VALUES('{id}',{OrderDate},'{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','{item.reject_flag}','N','{item.party_type_code}','{item.Po_Shipping_Address}','{item.Po_Sales_Type}','{item.Po_Shipping_Contact}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}')";
-                else
-                    InsertQuery = $@"INSERT INTO DIST_IP_SSR_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,RESELLER_CODE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO,DISPATCH_FROM,WHOLESELLER_CODE)
-                            VALUES('{id}',{OrderDate},'{model.reseller_code}','{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','N','N','{item.party_type_code}','{item.Po_Shipping_Address}','{item.Po_Sales_Type}','{item.Po_Shipping_Contact}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}','{model.Dispatch_From}','{model.WholeSeller_Code}')";
-                int rowNum = dbContext.ExecuteSqlCommand(InsertQuery);
-                result.Add(item.Sync_Id, id.ToString());
-              
-            }
+                            if (model.type.Equals("P", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DEALER", StringComparison.OrdinalIgnoreCase)
+                                || model.type.Equals("D", StringComparison.OrdinalIgnoreCase) || model.type.Equals("DISTRIBUTOR", StringComparison.OrdinalIgnoreCase))
+                            {
+                                InsertQuery = $@"INSERT INTO DIST_IP_SSD_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO,DISCOUNT,DISCOUNT_RATE,DISCOUNT_PERCENTAGE,PRIORITY_STATUS_CODE)
+                                    VALUES('{id}',{OrderDate},'{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','{item.reject_flag}','N','{item.party_type_code}','{item.CITY_CODE}','{item.SALES_TYPE_CODE}','{item.SHIPPING_CONTACT}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}','{item.discount}','{item.discountRate}','{item.discountPercentage}','{item.PRIORITY_STATUS_CODE}')";
+                                int distInsertResult = dbContext.ExecuteSqlCommand(InsertQuery);
+
+                                if (distInsertResult == 0)
+                                {
+                                    throw new Exception("Failed to insert!");
+                                }
+                                var preferences = FetchPreferences(model.COMPANY_CODE, dbContext);
+                                if (preferences.SO_SALES_ORDER.Trim().ToUpper() == "Y")
+                                {
+                                    var voucherCode = "select  FN_NEW_VOUCHER_NO('" + model.COMPANY_CODE + "','" + item.form_code + "',TRUNC(sysdate),'SA_SALES_ORDER') from dual";
+                                    var data = dbContext.SqlQuery<string>(voucherCode).FirstOrDefault();
+                                    var sessionQuery = "SELECT MYSEQUENCE.NEXTVAL FROM DUAL";
+                                    int sessionId = dbContext.SqlQuery<int>(sessionQuery).FirstOrDefault();
+                                    if (data == null)
+                                        throw new Exception("Sales Order No. Not Generated.Please try once again");
+                                    var query = string.Format(@"Insert into SA_SALES_ORDER
+                                                                           (ORDER_NO, ORDER_DATE, CUSTOMER_CODE, SERIAL_NO, ITEM_CODE, MU_CODE, QUANTITY, UNIT_PRICE, TOTAL_PRICE, CALC_QUANTITY, CALC_UNIT_PRICE, CALC_TOTAL_PRICE, FORM_CODE, COMPANY_CODE, BRANCH_CODE, CREATED_BY, CREATED_DATE, DELETED_FLAG, DELIVERY_DATE, CURRENCY_CODE, EXCHANGE_RATE, TRACKING_NO, STOCK_BLOCK_FLAG,MODIFY_BY,MODIFY_DATE,PARTY_TYPE_CODE,REMARKS,SESSION_ROWID)
+                                                                         Values
+                                                                           ('" + data + @"', to_date('" + DateTime.Parse(model.Order_Date).ToString("MM/dd/yyyy") + "','MM/dd/yyyy'), '" + model.distributor_code + @"'," + serialnumber + @",
+                                                                            '" + item.item_code + @"', '" + item.mu_code + @"'," + item.quantity + @" , " + item.rate + @", " + total + @",
+                                                                           " + item.quantity + @" , " + item.rate + @", " + total + @",
+                                                                            '" + item.form_code + @"', '" + model.COMPANY_CODE + @"', '" + model.BRANCH_CODE + @"', UPPER('" + model.login_code + @"'), sysdate,
+                                                                            'N', TO_DATE(sysdate), 'NRS', 1,
+                                                                            '0', 'N',UPPER('" + model.login_code + @"'), to_date('" + model.Order_Date + @"','MM/dd/yyyy hh24:mi:ss'),'" + item.party_type_code + @"', '" + item.remarks + @"','" + sessionId + @"')");
+                                    int distInsert = dbContext.ExecuteSqlCommand(query);
+                                    if (distInsert > 0)
+                                    {
+                                        var masterQuery = @"Insert into MASTER_TRANSACTION
+                                               (VOUCHER_NO, VOUCHER_AMOUNT, FORM_CODE, CHECKED_BY, AUTHORISED_BY, POSTED_BY, COMPANY_CODE, BRANCH_CODE, CREATED_BY, CREATED_DATE, DELETED_FLAG, VOUCHER_DATE, CURRENCY_CODE, EXCHANGE_RATE, PRINT_COUNT,PRINT_FLAG,SESSION_ROWID)
+                                             Values
+                                               ('" + data + @"', " + total + @", '" + item.form_code + @"', '', '',
+                                                '', '" + model.COMPANY_CODE + "', '" + model.BRANCH_CODE + "', UPPER('" + model.login_code + @"'),
+                                                sysdate, 'N', to_date('" + DateTime.Parse(model.Order_Date).ToString("MM/dd/yyyy") + "','MM/dd/yyyy'),'NRS', 1, 0,'N', '" + sessionId + @"')";
+                                        var masterRowaffected = dbContext.ExecuteSqlCommand(masterQuery);
+                                    }
+                                    var partialUpdate = $@"UPDATE DIST_IP_SSD_PURCHASE_ORDER SET REJECT_FLAG='N',APPROVE_QTY = {item.quantity}, APPROVE_AMT = {total}, QUANTITY={item.quantity},SALES_ORDER_NO='{data}' WHERE ORDER_NO = {id} and ITEM_CODE = {item.item_code}";
+                                    var Pupdate = dbContext.ExecuteSqlCommand(partialUpdate);
+                                    serialnumber++;
+                                }
+                            }
+                            else
+                            {
+                                InsertQuery = $@"INSERT INTO DIST_IP_SSR_PURCHASE_ORDER (ORDER_NO,ORDER_DATE,RESELLER_CODE,CUSTOMER_CODE,ITEM_CODE,MU_CODE,QUANTITY,BILLING_NAME,REMARKS,UNIT_PRICE,TOTAL_PRICE,CREATED_BY,CREATED_DATE,APPROVED_FLAG,DISPATCH_FLAG,ACKNOWLEDGE_FLAG,REJECT_FLAG,DELETED_FLAG,PARTY_TYPE_CODE,CITY_CODE,SALES_TYPE_CODE,SHIPPING_CONTACT,COMPANY_CODE,BRANCH_CODE,SYNC_ID,TEMP_ORDER_NO,DISPATCH_FROM,WHOLESELLER_CODE,PRIORITY_STATUS_CODE,DISCOUNT,DISCOUNT_RATE,DISCOUNT_PERCENTAGE)
+                                    VALUES('{id}',{OrderDate},'{model.reseller_code}','{model.distributor_code}','{item.item_code}','{item.mu_code}','{item.quantity}','{item.billing_name}','{item.remarks}','{item.rate}','{total}','{model.user_id}',{model.Saved_Date},'N','N','N','N','N','{item.party_type_code}','{item.CITY_CODE}','{item.SALES_TYPE_CODE}','{item.SHIPPING_CONTACT}','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{item.Sync_Id}','{model.Order_No}','{model.Dispatch_From}','{model.WholeSeller_Code}','{item.PRIORITY_STATUS_CODE}','{item.discount}','{item.discountRate}','{item.discountPercentage}')";
+                                int rowNum = dbContext.ExecuteSqlCommand(InsertQuery);
+                            }
+                            result.Add(item.Sync_Id, id.ToString());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw ex;
+                    }
+
           //  UpdateMyLocation
             return result;
         }
-
         public Dictionary<string, string> CancelPurchaseOrder(CancelPurchaseOrderModal model, NeoErpCoreEntity dbContext)
         {
             var result = new Dictionary<string, string>();
@@ -4557,6 +5117,36 @@ namespace NeoErp.Distribution.Service.Service.Mobile
             return result;
         }
 
+        //public Dictionary<string, string> NewCollection(CollectionRequestModel model, NeoErpCoreEntity dbContext)
+        //{
+        //    if (string.IsNullOrWhiteSpace(model.sp_code))
+        //        throw new Exception("Sp code is empty");
+        //    if (string.IsNullOrWhiteSpace(model.entity_type))
+        //        throw new Exception("Entity type is empty");
+        //    if (string.IsNullOrWhiteSpace(model.created_by))
+        //        throw new Exception("Created by is empty");
+        //    decimal Amount;
+        //    //if (model.LocationInfo != null)
+        //    //{
+        //    //    model.LocationInfo.remarks = "Collection Received(auto)";
+        //    //    var locationRes = this.UpdateMyLocation(model.LocationInfo, dbContext);
+        //    //}
+        //    string[] types = { "P", "D", "R" };
+        //    if (string.IsNullOrWhiteSpace(model.amount) || !decimal.TryParse(model.amount, out Amount))
+        //        throw new Exception("Amount should be in Number");
+        //    if (!types.Contains(model.entity_type.ToUpper()))
+        //        throw new Exception(@"ENITY_TYPE must be 'P' or 'D' or 'R' ");
+        //    string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+        //    VALUES ('{model.sp_code}','{model.entity_code}','{model.entity_type}','{model.bill_no}','{model.cheque_no}','{model.bank_name.Replace("'", "''")}','{model.amount}','{model.payment_mode}',TO_DATE('{model.cheque_clearance_date}','dd-mm-yyyy'),
+        //    '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks.Replace("'", "''")}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Sync_Id}')";
+        //    var row = dbContext.ExecuteSqlCommand(insertQuery);
+        //    if (row <= 0)
+        //        throw new Exception("Unable to save collection");
+
+        //    var result = new Dictionary<string, string>();
+        //    result.Add(model.Sync_Id, model.sp_code);
+        //    return result;
+        //}
         public Dictionary<string, string> NewCollection(CollectionRequestModel model, NeoErpCoreEntity dbContext)
         {
             if (string.IsNullOrWhiteSpace(model.sp_code))
@@ -4576,15 +5166,72 @@ namespace NeoErp.Distribution.Service.Service.Mobile
                 throw new Exception("Amount should be in Number");
             if (!types.Contains(model.entity_type.ToUpper()))
                 throw new Exception(@"ENITY_TYPE must be 'P' or 'D' or 'R' ");
-            string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+            string insertQuery = $@"INSERT INTO DIST_COLLECTION (SP_CODE,ENTITY_CODE,ENTITY_TYPE,BILL_NO, CHEQUE_NO, BANK_NAME, AMOUNT,PAYMENT_MODE,CHEQUE_CLEARANCE_DATE,CHEQUE_DEPOSIT_BANK,LATITUDE,LONGITUDE,REMARKS,CREATED_BY,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE,SYNC_ID,OTP_CODE)
             VALUES ('{model.sp_code}','{model.entity_code}','{model.entity_type}','{model.bill_no}','{model.cheque_no}','{model.bank_name.Replace("'", "''")}','{model.amount}','{model.payment_mode}',TO_DATE('{model.cheque_clearance_date}','dd-mm-yyyy'),
-            '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks.Replace("'", "''")}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Sync_Id}')";
+            '{model.cheque_deposit_bank}', '{model.latitude}','{model.longitude}','{model.remarks.Replace("'", "''")}','{model.created_by}','N','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Sync_Id}','{model.otp_code}')";
             var row = dbContext.ExecuteSqlCommand(insertQuery);
             if (row <= 0)
                 throw new Exception("Unable to save collection");
 
             var result = new Dictionary<string, string>();
             result.Add(model.Sync_Id, model.sp_code);
+
+            /*sashi*/
+            //foreach (string tagName in Files)
+            //{
+            //    HttpPostedFile file = Files[tagName];
+            //    string ChequePath = string.Empty;
+
+            //    var ImageId = this.GetMaxId("DIST_VISIT_IMAGE", "IMAGE_CODE", dbContext);
+
+            //    ChequePath = UploadPath + "\\EntityImages";
+
+            //    if (!Directory.Exists(ChequePath))
+            //        Directory.CreateDirectory(ChequePath);
+            //    string FileName = string.Format("{0}{1}", model.entity_code, Path.GetExtension(file.FileName));
+            //    string filePath = Path.Combine(ChequePath, FileName);
+            //    int count = 1;
+            //    while (File.Exists(filePath))
+            //    {
+            //        FileName = string.Format("{0}_{1}{2}", model.entity_code, count++, Path.GetExtension(file.FileName));
+            //        filePath = Path.Combine(ChequePath, FileName);
+            //    }
+            //    string mediaType;
+            //    int categoryId = 0;
+            //    if (tagName.IndexOf("cheque", StringComparison.OrdinalIgnoreCase) >= 0)
+            //    {
+            //        mediaType = "CHEQUE";
+            //        string chequeQuery = $"SELECT CATEGORYID FROM DIST_IMAGE_CATEGORY WHERE CATEGORY_CODE = 'cheque'";
+            //        categoryId = dbContext.SqlQuery<int>(chequeQuery).FirstOrDefault();
+            //        file.SaveAs(filePath);
+            //    }
+            //    else if (tagName.IndexOf("signature", StringComparison.OrdinalIgnoreCase) >= 0)
+            //    {
+            //        mediaType = "SIGNATURE";
+            //        string chequeQuery = $"SELECT CATEGORYID FROM DIST_IMAGE_CATEGORY WHERE CATEGORY_CODE = 'signature'";
+            //        categoryId = dbContext.SqlQuery<int>(chequeQuery).FirstOrDefault();
+            //        file.SaveAs(filePath);
+            //    }
+            //    else
+            //        continue;
+            //    var InsertQuery = $@"INSERT INTO DIST_VISIT_IMAGE (IMAGE_CODE,IMAGE_NAME,IMAGE_TITLE,IMAGE_DESC,SP_CODE,ENTITY_CODE,TYPE,UPLOAD_DATE,LONGITUDE,LATITUDE,CATEGORYID,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+            //                        VALUES ({ImageId}, '{FileName}', '{DBNull.Value}', '{mediaType}', '{model.sp_code}', '{model.entity_code}', '{model.entity_type}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy  HH24:MI:SS'),'{model.longitude}', '{model.latitude}','{categoryId}','{model.COMPANY_CODE}', '{model.BRANCH_CODE}','{model.Sync_Id}')";
+            //    row = dbContext.ExecuteSqlCommand(InsertQuery);
+            //    //string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+            //    //            ('{FileName}','{descriptions[tagName]}','R','{ResellerCode}','{mediaType}','{model.user_id}',SYSDATE,'{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+            //    //row = dbContext.ExecuteSqlCommand(ImageQuery);
+
+            //    //var InsertQuery = $@"INSERT INTO DIST_VISIT_IMAGE (IMAGE_CODE,IMAGE_NAME,IMAGE_TITLE,IMAGE_DESC,SP_CODE,ENTITY_CODE,TYPE,UPLOAD_DATE,LONGITUDE,LATITUDE,CATEGORYID,COMPANY_CODE,BRANCH_CODE,SYNC_ID)
+            //    //                    VALUES ({ImageId}, '{FileName}', '{DBNull.Value}', '{model.Description.Replace("'", "''")}', '{model.ACC_CODE}', '{model.entity_code}', '{model.entity_type}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy  HH24:MI:SS'),'{model.longitude}', '{model.latitude}','{model.Categoryid}','{model.COMPANY_CODE}', '{model.BRANCH_CODE}','{model.Sync_Id}')";
+            //    //row += dbContext.ExecuteSqlCommand(InsertQuery);
+
+            //    //result.Add(model.Sync_Id, ImageId.ToString());
+
+
+
+            //}
+            /*sashi*/
+
             return result;
         }
 
@@ -4827,7 +5474,253 @@ namespace NeoErp.Distribution.Service.Service.Mobile
 
             return result;
         }
+        /*sashi*/
+        public Dictionary<string, string> CreateDistributor(CreateDistributorModel model, NeoErpCoreEntity dbContext)
+        {
+            var result = new Dictionary<string, string>();
+            //primary contact
+            var primary = new ContactModel();
+            foreach (var c in model.contact)
+                if (c.primary.Equals("Y", StringComparison.OrdinalIgnoreCase))
+                    primary = c;
+            if (primary != null)
+                model.contact.Remove(primary);
 
+            if (string.IsNullOrWhiteSpace(model.address))
+                throw new Exception("Address is empty.");
+            if (string.IsNullOrWhiteSpace(model.latitude))
+                throw new Exception("Latitude is empty.");
+            if (string.IsNullOrWhiteSpace(model.longitude))
+                throw new Exception("Longitude is empty.");
+            if (string.IsNullOrWhiteSpace(model.area_code))
+                throw new Exception("Area code not selected.");
+
+
+
+            string testQuery = $"SELECT * FROM sa_customer_setup WHERE CUSTOMER_EDESC = '{model.distributor_name}' AND PAN_NO = '{model.pan}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            var testObj = dbContext.SqlQuery<object>(testQuery).ToList();
+            if (testObj.Count > 0)
+                throw new Exception("Distributor with the provided name and PAN no. already exists.");
+            //Generate distributor code
+            //sashi
+            var newmaxitemcode = string.Empty;
+            var newmaxitemcodequery = $@"SELECT MAX(TO_NUMBER(CUSTOMER_CODE))+1 as MASTER_CUSTOMER_CODE FROM SA_CUSTOMER_SETUP";
+            newmaxitemcode = dbContext.SqlQuery<int>(newmaxitemcodequery).FirstOrDefault().ToString();
+
+            using (var transaction = _objectEntity.Database.BeginTransaction())
+            {
+                try
+                {
+
+                    if (newmaxitemcodequery != null)
+                    {
+
+                        string CustomerQuery = $@"INSERT INTO sa_customer_setup(CUSTOMER_CODE,CUSTOMER_EDESC,CUSTOMER_NDESC,REGD_OFFICE_EADDRESS,REGD_OFFICE_NADDRESS,TEL_MOBILE_NO1,TEL_MOBILE_NO2,FAX_NO,EMAIL,PARTY_TYPE_CODE,CUSTOMER_FLAG,LINK_SUB_CODE,CREDIT_RATE,CREDIT_LIMIT
+                                            ,CUSHION_PERCENT,DUE_BILL_COUNT,ACTIVE_FLAG,REMARKS,GROUP_SKU_FLAG,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE,DISCOUNT_FLAT_RATE,EXCLUSIVE_FLAG,DISCOUNT_DAYS,DISCOUNT_PERCENT,COMPANY_CODE,CREATED_BY
+                                            ,CREATED_DATE,DELETED_FLAG,OPENING_DATE,MATURITY_DATE,CUSTOMER_GROUP_ID,COUNTRY_CODE,ZONE_CODE,DISTRICT_CODE,CITY_CODE,DEALING_PERSON,EXCISE_NO,TIN,EXPORT_FLAG,GST_NO,IEC_NO,FSSAI_NO,AD_CODE) VALUES
+                                            ('{newmaxitemcode}','{model.distributor_name}','{model.distributor_name}','{model.address.Replace("'", "''")}','{model.address.Replace("'", "''")}','{primary.contact_suffix}','{primary.contact_suffix}','{null}','{model.email}','{null}','D','{'C' + newmaxitemcode}','{null}','{null}'
+                                            ,'{null}','{null}','Y','{null}','G','01.02','01','{null}','{null}','{null}','{null}','01','ADMIN'
+                                            ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+                                            ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{null}','{null}','{null}','{null}','{null}','{null}','{null}','{null}','N','{null}','{null}','{null}','{null}')";
+                        var row = dbContext.ExecuteSqlCommand(CustomerQuery);
+
+
+                        string DistributorQuery = $@"INSERT INTO DIST_DISTRIBUTOR_MASTER(DISTRIBUTOR_CODE,LATITUDE,LONGITUDE,CREATED_BY,CREATED_DATE,ACTIVE,COMPANY_CODE,BRANCH_CODE,AREA_CODE,GROUPID,WEIGHT,DELETED_FLAG) VALUES
+                            ('{newmaxitemcode}','{model.latitude}','{model.longitude}','{model.user_id}',TO_DATE('{model.Saved_Date}', 'MM/dd/yyyy hh24:mi:ss'),'Y','{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.area_code}','{model.Group_id}','{0}','{'N'}')";
+                        row = dbContext.ExecuteSqlCommand(DistributorQuery);
+
+                        //insert contact details
+                        foreach (var con in model.contact)
+                        {
+                            string ContactQuery = $@"INSERT INTO DIST_DISTRIBUTOR_DETAIL(DISTRIBUTOR_CODE,COMPANY_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,DESIGNATION,CREATED_BY,CREATED_DATE) VALUES
+                            ('{newmaxitemcode}','{model.COMPANY_CODE}','{con.contact_suffix}','{con.name}','{con.number}','{con.designation}','{model.user_id}',TO_DATE(SYSDATE))";
+                            row = dbContext.ExecuteSqlCommand(ContactQuery);
+                        }
+
+                        //upload files
+                        //foreach (string tagName in Files)
+                        //{
+                        //    HttpPostedFile file = Files[tagName];
+                        //    string DistributorPath = string.Empty;
+
+                        //    DistributorPath = UploadPath + "\\DistributorImages";
+
+                        //    if (!Directory.Exists(DistributorPath))
+                        //        Directory.CreateDirectory(DistributorPath);
+                        //    string FileName = string.Format("{0}{1}", newmaxitemcode, Path.GetExtension(file.FileName));
+                        //    string filePath = Path.Combine(DistributorPath, FileName);
+                        //    int count = 1;
+                        //    while (File.Exists(filePath))
+                        //    {
+                        //        FileName = string.Format("{0}_{1}{2}", newmaxitemcode, count++, Path.GetExtension(file.FileName));
+                        //        filePath = Path.Combine(DistributorPath, FileName);
+                        //    }
+                        //    string mediaType;
+                        //    if (tagName.IndexOf("store", StringComparison.OrdinalIgnoreCase) >= 0)
+                        //    {
+                        //        mediaType = "STORE";
+                        //        file.SaveAs(filePath);
+                        //    }
+                        //    else if (tagName.IndexOf("pcontact", StringComparison.OrdinalIgnoreCase) >= 0)
+                        //    {
+                        //        mediaType = "PCONTACT";
+                        //        file.SaveAs(filePath);
+                        //    }
+                        //    else
+                        //        continue;
+                        //    string ImageQuery = $@"INSERT INTO DIST_PHOTO_INFO (FILENAME,DESCRIPTION,ENTITY_TYPE,ENTITY_CODE,MEDIA_TYPE,CREATED_BY,CREATE_DATE,COMPANY_CODE,BRANCH_CODE) VALUES
+                        //    ('{FileName}','{descriptions[tagName]}','D','{newmaxitemcode}','{mediaType}','{model.user_id}',SYSDATE,'{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+                        //    row = dbContext.ExecuteSqlCommand(ImageQuery);
+                        //}
+                        _objectEntity.SaveChanges();
+                        transaction.Commit();
+                    }
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                }
+            }
+            //sashi
+            var fetchModel = new EntityRequestModel
+            {
+                entity_code = newmaxitemcode,
+                BRANCH_CODE = model.BRANCH_CODE,
+                COMPANY_CODE = model.COMPANY_CODE,
+                entity_type = "D"
+            };
+            var entityList = this.FetchEntityById(fetchModel, dbContext);
+            //var result = entityList.FirstOrDefault();
+
+
+            //string CodeQuery = $"SELECT '{model.user_id.Trim()} FROM DUAL";
+            //string ResellerCode = dbContext.SqlQuery<string>(CodeQuery).FirstOrDefault();
+
+
+            //var newmaxitemcode = string.Empty;
+            //var newmaxitemcodequery = $@"SELECT MAX(TO_NUMBER(CUSTOMER_CODE))+1 as MASTER_CUSTOMER_CODE FROM SA_CUSTOMER_SETUP";
+            //newmaxitemcode = dbContext.SqlQuery<int>(newmaxitemcodequery).FirstOrDefault().ToString();
+
+            //string CustomerQuery = $@"INSERT INTO sa_customer_setup(CUSTOMER_CODE,CUSTOMER_EDESC,CUSTOMER_NDESC,REGD_OFFICE_EADDRESS,REGD_OFFICE_NADDRESS,TEL_MOBILE_NO1,TEL_MOBILE_NO2,FAX_NO,EMAIL,PARTY_TYPE_CODE,CUSTOMER_FLAG,LINK_SUB_CODE,CREDIT_RATE,CREDIT_LIMIT
+            //                                ,CUSHION_PERCENT,DUE_BILL_COUNT,ACTIVE_FLAG,REMARKS,GROUP_SKU_FLAG,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE,DISCOUNT_FLAT_RATE,EXCLUSIVE_FLAG,DISCOUNT_DAYS,DISCOUNT_PERCENT,COMPANY_CODE,CREATED_BY
+            //                                ,CREATED_DATE,DELETED_FLAG,OPENING_DATE,MATURITY_DATE,CUSTOMER_GROUP_ID,COUNTRY_CODE,ZONE_CODE,DISTRICT_CODE,CITY_CODE,DEALING_PERSON,EXCISE_NO,TIN,EXPORT_FLAG,GST_NO,IEC_NO,FSSAI_NO,AD_CODE) VALUES
+            //                                ('{newmaxitemcode}','{model.distributor_name}','{model.distributor_name}','{model.address.Replace("'", "''")}','{model.address.Replace("'", "''")}','{primary.contact_suffix}','{primary.contact_suffix}','{null}','{model.email}','{null}','D','{'C' + newmaxitemcode}','{null}','{null}'
+            //                                ,'{null}','{null}','Y','{null}','G','01.02','01','{null}','{null}','{null}','{null}','01','ADMIN'
+            //                                ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+            //                                ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{null}','{null}','{null}','{null}','{null}','{null}','{null}','N','{null}','{null}','{null}','{null}')";
+            //var row = dbContext.ExecuteSqlCommand(CustomerQuery);
+            //result.Add(model.Sync_Id, newmaxitemcode);
+
+
+            //string DistributorQuery = $@"INSERT INTO DIST_DISTRIBUTOR_MASTER(DISTRIBUTOR_CODE,LATITUDE,LONGITUDE,CREATED_BY,CREATED_DATE,ACTIVE,COMPANY_CODE,BRANCH_CODE,AREA_CODE,GROUPID,WEIGHT,DELETED_FLAG) VALUES
+            //                ('{newmaxitemcode}','{model.latitude}','{model.longitude}','{model.user_id}','TO_DATE('{model.Saved_Date}', 'MM/dd/yyyy hh24:mi:ss')','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.area_code}','{model.Group_id}','{0}','{'N'}')";
+            //row = dbContext.ExecuteSqlCommand(DistributorQuery);
+            //result.Add(model.Sync_Id, newmaxitemcode);
+
+            ////insert contact details
+            //foreach (var con in model.contact)
+            //{
+            //    string ContactQuery = $@"INSERT INTO DIST_DISTRIBUTOR_DETAIL(DISTRIBUTOR_CODE,COMPANY_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,DESIGNATION,CREATED_BY,CREATED_DATE,SYNC_ID) VALUES
+            //                ('{newmaxitemcode}','{model.COMPANY_CODE}','{con.contact_suffix}','{con.name.Replace("'", "''")}','{con.number}','{con.designation.Replace("'", "''")}','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{con.Sync_Id}')";
+            //    row = dbContext.ExecuteSqlCommand(ContactQuery);
+            //    result.Add(con.Sync_Id, newmaxitemcode);
+            //}
+
+
+
+
+
+
+
+            //            DISTRIBUTOR_CODE,REG_OFFICE_ADDRESS,CONTACT_NO,EMAIL,PAN_NO,VAT_NO,LATITUDE,LONGITUDE,CREATED_BY,LUPDATE_BY,CREATED_DATE,LUPDATE_DATE,ACTIVE,COMPANY_CODE,BRANCH_CODE,AREA_CODE,SYNC_ID,GROUPID,WEIGHT,DELETED_FLAG,DISTRIBUTOR_TYPE_ID,DISTRIBUTOR_SUBTYPE_ID
+            //)
+
+
+            //string customerQuery = $"SELECT * FROM sa_customer_setup WHERE " +
+            //    $"SELLER_NAME = '{model.reseller_name.Replace("'", "''")}' AND PAN_NO = '{model.pan}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            //var testObj = dbContext.SqlQuery<object>(testQuery).ToList();
+
+            //insert customer details
+            //foreach (var cus in model.customer)
+            //{
+            //    string customerQuery = $"SELECT * FROM sa_customer_setup WHERE " +
+            //        $"CUSTOMER_EDESC = '{cus.CUSTOMER_NAME.Replace("'", "''")}' AND PAN_NO = '{model.pan}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            //    var custObj = dbContext.SqlQuery<object>(customerQuery).ToList();
+
+            //    if (custObj.Count < 1)
+            //    {
+            //        string CustomerQuery = $@"INSERT INTO sa_customer_setup(CUSTOMER_CODE,CUSTOMER_EDESC,CUSTOMER_NDESC,REGD_OFFICE_EADDRESS,REGD_OFFICE_NADDRESS,TEL_MOBILE_NO1,TEL_MOBILE_NO2,FAX_NO,EMAIL,PARTY_TYPE_CODE,CUSTOMER_FLAG,LINK_SUB_CODE,CREDIT_RATE,CREDIT_LIMIT
+            //                                ,CUSHION_PERCENT,DUE_BILL_COUNT,ACTIVE_FLAG,REMARKS,GROUP_SKU_FLAG,MASTER_CUSTOMER_CODE,PRE_CUSTOMER_CODE,DISCOUNT_FLAT_RATE,EXCLUSIVE_FLAG,DISCOUNT_DAYS,DISCOUNT_PERCENT,COMPANY_CODE,CREATED_BY
+            //                                ,CREATED_DATE,DELETED_FLAG,OPENING_DATE,MATURITY_DATE,CUSTOMER_GROUP_ID,COUNTRY_CODE,ZONE_CODE,DISTRICT_CODE,CITY_CODE,DEALING_PERSON,EXCISE_NO,TIN,EXPORT_FLAG,GST_NO,IEC_NO,FSSAI_NO,AD_CODE) VALUES
+            //                                ('{cus.CUSTOMER_CODE}','{cus.CUSTOMER_NAME}','{cus.CUSTOMER_NAME}','{model.address.Replace("'", "''")}','{model.address.Replace("'", "''")}','{primary.contact_suffix}','{primary.contact_suffix}','{null}','{model.email}','{null}','D','{'C' + cus.CUSTOMER_CODE}','{null}','{null}'
+            //                                ,'{null}','{null}','Y','{null}','G','01.02','01','{null}','{null}','{null}','{null}','01','ADMIN'
+            //                                ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss')
+            //                                ,TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{null}','{null}','{null}','{null}','{null}','{null}','{null}','N','{null}','{null}','{null}','{null}')";
+            //        var row = dbContext.ExecuteSqlCommand(CustomerQuery);
+            //        result.Add(model.Sync_Id, cus.CUSTOMER_CODE);
+            //    }
+
+            //    string ContactQuery = $@"INSERT INTO DIST_DISTRIBUTOR_MASTER(DISTRIBUTOR_CODE,LATITUDE,LONGITUDE,CREATED_BY,CREATED_DATE,ACTIVE,COMPANY_CODE,BRANCH_CODE,AREA_CODE,GROUPID,WEIGHT,DELETED_FLAG) VALUES
+            //                ('{CodeQuery}','{model.latitude}','{model.longitude}','{model.user_id}','TO_DATE('{model.Saved_Date}', 'MM/dd/yyyy hh24:mi:ss')','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.area_code}','{model.Group_id}','{0}','{'N'}')";
+            //   var row1 = dbContext.ExecuteSqlCommand(ContactQuery);
+            //    result.Add(model.Sync_Id, customerQuery);
+
+            //    //string ContactQuery = $@"INSERT INTO DIST_RESELLER_DETAIL(RESELLER_CODE,COMPANY_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,DESIGNATION,CREATED_BY,CREATED_DATE,SYNC_ID) VALUES
+            //    //            ('{ResellerCode}','{model.COMPANY_CODE}','{con.contact_suffix}','{con.name.Replace("'", "''")}','{con.number}','{con.designation.Replace("'", "''")}','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{con.Sync_Id}')";
+            //    //row = dbContext.ExecuteSqlCommand(ContactQuery);
+            //    //result.Add(con.Sync_Id, ResellerCode
+            //}
+
+
+            //string testQuery = $"SELECT * FROM DIST_DISTRIBUTOR_MASTER WHERE RE" +
+            //    $"SELLER_NAME = '{model.reseller_name.Replace("'", "''")}' AND PAN_NO = '{model.pan}' AND COMPANY_CODE='{model.COMPANY_CODE}'";
+            //var testObj = dbContext.SqlQuery<object>(testQuery).ToList();
+            //if (testObj.Count > 0)
+            //    //throw new Exception("Reseller with the provided name and PAN no. already exists.");
+            //    throw new Exception("EXISTS");
+            ////Generate reseller code
+            //string RCodeQuery = $"SELECT 'R-{model.user_id.Trim()}-'||TO_CHAR(SYSDATE,'YYMMDD-HH24MMSS') FROM DUAL";
+            //string ResellerCode = dbContext.SqlQuery<string>(RCodeQuery).FirstOrDefault();
+
+            ////insert reseller
+            //string ResellerInsert = $@"INSERT INTO DIST_RESELLER_MASTER
+            //            (RESELLER_CODE,RESELLER_NAME,REG_OFFICE_ADDRESS,EMAIL,PAN_NO,LATITUDE,LONGITUDE,WHOLESELLER,AREA_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,OUTLET_TYPE_ID,OUTLET_SUBTYPE_ID,GROUPID,CREATED_BY,CREATED_BY_NAME,CREATED_DATE,COMPANY_CODE,BRANCH_CODE,RESELLER_CONTACT,SYNC_ID,SOURCE,ACTIVE,TEMP_ROUTE_CODE) VALUES 
+            //            ('{ResellerCode}','{model.reseller_name.Replace("'", "''")}','{model.address.Replace("'", "''")}','{model.email}','{model.pan}','{model.latitude}','{model.longitude}','{model.wholeseller}','{model.area_code}','{primary.contact_suffix}','{primary.name.Replace("'", "''")}',
+            //            '{primary.number}','{model.type_id}','{model.subtype_id}','{model.Group_id}','{model.user_id}',(SELECT FULL_NAME FROM DIST_LOGIN_USER WHERE USERID = '{model.user_id}'),TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{model.COMPANY_CODE}','{model.BRANCH_CODE}','{model.Reseller_contact}','{model.Sync_Id}','MOB','N','{model.ROUTE_CODE}')";
+            //var row = dbContext.ExecuteSqlCommand(ResellerInsert);
+            //result.Add(model.Sync_Id, ResellerCode);
+
+            ////insert contact details
+            //foreach (var con in model.contact)
+            //{
+            //    string ContactQuery = $@"INSERT INTO DIST_RESELLER_DETAIL(RESELLER_CODE,COMPANY_CODE,CONTACT_SUFFIX,CONTACT_NAME,CONTACT_NO,DESIGNATION,CREATED_BY,CREATED_DATE,SYNC_ID) VALUES
+            //                ('{ResellerCode}','{model.COMPANY_CODE}','{con.contact_suffix}','{con.name.Replace("'", "''")}','{con.number}','{con.designation.Replace("'", "''")}','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'{con.Sync_Id}')";
+            //    row = dbContext.ExecuteSqlCommand(ContactQuery);
+            //    result.Add(con.Sync_Id, ResellerCode);
+            //}
+            //List<string> dist = new List<string>();
+            //List<string> Who = new List<string>();
+            //if (!string.IsNullOrWhiteSpace(model.distributor_code))
+            //    dist = model.distributor_code.Replace(" ", string.Empty).Split(',').ToList();
+            //if (!string.IsNullOrWhiteSpace(model.wholeseller_code))
+            //    Who = model.wholeseller_code.Replace(" ", string.Empty).Split(',').ToList();
+
+            //foreach (var distributor in dist)
+            //{
+            //    string disInsertQuery = $@"INSERT INTO DIST_RESELLER_ENTITY (RESELLER_CODE,ENTITY_CODE,ENTITY_TYPE,CREATED_BY,CREATED_DATE,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE)
+            //                                    VALUES('{ResellerCode}','{distributor}','D','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+            //    row = dbContext.ExecuteSqlCommand(disInsertQuery);
+            //}
+            //foreach (var wholeseller in Who)
+            //{
+            //    string whoInsertQuery = $@"INSERT INTO DIST_RESELLER_ENTITY (RESELLER_CODE,ENTITY_CODE,ENTITY_TYPE,CREATED_BY,CREATED_DATE,DELETED_FLAG,COMPANY_CODE,BRANCH_CODE)
+            //                                    VALUES('{ResellerCode}','{wholeseller}','W','{model.user_id}',TO_DATE('{model.Saved_Date}','MM/dd/yyyy hh24:mi:ss'),'N','{model.COMPANY_CODE}','{model.BRANCH_CODE}')";
+            //    row = dbContext.ExecuteSqlCommand(whoInsertQuery);
+            //}
+
+            return result;
+        }
+        /*sashi*/
         public Dictionary<string, string> UploadEntityMedia(List<EntityRequestModelOffline> list, HttpFileCollection files, NeoErpCoreEntity dbContext)
         {
             var result = new Dictionary<string, string>();

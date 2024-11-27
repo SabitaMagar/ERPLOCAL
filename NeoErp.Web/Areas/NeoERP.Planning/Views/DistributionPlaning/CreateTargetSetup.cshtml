@@ -4,23 +4,24 @@
     //Layout = "~/Areas/NeoERP.Planning/Views/Shared/_Layout.cshtml";
 }
 <style>
-
+    #generateplan input.form-control, #planSetupForm .k-dropdown-wrap, .common input.form-control, .customdesign select.dateFilterSelect {
+        padding: 0px 0px !important;
+    }
     .k-splitter {
         height: 460px !important;
     }
+
     .k-dropdown {
         position: relative; /* Ensure the Kendo dropdown is positioned */
         z-index: 1000; /* Set the desired z-index value */
     }
+
     #external-events {
         /*float: left !important;*/
         padding: 0 10px;
         border: 1px solid #ccc;
-        /*background: #eee;*/
-        /*text-align: left;*/
-        /*width: 14%;*/
-        /*height: 450px;*/
     }
+
     .target-type-container {
         display: flex;
         flex-wrap: wrap;
@@ -28,30 +29,30 @@
 
     .radio-option {
         display: flex;
-        align-items: center; 
-        margin-right: 15px; 
+        align-items: center;
+        margin-right: 15px;
     }
 
         .radio-option label {
-            margin-left: 5px; 
+            margin-left: 5px;
         }
 
-        #external-events h4 {
-            font-size: 16px;
-            margin-top: 0;
-            padding-top: 1em;
-        }
+    #external-events h4 {
+        font-size: 16px;
+        margin-top: 0;
+        padding-top: 1em;
+    }
 
-        #external-events .fc-event {
-            margin: 10px 0;
-            cursor: pointer;
-        }
+    #external-events .fc-event {
+        margin: 10px 0;
+        cursor: pointer;
+    }
 
-        #external-events p {
-            margin: 1.5em 0;
-            font-size: 11px;
-            /*color: #666;*/
-        }
+    #external-events p {
+        margin: 1.5em 0;
+        font-size: 11px;
+        /*color: #666;*/
+    }
 
     .calendar-sliim {
         /*max-height:900px;
@@ -75,10 +76,12 @@
     .md-radio-inline div {
         display: inline-block;
     }
+
     input[type=checkbox], input[type=radio] {
         margin: -5px 0 0;
         line-height: normal;
     }
+
     .md-radio-inline .has-error {
         margin-right: 10px;
     }
@@ -130,7 +133,6 @@
         background: inherit;
         left: 20px;
     }
-
     .dateFilterSelect.form-control {
         font-size: 11px !important;
         height: 24px !important;
@@ -167,134 +169,117 @@
         background: #FFBF00 !important;
     }
 </style>
-<div class="row">
-    <div class="col-md-12 common" id="TargetSetup">
+<div class="row" id="TargetSetup">
+    <div class="col-md-12 common">
         <div class="portlet light bordered">
             <div class="portlet-title">
                 <div class="caption">
                     <i class="fa fa-calendar font-green-haze"></i>
-                    <span class="caption-subject font-green-haze bold uppercase">{{add_edit_option == "New" ? "Edit" : "New"}} Target Setup</span>
-                    <span class="caption-helper"></span>
+                    <span class="caption-subject font-green-haze bold uppercase">
+                        {{add_edit_option == "New" ? "Edit" : "New"}} Target Setup
+                    </span>
                 </div>
+                <div class="caption" style="margin-left: 5rem;display:flex">
+                    <div class="radio-option" ng-repeat="type in Types">
+                        <input type="radio" id="selectedType_{{type.value}}" name="selectedType" ng-model="selectedType" ng-value="type.value" ng-click="onTypeChange(type)" />
+                        <label for="selectedType_{{type.value}}">{{type.text}}</label>
+                    </div>
+                </div>
+
                 <div class="actions pull-right">
-                    <div class="btn-group" style="margin-top:10px;">
-                        <input id="avatar" type="file" name="avatar" style="width:185px;" />
-                    </div>
-                    <div class="btn-group">
-                        <a href="javascript:void(0)" id="uploadExcel" class="pull-right btn btn-circle btn-icon-only btn-default">
-                            <i class="fa fa-upload"></i>
-                        </a>
-                    </div>
+                    @*<div class="btn-group" style="margin-top:10px;">
+                <input id="avatar" type="file" name="avatar" style="width:185px;" />
+            </div>
+            <div class="btn-group">
+                <a href="javascript:void(0)" id="uploadExcel" class="pull-right btn btn-circle btn-icon-only btn-default">
+                    <i class="fa fa-upload"></i>
+                </a>
+            </div>
 
-                    <a href="~/PlanExcell/CalendarRouteSetup/RouteSetupTemplate.xlsx" download>
-                        <i class="fa fa-file-excel-o"></i>
-                    </a>
-
-                    @*<input type="text" name="routeEndDate" class="form-control frmDataInput" readonly="readonly" id="routeEndDate" placeholder="To Date">*@
-                    <button type="button" ng-click="cancelCalendarWiseRoute()" class="btn btn-circle btn-default btn-sm"><i class="fa fa-times"></i> Cancel</button>
-                    <button type="submit" ng-click="saveCalendarWiseRoute()" class="btn btn-circle btn-green btn-sm"><i class="fa fa-save"></i> Save</button>
-                    <button type="submit" ng-click="AddEditOption()" class="btn btn-circle btn-green-light btn-sm"><i class="fa fa-edit"></i> Go To {{add_edit_option}}</button>
+            <a href="~/PlanExcell/CalendarRouteSetup/RouteSetupTemplate.xlsx" download>
+                <i class="fa fa-file-excel-o"></i>
+            </a>*@
+                    <button type="button" ng-click="cancelClick()" class="btn btn-circle btn-default btn-sm"><i class="fa fa-times"></i> Cancel</button>
+                    <button type="submit" ng-click="assignTargets()" class="btn btn-circle btn-green btn-sm"><i class="fa fa-save"></i> Save</button>
+                    @*<button type="submit" ng-click="AddEditOption()" class="btn btn-circle btn-green-light btn-sm"><i class="fa fa-edit"></i> Go To {{add_edit_option}}</button>*@
                 </div>
             </div>
             <div class="portlet-body clearfix">
-
                 <div class="route_plan">
                     <form id="targetForm" name="targetForm">
                         <div class="row">
-                            <div ng-show="IsEdit" class="col-md-4">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="control-label">
-                                                Route Plan Name<span style="color:red" ng-show="targetForm.planName.$invalid">
-                                                    <span ng-show="targetForm.planName.$error.required">*</span>
-                                                </span>
-                                            </label>
-                                            <input type="text" name="planName" class="form-control input-sm" ng-model="planName" readonly required />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="control-label">
-                                                Route Plan List
-                                            </label>
-                                            <select id="routeList" kendo-drop-down-list style="width: 100%" k-options="routeListOptions"></select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
                             <div class="col-md-8">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="control-label">
-                                                Target Type
-                                            </label>
+                                            <label class="control-label">Target Type</label>
                                             <div class="target-type-container">
                                                 <div class="radio-option" ng-repeat="type in targetTypes">
-                                                    <input type="radio" id="targetType" name="targetType" ng-model="selectedTarget" ng-value="type" ng-click="onTargetTypeChange(type)" required />
+                                                    <input type="radio" id="targetType_{{type.value}}" name="targetType" ng-model="selectedTarget" ng-value="type" ng-click="onTargetTypeChange(type)" />
                                                     <label for="targetType_{{type.value}}">{{type.text}}</label>
                                                 </div>
                                             </div>
-
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Target Name</label>
+                                            <input type="text" name="targetName" class="form-control input-sm" ng-model="targetName" />
                                         </div>
                                     </div>
                                     <div class="col-md-6" ng-show="shouldShowSubTargetType">
                                         <div class="form-group">
-                                            <label class="control-label">
-                                                Sub Target Type<span style="color:red" ng-show="targetForm.subTarget.$invalid">*</span>
-                                            </label>
-                                            <select id="subTargetType" k-ng-model="selectedSubTarget" kendo-drop-down-list k-options="subTargetTypeOptions" style="width: 100%">
-                                            </select>
+                                            <label class="control-label">Sub Target Type<span style="color:red" ng-show="targetForm.subTarget.$invalid">*</span></label>
+                                            <select id="subTargetType" k-ng-model="selectedSubTarget" kendo-drop-down-list k-options="subTargetTypeOptions" style="width: 100%"></select>
                                         </div>
                                     </div>
-
                                     <div class="col-md-6" ng-show="showIndividualType">
                                         <div class="form-group">
-                                            <label class="control-label">Group<span style="color:red" ng-show="targetForm.group.$invalid">*</span></label>
-                                            <select id="itemGroup" k-ng-model="selectedItmGroup" k-options="itemGroupOptions" kendo-multi-select style="width: 100%"></select>
+                                            <label class="control-label">Item Group<span style="color:red" ng-show="targetForm.group.$invalid">*</span></label>
+                                            <select id="itemGroup" k-ng-model="selectedItmGroup" kendo-multi-select k-options="itemGroupOptions" style="width: 100%"></select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6" ng-show="showEmpType">
+                                    <div class="col-md-6" ng-show="showIndividualType">
                                         <div class="form-group">
-                                            <label class="control-label">Group<span style="color:red" ng-show="targetForm.group.$invalid">*</span></label>
+                                            <label class="control-label">Items<span style="color:red" ng-show="targetForm.individual.$invalid">*</span></label>
+                                            <select id="individual" k-ng-model="selectedIndividual" kendo-multi-select k-options="individualOptions" style="width: 100%"></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" ng-show="showCustomerType">
+                                        <div class="form-group">
+                                            <label class="control-label">Customer Group<span style="color:red" ng-show="targetForm.group.$invalid">*</span></label>
+                                            <select id="customerGroup" k-ng-model="selectedCusGroup" kendo-multi-select k-options="customerGroupOptions" style="width: 100%"></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" ng-show="showCustomerType">
+                                        <div class="form-group">
+                                            <label class="control-label">Customer<span style="color:red" ng-show="targetForm.individual.$invalid">*</span></label>
+                                            <select id="customerList" k-ng-model="selectedCustomer" kendo-multi-select k-options="customerOptions" style="width: 100%"></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Employee Group<span style="color:red" ng-show="targetForm.group.$invalid">*</span></label>
                                             <select id="empGroup" k-ng-model="selectedEmpGroup" k-options="employeeGroupOptions" kendo-multi-select style="width: 100%"></select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6" ng-show="showIndividualType">
-                                        <div class="form-group">
-                                            <label class="control-label">
-                                                Individual<span style="color:red" ng-show="targetForm.individual.$invalid">*</span>
-                                            </label>
-                                            <select id="individual" k-ng-model="selectedIndividual" kendo-multi-select k-options="individualOptions" style="width: 100%">
-                                            </select>
-                                        </div>
-                                    </div>
-
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="control-label">
-                                                Employees List<span style="color:red" ng-show="targetForm.employee.$invalid">*</span>
-                                            </label>
-                                            <select id="employees" name="employee" ng-model="employees" kendo-multi-select k-options="employeeOptions" style="width: 100%" required>
-                                            </select>
+                                            <label class="control-label">Employees List</label>
+                                            <select id="employees" name="employee" k-ng-model="selectedEmployees" kendo-multi-select k-options="employeeOptions" style="width: 100%"></select>
                                         </div>
                                     </div>
-
+                                    <div class="col-sm-6 col-md-3" ng-show="shouldShowSubTargetType">
+                                        <div class="form-group">
+                                            <label for="customQty">Quantity</label>
+                                            <input type="number" id="customQty" name="customQty" min="1" ng-model="customQty" class="form-control input-sm" />
+                                        </div>
+                                    </div>
                                     <div class="col-sm-6 col-md-3">
                                         <div class="form-group">
-                                            <label for="customday">Freq In Days</label>
-                                            <input type="number" id="customday" name="customday" min="1" ng-model="customfrequencyday" class="form-control input-sm" />
-                                        </div>
-                                    </div>
-
-                                    <div class="col-sm-4 col-md-3">
-                                        <div class="form-group">
-                                            <label for="frequencyWiseRouteAssign">Auto-fill Frequency</label>
-                                            <div class="TriSea-technologies-Switch">
-                                                <input id="frequencyWiseRouteAssign" name="frequencyWiseRouteAssign" type="checkbox" ng-model="frequencyWiseRouteAssign" value="yes" />
-                                                <label for="frequencyWiseRouteAssign" class="label-primary"></label>
-                                            </div>
+                                            <label for="customAmt">Amount</label>
+                                            <input type="number" id="customAmt" name="customAmt" min="1" ng-model="customAmt" class="form-control input-sm" />
                                         </div>
                                     </div>
                                 </div>
@@ -302,63 +287,40 @@
                             <div ng-show="!IsEdit" class="col-md-4">
                                 <div class="form-group">
                                     <div class="btn-group">
-                                        @Html.Partial("~/Views/Shared/Controls/DateField.cshtml", true)
+                                        @Html.Partial("~/Areas/NeoERP.Planning/Views/Shared/Controls/DateField.cshtml", true)
                                     </div>
                                 </div>
+                                <div class="form-group text-right mb-3">
+                                    <button id="searchEmployeesBtn" ng-click="searchClick()" class="btn btn-default btn-sm pull-right">
+                                        Search
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
                             </div>
-
                         </div>
                     </form>
-
-
-                    <!--<div style="border-bottom:solid 1px #eeeeee;margin-bottom:7px;">
-                        <div ng-if="IsEdit" class="form-inline">
-                            <label>
-                                Start Date : <strong>{{startdate |date}}</strong>,
-                                End Date: <a ng-click="editEndDate()" title="Click to edit end date" style="text-decoration:none;"><strong>{{enddate |date}}</strong></a> ,
-
-                            </label>-->
-                            @*<input type="text" name="routeEndDate" readonly="readonly" id="routeEndDate" placeholder="To Date" hidden ng-model="endDateToEdit">*@
-
-                            <!--<div class="input-group mb-3" id="editDiv" style="display:none;">
-                                <input type="text" name="routeEndDate" readonly="readonly" id="routeEndDate" placeholder="To Date" ng-model="endDateToEdit">
-                                <button class="btn btn-outline-secondary" type="button" ng-click="updateEndDate()">Update</button>
-                            </div>
-
-                        </div>
-                        <div ng-if="notFromCalendar" style="color:#af4141;">
-                            <label>
-                                <strong>  Selected route is not set from calendar route.</strong>
-                            </label>
-                        </div>
-
-                    </div>-->
                     <div class="row">
-
+                        <div id="grid" kendo-grid k-options="gridOptions" k-rebind="gridOptions"></div>
                     </div>
                 </div>
 
             </div>
         </div>
-
-
-
-
     </div>
 </div>
-<script src="@Scripts.Url("~/Areas/NeoERP.Planning/Scripts/DateFilter.js")" type="text/javascript"></script>
+<script src="@Scripts.Url("~/Areas/NeoERP.Planning/js/controller/DateFilter.js")" type="text/javascript"></script>
 <script src="@Scripts.Url("~/JS/ReportFilter.js")" type="text/javascript"></script>
 
 <script>
-        $(document).ready(function () {
-            $('[data-toggle="tooltip"]').tooltip();
-            DateFilter.init();
-            //$scope.calendar.fullCalendar('refetchEvents');
-            $("#ddlDateFilterVoucher, #ToDateVoucher, #FromDateVoucher").on('change', function () {
-                //$("#calendar").fullCalendar('destroy');
-                angular.element(document.getElementById('calendarRouteCtrl')).scope().clearEventOfCalendar();
-                angular.element(document.getElementById('calendarRouteCtrl')).scope().initCalendar();
-            });
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        DateFilter.init();
+        //$scope.calendar.fullCalendar('refetchEvents');
+        $("#ddlDateFilterVoucher, #ToDateVoucher, #FromDateVoucher").on('change', function () {
+            //$("#calendar").fullCalendar('destroy');
+            ////angular.element(document.getElementById('TargetSetup')).scope().clearEventOfCalendar();
+            ////angular.element(document.getElementById('TargetSetup')).scope().initCalendar();
         });
+    });
 </script>
 

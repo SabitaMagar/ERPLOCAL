@@ -1893,7 +1893,7 @@ SELECT *
 FROM (
 SELECT ORDER_NO
 ,ORDER_DATE
-,TO_BS(ORDER_DATE) MITI
+,BS_DATE(trunc(ORDER_DATE)) MITI
 ,DPO.CUSTOMER_CODE
 ,CS.CUSTOMER_EDESC
 ,GROUP_EDESC GROUP_NAME
@@ -3967,101 +3967,152 @@ AND FSLDM.PARTY_TYPE_CODE='{partyTypeCode}' ORDER BY ORDER_NO DESC";
             }
             else if (PO.PO_RATE_TABLE == "IP_ITEM_RATE_APPLICAT_SETUP" && PO.PO_DIST_RATE_COLUMN != "SALES_RATE_ZERO")
             {
-                newQuery = $@"SELECT 
-                                {dynamicRate}
-                                IRA.APP_DATE,
-                                RESULT.*,IRA.BRANCH_CODE rate_branch , RESULT.BRANCH_CODE order_branch
-                                FROM (SELECT DPO.ORDER_NO,
-                                DPO.ORDER_DATE,
-                                DPO.PARTY_TYPE_CODE,
-                                PTC.PARTY_TYPE_EDESC,
-                                DPO.CUSTOMER_CODE,
-                                CS.CUSTOMER_EDESC,
-                                DPO.ITEM_CODE,
-                                TRIM (IMS.ITEM_EDESC) ITEM_EDESC,
-                                DPO.MU_CODE,
-                                NVL (DPO.QUANTITY, 0) QUANTITY,
-                                NVL (DPO.APPROVE_QTY, 0) APPROVEQTY,
-                                NVL (DPO.UNIT_PRICE, 0) UNIT_PRICE,
-                                --NVL(ITRAS.SALES_RATE,0) NEW_UNIT_PRICE, --aaku
-                                IUS.MU_CODE CONVERSION_MU_CODE,
-                                CASE (DPO.MU_CODE)
-                                WHEN IUS.MU_CODE THEN 1
-                                ELSE IUS.CONVERSION_FACTOR
-                                END
-                                CONVERSION_FACTOR,
-                                DPO.TOTAL_PRICE,
-                                DPO.REMARKS,
-                                DPO.CREATED_BY,
-                                DPO.CREATED_DATE,
-                                DPO.MODIFY_DATE,
-                                DPO.DELETED_FLAG,
-                                DPO.CURRENCY_CODE,
-                                DPO.EXCHANGE_RATE,
-                                DPO.COMPANY_CODE,
-                                DPO.BRANCH_CODE,
-                                DPO.APPROVED_FLAG,
-                                DPO.DISPATCH_FLAG,
-                                DPO.ACKNOWLEDGE_FLAG,
-                                DPO.REJECT_FLAG,
-                                DPO.SYN_ROWID--,DPO.MODIFY_DATE
-                                ,
-                                DPO.MODIFY_BY,
-                                TRIM (IMS.ITEM_EDESC),
-                                ES.EMPLOYEE_EDESC,
-                                PS.PO_PARTY_TYPE,
-                                PS.PO_CONVERSION_FACTOR,
-                                PS.PO_BILLING_NAME,
-                                PS.PO_CUSTOM_RATE,
-                                PS.PO_REMARKS,
-                                PS.PO_CONVERSION_UNIT--,PS.PO_CONVERSION_FACTOR
-                                ,
-                                PS.CS_CONVERSION_UNIT,
-                                CS.CREDIT_LIMIT
-                                FROM DIST_IP_SSD_PURCHASE_ORDER DPO
-                                INNER JOIN IP_ITEM_MASTER_SETUP IMS
-                                ON IMS.ITEM_CODE = DPO.ITEM_CODE
-                                AND IMS.COMPANY_CODE = DPO.COMPANY_CODE
-                                AND IMS.CATEGORY_CODE IN
-                                (SELECT CATEGORY_CODE
-                                FROM IP_CATEGORY_CODE
-                                WHERE CATEGORY_TYPE IN ('FG', 'TF'))
-                                AND IMS.GROUP_SKU_FLAG = 'I'
-                                LEFT JOIN SA_CUSTOMER_SETUP CS
-                                ON CS.CUSTOMER_CODE = DPO.CUSTOMER_CODE
-                                AND CS.COMPANY_CODE = DPO.COMPANY_CODE
-                                AND CS.DELETED_FLAG = 'N'
-                                INNER JOIN DIST_LOGIN_USER LU
-                                ON LU.USERID = DPO.CREATED_BY
-                                LEFT JOIN HR_EMPLOYEE_SETUP ES
-                                ON ES.EMPLOYEE_CODE = LU.SP_CODE
-                                AND ES.COMPANY_CODE = LU.COMPANY_CODE
-                                LEFT JOIN IP_ITEM_UNIT_SETUP IUS
-                                ON IUS.ITEM_CODE = DPO.ITEM_CODE
-                                AND IUS.COMPANY_CODE = DPO.COMPANY_CODE
-                                INNER JOIN DIST_PREFERENCE_SETUP PS
-                                ON PS.COMPANY_CODE = DPO.COMPANY_CODE
-                                LEFT JOIN IP_PARTY_TYPE_CODE PTC
-                                ON PTC.PARTY_TYPE_CODE = DPO.PARTY_TYPE_CODE
-                                AND PTC.PARTY_TYPE_CODE = DPO.COMPANY_CODE
-                                AND PTC.DELETED_FLAG = 'N') RESULT
-                                INNER JOIN
-                                (SELECT tt.*
-                                FROM IP_ITEM_RATE_APPLICAT_SETUP tt
-                                INNER JOIN
-                                ( SELECT item_code, branch_code,company_code,MAX (app_date) AS MaxDateTime
-                                FROM IP_ITEM_RATE_APPLICAT_SETUP
-                                GROUP BY item_code,branch_code,company_code) groupedtt
-                                ON tt.item_code = groupedtt.item_code
-                                AND TT.BRANCH_CODE= groupedtt.BRANCH_CODE
-                                AND TT.COMPANY_CODE= groupedtt.COMPANY_CODE
-                                AND tt.app_date = groupedtt.MaxDateTime) IRA
-                                ON IRA.item_code = result.item_code
-                                AND IRA.COMPANY_CODE = RESULT.COMPANY_CODE
-                                AND IRA.BRANCH_CODE = RESULT.BRANCH_CODE
-                                --LEFT JOIN IP_ITEM_RATE_APPLICAT_SETUP ITRAS on ITRAS.ITEM_CODE = DPO.ITEM_CODE AND ITRAS.COMPANY_CODE = DPO.COMPANY_CODE --aaku
-                                WHERE 1 = 1 { flagFilter} AND RESULT.DELETED_FLAG = 'N' AND RESULT.ORDER_NO = '{orderCode}'
-                                ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
+                if (ORDER_ENTITY == "R")
+                {
+                    newQuery = $@"SELECT DPO.ORDER_NO, DPO.ORDER_DATE, DPO.PARTY_TYPE_CODE, 
+                                    PTC.PARTY_TYPE_EDESC, DPO.CUSTOMER_CODE, CS.CUSTOMER_EDESC, 
+                                    DPO.ITEM_CODE,TRIM(IMS.ITEM_EDESC) ITEM_EDESC, DPO.MU_CODE, NVL(DPO.QUANTITY,0) QUANTITY, NVL(DPO.APPROVE_QTY,0) APPROVEQTY,
+                                              NVL(DPO.UNIT_PRICE,0) UNIT_PRICE, IUS.MU_CODE CONVERSION_MU_CODE, 
+                                    CASE(DPO.MU_CODE)
+                                        WHEN IUS.MU_CODE THEN 1
+                                        ELSE IUS.CONVERSION_FACTOR
+                                      END
+                                    CONVERSION_FACTOR,
+                                              DPO.TOTAL_PRICE, DPO.REMARKS, DPO.CREATED_BY, DPO.CREATED_DATE, 
+                                    DPO.MODIFY_DATE, DPO.DELETED_FLAG, DPO.CURRENCY_CODE, DPO.EXCHANGE_RATE,
+                                              DPO.COMPANY_CODE, DPO.BRANCH_CODE,
+                                              DPO.APPROVED_FLAG, DPO.DISPATCH_FLAG, DPO.ACKNOWLEDGE_FLAG, 
+                                    DPO.REJECT_FLAG, DPO.SYN_ROWID, DPO.MODIFY_DATE, DPO.MODIFY_BY,
+                                              TRIM(IMS.ITEM_EDESC),
+                                              ES.EMPLOYEE_EDESC,
+                                              PS.PO_PARTY_TYPE,
+                                              PS.PO_CONVERSION_FACTOR,
+                                              PS.PO_BILLING_NAME,
+                                              PS.PO_CUSTOM_RATE, PS.PO_REMARKS, PS.PO_CONVERSION_UNIT, 
+                                    PS.PO_CONVERSION_FACTOR, PS.CS_CONVERSION_UNIT,
+                                              CS.CREDIT_LIMIT
+                                    FROM DIST_IP_SSR_PURCHASE_ORDER DPO
+                                    INNER JOIN IP_ITEM_MASTER_SETUP IMS ON IMS.ITEM_CODE = DPO.ITEM_CODE AND 
+                                    IMS.COMPANY_CODE = DPO.COMPANY_CODE AND IMS.CATEGORY_CODE in (select CATEGORY_CODE  from IP_CATEGORY_CODE WHERE CATEGORY_TYPE IN ('FG','TF')) AND 
+                                    IMS.GROUP_SKU_FLAG = 'I'
+                                    LEFT JOIN SA_CUSTOMER_SETUP CS ON CS.CUSTOMER_CODE = DPO.CUSTOMER_CODE 
+                                    AND CS.COMPANY_CODE = DPO.COMPANY_CODE AND CS.DELETED_FLAG = 'N'
+                                    INNER JOIN DIST_LOGIN_USER LU ON LU.USERID = DPO.CREATED_BY
+                                    INNER JOIN HR_EMPLOYEE_SETUP ES ON ES.EMPLOYEE_CODE = LU.SP_CODE AND 
+                                    ES.COMPANY_CODE = LU.COMPANY_CODE
+                                    LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = DPO.ITEM_CODE AND 
+                                    IUS.COMPANY_CODE = DPO.COMPANY_CODE
+                                    INNER JOIN DIST_PREFERENCE_SETUP PS ON PS.COMPANY_CODE = 
+                                    DPO.COMPANY_CODE
+                                    LEFT JOIN IP_PARTY_TYPE_CODE PTC ON PTC.PARTY_TYPE_CODE = 
+                                    DPO.PARTY_TYPE_CODE AND PTC.PARTY_TYPE_CODE = DPO.COMPANY_CODE AND 
+                                    PTC.DELETED_FLAG = 'N'
+                                    WHERE 1 = 1
+                                      {flagFilter}
+                                       AND DPO.DELETED_FLAG = 'N'
+                                       AND DPO.ORDER_NO = '{orderCode}'
+                                    ORDER BY UPPER(TRIM(IMS.ITEM_EDESC))";
+                }
+                else
+                {
+                    newQuery = $@"SELECT 
+                                    {dynamicRate}
+                                    IRA.APP_DATE,
+                                    RESULT.*,IRA.BRANCH_CODE rate_branch , RESULT.BRANCH_CODE order_branch
+                                    FROM (SELECT DPO.ORDER_NO,
+                                    DPO.ORDER_DATE,
+                                    DPO.PARTY_TYPE_CODE,
+                                    PTC.PARTY_TYPE_EDESC,
+                                    DPO.CUSTOMER_CODE,
+                                    CS.CUSTOMER_EDESC,
+                                    DPO.ITEM_CODE,
+                                    TRIM (IMS.ITEM_EDESC) ITEM_EDESC,
+                                    DPO.MU_CODE,
+                                    NVL (DPO.QUANTITY, 0) QUANTITY,
+                                    NVL (DPO.APPROVE_QTY, 0) APPROVEQTY,
+                                    NVL (DPO.UNIT_PRICE, 0) UNIT_PRICE,
+                                    --NVL(ITRAS.SALES_RATE,0) NEW_UNIT_PRICE, --aaku
+                                    IUS.MU_CODE CONVERSION_MU_CODE,
+                                    CASE (DPO.MU_CODE)
+                                    WHEN IUS.MU_CODE THEN 1
+                                    ELSE IUS.CONVERSION_FACTOR
+                                    END
+                                    CONVERSION_FACTOR,
+                                    DPO.TOTAL_PRICE,
+                                    DPO.REMARKS,
+                                    DPO.CREATED_BY,
+                                    DPO.CREATED_DATE,
+                                    DPO.MODIFY_DATE,
+                                    DPO.DELETED_FLAG,
+                                    DPO.CURRENCY_CODE,
+                                    DPO.EXCHANGE_RATE,
+                                    DPO.COMPANY_CODE,
+                                    DPO.BRANCH_CODE,
+                                    DPO.APPROVED_FLAG,
+                                    DPO.DISPATCH_FLAG,
+                                    DPO.ACKNOWLEDGE_FLAG,
+                                    DPO.REJECT_FLAG,
+                                    DPO.SYN_ROWID--,DPO.MODIFY_DATE
+                                    ,
+                                    DPO.MODIFY_BY,
+                                    TRIM (IMS.ITEM_EDESC),
+                                    ES.EMPLOYEE_EDESC,
+                                    PS.PO_PARTY_TYPE,
+                                    PS.PO_CONVERSION_FACTOR,
+                                    PS.PO_BILLING_NAME,
+                                    PS.PO_CUSTOM_RATE,
+                                    PS.PO_REMARKS,
+                                    PS.PO_CONVERSION_UNIT--,PS.PO_CONVERSION_FACTOR
+                                    ,
+                                    PS.CS_CONVERSION_UNIT,
+                                    CS.CREDIT_LIMIT
+                                    FROM DIST_IP_SSD_PURCHASE_ORDER DPO
+                                    INNER JOIN IP_ITEM_MASTER_SETUP IMS
+                                    ON IMS.ITEM_CODE = DPO.ITEM_CODE
+                                    AND IMS.COMPANY_CODE = DPO.COMPANY_CODE
+                                    AND IMS.CATEGORY_CODE IN
+                                    (SELECT CATEGORY_CODE
+                                    FROM IP_CATEGORY_CODE
+                                    WHERE CATEGORY_TYPE IN ('FG', 'TF'))
+                                    AND IMS.GROUP_SKU_FLAG = 'I'
+                                    LEFT JOIN SA_CUSTOMER_SETUP CS
+                                    ON CS.CUSTOMER_CODE = DPO.CUSTOMER_CODE
+                                    AND CS.COMPANY_CODE = DPO.COMPANY_CODE
+                                    AND CS.DELETED_FLAG = 'N'
+                                    INNER JOIN DIST_LOGIN_USER LU
+                                    ON LU.USERID = DPO.CREATED_BY
+                                    LEFT JOIN HR_EMPLOYEE_SETUP ES
+                                    ON ES.EMPLOYEE_CODE = LU.SP_CODE
+                                    AND ES.COMPANY_CODE = LU.COMPANY_CODE
+                                    LEFT JOIN IP_ITEM_UNIT_SETUP IUS
+                                    ON IUS.ITEM_CODE = DPO.ITEM_CODE
+                                    AND IUS.COMPANY_CODE = DPO.COMPANY_CODE
+                                    INNER JOIN DIST_PREFERENCE_SETUP PS
+                                    ON PS.COMPANY_CODE = DPO.COMPANY_CODE
+                                    LEFT JOIN IP_PARTY_TYPE_CODE PTC
+                                    ON PTC.PARTY_TYPE_CODE = DPO.PARTY_TYPE_CODE
+                                    AND PTC.PARTY_TYPE_CODE = DPO.COMPANY_CODE
+                                    AND PTC.DELETED_FLAG = 'N') RESULT
+                                    INNER JOIN
+                                    (SELECT tt.*
+                                    FROM IP_ITEM_RATE_APPLICAT_SETUP tt
+                                    INNER JOIN
+                                    ( SELECT item_code, branch_code,company_code,MAX (app_date) AS MaxDateTime
+                                    FROM IP_ITEM_RATE_APPLICAT_SETUP
+                                    GROUP BY item_code,branch_code,company_code) groupedtt
+                                    ON tt.item_code = groupedtt.item_code
+                                    AND TT.BRANCH_CODE= groupedtt.BRANCH_CODE
+                                    AND TT.COMPANY_CODE= groupedtt.COMPANY_CODE
+                                    AND tt.app_date = groupedtt.MaxDateTime) IRA
+                                    ON IRA.item_code = result.item_code
+                                    AND IRA.COMPANY_CODE = RESULT.COMPANY_CODE
+                                    AND IRA.BRANCH_CODE = RESULT.BRANCH_CODE
+                                    --LEFT JOIN IP_ITEM_RATE_APPLICAT_SETUP ITRAS on ITRAS.ITEM_CODE = DPO.ITEM_CODE AND ITRAS.COMPANY_CODE = DPO.COMPANY_CODE --aaku
+                                    WHERE 1 = 1 { flagFilter} AND RESULT.DELETED_FLAG = 'N' AND RESULT.ORDER_NO = '{orderCode}'
+                                    ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
+                }
+
+          
             }
             else
             {
@@ -5215,7 +5266,6 @@ ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
             return result;
         }
 
-
         public List<VisitSummaryViewModel> GetVisitSummaryReport(ReportFiltersModel model, User userInfo)
         {
             var companyCode = string.Join(",", model.CompanyFilter);
@@ -5306,7 +5356,415 @@ ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
             //CONDITIONS FITLER END HERE
             //****************************
 
-    string query = $@"SELECT * FROM (
+            //            string query = $@"SELECT * FROM (
+            //	--Dealer
+            //	SELECT dlt.sp_code visited_by
+            //		,trunc(dlt.update_date) visit_date
+            //		,bs_date(TO_CHAR(dlt.update_date)) miti
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+            //		,dlt.customer_code
+            //		,am.area_name
+            //		,'-' outlet_type
+            //		,'-' outlet_subtype
+            //		,'-' group_name
+            //		,dlt.latitude AS visit_lat
+            //		,dlt.longitude AS visit_long
+            //		,
+            //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+            //		TRIM(dlt.remarks) remarks
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			) visit_type
+            //		,drd.assign_date
+            //		,drd.emp_code AS assigned_to
+            //		,
+            //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+            //		'P' customer_type
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,TRIM(hes1.employee_edesc) visit_by
+            //		,TRIM(hes2.employee_edesc) assigned_employee
+            //		,TRIM(ptc.party_type_edesc) customer_name
+            //		,nvl(ddm.latitude, 0) cust_lat
+            //		,nvl(ddm.longitude, 0) cust_long
+            //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+            //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+            //	FROM dist_location_track dlt
+            //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code
+            //		AND dre.company_code = dlt.company_code
+            //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+            //		AND trunc(drd.assign_date) = trunc(dlt.update_date)
+            //	INNER JOIN dist_dealer_master ddm ON ddm.dealer_code = dlt.customer_code
+            //		AND ddm.company_code = dlt.company_code
+            //	INNER JOIN ip_party_type_code ptc ON ptc.party_type_code = dlt.customer_code
+            //		AND ptc.company_code = dlt.company_code
+            //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+            //		AND dlu1.company_code = dlt.company_code
+            //		AND dlu1.active = 'Y'
+            //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+            //		AND hes1.company_code = dlu1.company_code
+            //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+            //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+            //		AND dlu2.active = 'Y'
+            //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+            //		AND hes2.company_code = dlu2.company_code
+            //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+            //		AND rm1.company_code = dre.company_code
+            //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+            //		AND rm2.company_code = drd.company_code
+            //	LEFT JOIN dist_area_master am ON am.area_code = ddm.area_code
+            //		AND am.company_code = ddm.company_code
+            //	WHERE 1 = 1
+            //		AND rm1.route_type = 'D'
+            //		AND rm2.route_type = 'D'
+            //		AND dlt.customer_type = 'P' {FromDate}
+            //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+            //	GROUP BY dlt.sp_code
+            //		,trunc(dlt.update_date)
+            //		,bs_date(TO_CHAR(dlt.update_date))
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+            //		,dlt.customer_code
+            //		,dlt.latitude
+            //		,dlt.longitude
+            //		,
+            //		--DRE.ROUTE_CODE,
+            //		TRIM(dlt.remarks)
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			)
+            //		,drd.assign_date
+            //		,drd.emp_code
+            //		,
+            //		--DRD.ROUTE_CODE,           
+            //		'P'
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,am.area_name
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //		,TRIM(hes1.employee_edesc)
+            //		,TRIM(hes2.employee_edesc)
+            //		,TRIM(ptc.party_type_edesc)
+            //		,nvl(ddm.latitude, 0)
+            //		,nvl(ddm.longitude, 0)
+            //	--TRIM(RM1.ROUTE_NAME),
+            //	--TRIM(RM2.ROUTE_NAME)
+
+            //	UNION ALL
+
+            //	--Distributor
+            //	SELECT dlt.sp_code visited_by
+            //		,trunc(dlt.update_date) visit_date
+            //		,bs_date(TO_CHAR(dlt.update_date)) miti
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+            //		,dlt.customer_code
+            //		,vd.area_name
+            //		,'-' outlet_type
+            //		,'-' outlet_subtype
+            //		,vd.group_name
+            //		,dlt.latitude AS visit_lat
+            //		,dlt.longitude AS visit_long
+            //		,
+            //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+            //		TRIM(dlt.remarks) remarks
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			) visit_type
+            //		,drd.assign_date
+            //		,drd.emp_code AS assigned_to
+            //		,
+            //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+            //		'D' customer_type
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,TRIM(hes1.employee_edesc) visit_by
+            //		,TRIM(hes2.employee_edesc) assigned_employee
+            //		,TRIM(scs.customer_edesc) customer_name
+            //		,nvl(dim.latitude, 0) cust_lat
+            //		,nvl(dim.longitude, 0) cust_long
+            //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+            //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+            //	FROM dist_location_track dlt
+            //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code
+            //		AND dre.company_code = dlt.company_code
+            //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+            //		AND trunc(drd.assign_date) = trunc(dlt.update_date)
+            //	INNER JOIN dist_distributor_master dim ON dim.distributor_code = dlt.customer_code
+            //		AND dim.company_code = dlt.company_code
+            //		AND dim.active = 'Y'
+            //	INNER JOIN sa_customer_setup scs ON scs.customer_code = dlt.customer_code
+            //		AND scs.company_code = dlt.company_code
+            //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+            //		AND dlu1.company_code = dlt.company_code
+            //		AND dlu1.active = 'Y'
+            //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+            //		AND hes1.company_code = dlu1.company_code
+            //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+            //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+            //		AND dlu2.active = 'Y'
+            //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+            //		AND hes2.company_code = dlu2.company_code
+            //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+            //		AND rm1.company_code = dre.company_code
+            //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+            //		AND rm2.company_code = drd.company_code
+            //	LEFT JOIN V_DIST_DISTRIBUTOR_DETAIL vd ON vd.distributor_code = dlt.customer_code
+            //		AND vd.company_code = dlt.company_code
+            //	WHERE 1 = 1
+            //		AND rm1.route_type = 'D'
+            //		AND rm2.route_type = 'D'
+            //		AND dlt.customer_type = 'D' {FromDate}
+            //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+            //	GROUP BY dlt.sp_code
+            //		,trunc(dlt.update_date)
+            //		,bs_date(TO_CHAR(dlt.update_date))
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+            //		,dlt.customer_code
+            //		,vd.area_name
+            //		,'-'
+            //		,'-'
+            //		,vd.group_name
+            //		,dlt.latitude
+            //		,dlt.longitude
+            //		,
+            //		--DRE.ROUTE_CODE,
+            //		TRIM(dlt.remarks)
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			)
+            //		,drd.assign_date
+            //		,drd.emp_code
+            //		,
+            //		--DRD.ROUTE_CODE,           
+            //		'D'
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,TRIM(hes1.employee_edesc)
+            //		,TRIM(hes2.employee_edesc)
+            //		,TRIM(scs.customer_edesc)
+            //		,nvl(dim.latitude, 0)
+            //		,nvl(dim.longitude, 0)
+            //	--TRIM(RM1.ROUTE_NAME),
+            //	--TRIM(RM2.ROUTE_NAME)
+
+            //	UNION ALL
+
+            //	--RESELLER
+            //	SELECT dlt.sp_code visited_by
+            //		,trunc(dlt.update_date) visit_date
+            //		,bs_date(TO_CHAR(dlt.update_date)) miti
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+            //		,dlt.customer_code
+            //		,vr.area_name
+            //		,vr.outlet_type
+            //		,vr.outlet_subtype
+            //		,vr.group_name
+            //		,dlt.latitude AS visit_lat
+            //		,dlt.longitude AS visit_long
+            //		,
+            //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+            //		TRIM(dlt.remarks) remarks
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			) visit_type
+            //		,drd.assign_date
+            //		,drd.emp_code AS assigned_to
+            //		,
+            //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+            //		'R' customer_type
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,TRIM(hes1.employee_edesc) visit_by
+            //		,TRIM(hes2.employee_edesc) assigned_employee
+            //		,TRIM(drm.reseller_name) customer_name
+            //		,nvl(drm.latitude, 0) cust_lat
+            //		,nvl(drm.longitude, 0) cust_long
+            //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+            //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+            //	FROM dist_location_track dlt
+            //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code --AND DRE.COMPANY_CODE = DLT.COMPANY_CODE
+            //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+            //		AND trunc(drd.assign_date) = trunc(dlt.update_date) --AND DRD.ASSIGN_DATE BETWEEN TO_DATE('2021-Nov-23','YYYY-MM-DD') AND TO_DATE('2021-Nov-23','YYYY-MM-DD')
+            //	INNER JOIN dist_reseller_master drm ON drm.reseller_code = dlt.customer_code --AND DRM.COMPANY_CODE = DLT.COMPANY_CODE
+            //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+            //		AND dlu1.company_code = dlt.company_code
+            //		AND dlu1.active = 'Y'
+            //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+            //		AND hes1.company_code = dlu1.company_code
+            //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+            //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+            //		AND dlu2.active = 'Y'
+            //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+            //		AND hes2.company_code = dlu2.company_code
+            //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+            //		AND rm1.company_code = dre.company_code
+            //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+            //		AND rm2.company_code = drd.company_code
+            //	LEFT JOIN V_RETAIL_DETAIL vr ON vr.reseller_code = dlt.customer_code
+            //		AND vr.company_code = dlt.company_code
+            //	WHERE 1 = 1
+            //		AND drm.is_closed = 'N'
+            //		AND rm1.route_type = 'D'
+            //		AND rm2.route_type = 'D'
+            //		AND dlt.customer_type = 'R' {FromDate}
+            //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+            //	GROUP BY dlt.sp_code
+            //		,trunc(dlt.update_date)
+            //		,bs_date(TO_CHAR(dlt.update_date))
+            //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+            //		,dlt.customer_code
+            //		,vr.area_name
+            //		,vr.outlet_type
+            //		,vr.outlet_subtype
+            //		,vr.group_name
+            //		,dlt.latitude
+            //		,dlt.longitude
+            //		,
+            //		--DRE.ROUTE_CODE,
+            //		TRIM(dlt.remarks)
+            //		,(
+            //			CASE 
+            //				WHEN dlt.is_visited IS NULL
+            //					THEN 'PENDING VISIT'
+            //				ELSE CASE 
+            //						WHEN dlt.is_visited = 'Y'
+            //							THEN 'VISIT'
+            //						ELSE 'CANCELLED'
+            //						END
+            //				END
+            //			)
+            //		,drd.assign_date
+            //		,drd.emp_code
+            //		,
+            //		--DRD.ROUTE_CODE,           
+            //		'R'
+            //		,dlt.company_code
+            //		,dlt.branch_code
+            //		,TRIM(hes1.employee_edesc)
+            //		,TRIM(hes2.employee_edesc)
+            //		,TRIM(drm.reseller_name)
+            //		,nvl(drm.latitude, 0)
+            //		,nvl(drm.longitude, 0)
+            //	--TRIM(RM1.ROUTE_NAME),
+            //	--TRIM(RM2.ROUTE_NAME)    
+
+            //	UNION ALL
+
+            //	--Extra
+            //	SELECT dea.sp_code visited_by
+            //		,trunc(dea.visit_date) visit_date
+            //		,bs_date(TO_CHAR(dea.visit_date)) miti
+            //		,TO_DATE(TO_CHAR(dea.visit_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+            //		,'-' customer_code
+            //		,'-' area_name
+            //		,'-' outlet_type
+            //		,'-' outlet_subtype
+            //		,'-' group_name
+            //		,dea.latitude AS visit_lat
+            //		,dea.longitude AS visit_long
+            //		,
+            //		--'-' VISIT_ROUTE_CODE,
+            //		TRIM(dea.remarks) remarks
+            //		,'EXTRA' visit_type
+            //		,dea.visit_date assign_date
+            //		,'-' assigned_to
+            //		,
+            //		--'-' ASSIGNED_ROUTE,
+            //		'-' customer_type
+            //		,'-' company_code
+            //		,'-' branch_code
+            //		,hes.employee_edesc visit_by
+            //		,'-' assigned_employee
+            //		,'-' customer_name
+            //		,'-' customer_lat
+            //		,'-' customer_long
+            //	--'-' VISITED_ROUTE,
+            //	--'-' ASSIGNED_ROUTE_NAME
+            //	FROM dist_extra_activity dea
+            //	INNER JOIN hr_employee_setup hes ON hes.employee_code = dea.sp_code
+            //		AND hes.company_code = dea.company_code
+            //	WHERE 1 = 1
+            //		AND DEA.COMPANY_CODE IN ({companyCode}) {BranchFilterDEA} {employeeFilterDEA}
+            //		AND TRUNC(DEA.VISIT_DATE) BETWEEN TO_DATE('{model.FromDate}', 'YYYY-MM-DD')
+            //			AND TO_DATE('{model.ToDate}', 'YYYY-MM-DD')
+            //	GROUP BY dea.sp_code
+            //		,dea.visit_date
+            //		,bs_date(TO_CHAR(dea.visit_date))
+            //		,trunc(dea.visit_date)
+            //		,TO_DATE(TO_CHAR(dea.visit_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //		,dea.latitude
+            //		,dea.longitude
+            //		,
+            //		--'-',
+            //		TRIM(dea.remarks)
+            //		,'EXTRA'
+            //		,dea.visit_date
+            //		,bs_date(TO_CHAR(dea.visit_date))
+            //		,'-'
+            //		,
+            //		--'-',
+            //		'-'
+            //		,'-'
+            //		,'-'
+            //		,hes.employee_edesc
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //		,'-'
+            //	)
+            //--'-',
+            //--'-'
+            //ORDER BY visit_time DESC
+            //	,customer_name ASC";
+
+
+            string query = $@"SELECT * FROM (
 	--Dealer
 	SELECT dlt.sp_code visited_by
 		,trunc(dlt.update_date) visit_date
@@ -5373,8 +5831,8 @@ ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
 	LEFT JOIN dist_area_master am ON am.area_code = ddm.area_code
 		AND am.company_code = ddm.company_code
 	WHERE 1 = 1
-		AND rm1.route_type = 'D'
-		AND rm2.route_type = 'D'
+		--AND rm1.route_type = 'D'
+		--AND rm2.route_type = 'D'
 		AND dlt.customer_type = 'P' {FromDate}
 		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
 	GROUP BY dlt.sp_code
@@ -5486,8 +5944,8 @@ ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
 	LEFT JOIN V_DIST_DISTRIBUTOR_DETAIL vd ON vd.distributor_code = dlt.customer_code
 		AND vd.company_code = dlt.company_code
 	WHERE 1 = 1
-		AND rm1.route_type = 'D'
-		AND rm2.route_type = 'D'
+		--AND rm1.route_type = 'D'
+		--AND rm2.route_type = 'D'
 		AND dlt.customer_type = 'D' {FromDate}
 		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
 	GROUP BY dlt.sp_code
@@ -5595,8 +6053,8 @@ ORDER BY UPPER (TRIM (RESULT.ITEM_EDESC))";
 		AND vr.company_code = dlt.company_code
 	WHERE 1 = 1
 		AND drm.is_closed = 'N'
-		AND rm1.route_type = 'D'
-		AND rm2.route_type = 'D'
+		--AND rm1.route_type = 'D'
+		--AND rm2.route_type = 'D'
 		AND dlt.customer_type = 'R' {FromDate}
 		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
 	GROUP BY dlt.sp_code
@@ -5727,8 +6185,522 @@ ORDER BY visit_time DESC
             }
 
             return data;
-
         }
+
+
+        //        public List<VisitSummaryViewModel> GetVisitSummaryReport(ReportFiltersModel model, User userInfo)
+        //        {
+        //            var companyCode = string.Join(",", model.CompanyFilter);
+        //            companyCode = companyCode == "" ? userInfo.company_code : companyCode;
+
+
+        //            //**************************** 
+        //            //CONDITIONS FITLER START HERE
+        //            //****************************
+        //            //for customer Filter
+        //            var filter = string.Empty;
+        //            var customerFilter = string.Empty;
+        //            if (model.CustomerFilter.Count() > 0)
+        //            {
+        //                customerFilter = @"select  DISTINCT(customer_code) from sa_customer_setup where (";
+        //                //IF CUSTOMER_SKU_FLAG = G
+        //                foreach (var item in model.CustomerFilter)
+        //                {
+        //                    customerFilter += "master_customer_code like  (Select DISTINCT(MASTER_CUSTOMER_CODE) || '%'  from SA_CUSTOMER_SETUP WHERE CUSTOMER_CODE = '" + item + "' AND GROUP_SKU_FLAG = 'G' AND DELETED_FLAG= 'N' AND COMPANY_CODE IN(" + companyCode + ")) OR ";
+        //                }
+        //                customerFilter = customerFilter.Substring(0, customerFilter.Length - 3);
+        //                //IF CUSTOMER_SKU_FLAG = I                
+        //                customerFilter += " or (customer_code in (" + string.Join(",", model.CustomerFilter) + ") and group_sku_flag = 'I' AND DELETED_FLAG = 'N' AND COMPANY_CODE IN(" + companyCode + "))) ";
+
+
+        //                customerFilter = " and DLT.customer_code IN(" + customerFilter + ")";
+        //            }
+
+
+        //            var BranchFilterDLT = string.Empty;
+        //            var BranchFilterDEA = string.Empty;
+        //            if (model.BranchFilter.Count > 0)
+        //            {
+        //                BranchFilterDLT = string.Format(@" AND  DLT.BRANCH_CODE IN  ('{0}')", string.Join("','", model.BranchFilter).ToString());
+        //                BranchFilterDEA = string.Format(@" AND  DEA.BRANCH_CODE IN  ('{0}')", string.Join("','", model.BranchFilter).ToString());
+        //            }
+
+        //            var FromDate = string.Empty;
+        //            if (!string.IsNullOrEmpty(model.FromDate))
+        //            {
+        //                FromDate = string.Format(@" AND TRUNC(DLT.UPDATE_DATE) >= TO_DATE('" + model.FromDate + "','YYYY-MM-DD') AND TRUNC(DLT.UPDATE_DATE) <= TO_DATE('" + model.ToDate + "','YYYY-MM-DD')", string.Join("','", model.FromDate).ToString());
+        //            }
+        //            //query = query + " and A.SALES_DATE>=TO_DATE('" + model.FromDate + "', 'YYYY-MM-DD') and A.SALES_DATE <= TO_DATE('" + model.ToDate + "', 'YYYY-MM-DD')";
+
+        //            var employeeFilterDLT = string.Empty;
+        //            var employeeFilterDEA = string.Empty;
+        //            if (model.ItemBrandFilter.Count > 0)
+        //            {
+        //                employeeFilterDEA = $" AND  DEA.SP_CODE IN  ('{ string.Join("','", model.ItemBrandFilter).ToString()}')";
+        //                employeeFilterDLT = $" AND  DLT.SP_CODE IN  ('{string.Join("','", model.ItemBrandFilter).ToString()}')";
+        //                //employeeFilterDEA = $" AND  DEA.SP_CODE IN  (SELECT DISTINCT SP_CODE FROM DIST_USER_ITEM_MAPPING WHERE SP_CODE IN ({userInfo.sp_codes}) AND ITEM_CODE IN {string.Join("','", model.ItemBrandFilter).ToString()})";
+        //                //employeeFilterDLT = $" AND  DLT.SP_CODE IN  (SELECT DISTINCT SP_CODE FROM DIST_USER_ITEM_MAPPING WHERE SP_CODE IN ({userInfo.sp_codes}) AND ITEM_CODE IN {string.Join("','", model.ItemBrandFilter).ToString()})";
+        //            }
+        //            else if (!string.IsNullOrWhiteSpace(userInfo.sp_codes))
+        //            {
+        //                employeeFilterDEA = $" AND  DEA.SP_CODE IN  ({userInfo.sp_codes})";
+        //                employeeFilterDLT = $" AND  DLT.SP_CODE IN  ({userInfo.sp_codes})";
+        //            }
+
+        //            if (model.AgentFilter.Count > 0)
+        //            {
+        //                filter = filter + string.Format(@" AND  SI.AGENT_CODE IN  ('{0}')", string.Join("','", model.AgentFilter).ToString());
+        //            }
+        //            if (model.DivisionFilter.Count > 0)
+        //            {
+        //                filter = filter + string.Format(@" AND  I.DIVISION_CODE IN  ('{0}')", string.Join("','", model.DivisionFilter).ToString());
+        //            }
+        //            string locationFilter = string.Empty;
+        //            if (model.LocationFilter.Count > 0)
+        //            {
+
+        //                var locations = model.LocationFilter;
+        //                for (int i = 0; i < locations.Count; i++)
+        //                {
+
+        //                    if (i == 0)
+        //                        locationFilter += string.Format("SELECT LOCATION_CODE FROM IP_LOCATION_SETUP WHERE LOCATION_CODE LIKE '{0}%' ", locations[i]);
+        //                    else
+        //                    {
+        //                        locationFilter += string.Format(" OR LOCATION_CODE like '{0}%' ", locations[i]);
+        //                    }
+        //                }
+        //                locationFilter = string.Format(@" AND SI.FROM_LOCATION_CODE IN ({0} OR LOCATION_CODE IN ('{1}'))", locationFilter, string.Join("','", locations));
+        //                //query = query.AppendFormat(@" AND A.FROM_LOCATION_CODE IN ('{0}')", string.Join("','", filters.LocationFilter).ToString());
+        //                filter = filter + locationFilter;
+        //            }
+        //            //****************************
+        //            //CONDITIONS FITLER END HERE
+        //            //****************************
+
+        //    string query = $@"SELECT * FROM (
+        //	--Dealer
+        //	SELECT dlt.sp_code visited_by
+        //		,trunc(dlt.update_date) visit_date
+        //		,bs_date(TO_CHAR(dlt.update_date)) miti
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+        //		,dlt.customer_code
+        //		,am.area_name
+        //		,'-' outlet_type
+        //		,'-' outlet_subtype
+        //		,'-' group_name
+        //		,dlt.latitude AS visit_lat
+        //		,dlt.longitude AS visit_long
+        //		,
+        //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+        //		TRIM(dlt.remarks) remarks
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			) visit_type
+        //		,drd.assign_date
+        //		,drd.emp_code AS assigned_to
+        //		,
+        //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+        //		'P' customer_type
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,TRIM(hes1.employee_edesc) visit_by
+        //		,TRIM(hes2.employee_edesc) assigned_employee
+        //		,TRIM(ptc.party_type_edesc) customer_name
+        //		,nvl(ddm.latitude, 0) cust_lat
+        //		,nvl(ddm.longitude, 0) cust_long
+        //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+        //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+        //	FROM dist_location_track dlt
+        //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code
+        //		AND dre.company_code = dlt.company_code
+        //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+        //		AND trunc(drd.assign_date) = trunc(dlt.update_date)
+        //	INNER JOIN dist_dealer_master ddm ON ddm.dealer_code = dlt.customer_code
+        //		AND ddm.company_code = dlt.company_code
+        //	INNER JOIN ip_party_type_code ptc ON ptc.party_type_code = dlt.customer_code
+        //		AND ptc.company_code = dlt.company_code
+        //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+        //		AND dlu1.company_code = dlt.company_code
+        //		AND dlu1.active = 'Y'
+        //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+        //		AND hes1.company_code = dlu1.company_code
+        //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+        //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+        //		AND dlu2.active = 'Y'
+        //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+        //		AND hes2.company_code = dlu2.company_code
+        //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+        //		AND rm1.company_code = dre.company_code
+        //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+        //		AND rm2.company_code = drd.company_code
+        //	LEFT JOIN dist_area_master am ON am.area_code = ddm.area_code
+        //		AND am.company_code = ddm.company_code
+        //	WHERE 1 = 1
+        //		AND rm1.route_type = 'D'
+        //		AND rm2.route_type = 'D'
+        //		AND dlt.customer_type = 'P' {FromDate}
+        //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+        //	GROUP BY dlt.sp_code
+        //		,trunc(dlt.update_date)
+        //		,bs_date(TO_CHAR(dlt.update_date))
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+        //		,dlt.customer_code
+        //		,dlt.latitude
+        //		,dlt.longitude
+        //		,
+        //		--DRE.ROUTE_CODE,
+        //		TRIM(dlt.remarks)
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			)
+        //		,drd.assign_date
+        //		,drd.emp_code
+        //		,
+        //		--DRD.ROUTE_CODE,           
+        //		'P'
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,am.area_name
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //		,TRIM(hes1.employee_edesc)
+        //		,TRIM(hes2.employee_edesc)
+        //		,TRIM(ptc.party_type_edesc)
+        //		,nvl(ddm.latitude, 0)
+        //		,nvl(ddm.longitude, 0)
+        //	--TRIM(RM1.ROUTE_NAME),
+        //	--TRIM(RM2.ROUTE_NAME)
+
+        //	UNION ALL
+
+        //	--Distributor
+        //	SELECT dlt.sp_code visited_by
+        //		,trunc(dlt.update_date) visit_date
+        //		,bs_date(TO_CHAR(dlt.update_date)) miti
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+        //		,dlt.customer_code
+        //		,vd.area_name
+        //		,'-' outlet_type
+        //		,'-' outlet_subtype
+        //		,vd.group_name
+        //		,dlt.latitude AS visit_lat
+        //		,dlt.longitude AS visit_long
+        //		,
+        //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+        //		TRIM(dlt.remarks) remarks
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			) visit_type
+        //		,drd.assign_date
+        //		,drd.emp_code AS assigned_to
+        //		,
+        //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+        //		'D' customer_type
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,TRIM(hes1.employee_edesc) visit_by
+        //		,TRIM(hes2.employee_edesc) assigned_employee
+        //		,TRIM(scs.customer_edesc) customer_name
+        //		,nvl(dim.latitude, 0) cust_lat
+        //		,nvl(dim.longitude, 0) cust_long
+        //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+        //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+        //	FROM dist_location_track dlt
+        //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code
+        //		AND dre.company_code = dlt.company_code
+        //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+        //		AND trunc(drd.assign_date) = trunc(dlt.update_date)
+        //	INNER JOIN dist_distributor_master dim ON dim.distributor_code = dlt.customer_code
+        //		AND dim.company_code = dlt.company_code
+        //		AND dim.active = 'Y'
+        //	INNER JOIN sa_customer_setup scs ON scs.customer_code = dlt.customer_code
+        //		AND scs.company_code = dlt.company_code
+        //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+        //		AND dlu1.company_code = dlt.company_code
+        //		AND dlu1.active = 'Y'
+        //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+        //		AND hes1.company_code = dlu1.company_code
+        //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+        //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+        //		AND dlu2.active = 'Y'
+        //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+        //		AND hes2.company_code = dlu2.company_code
+        //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+        //		AND rm1.company_code = dre.company_code
+        //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+        //		AND rm2.company_code = drd.company_code
+        //	LEFT JOIN V_DIST_DISTRIBUTOR_DETAIL vd ON vd.distributor_code = dlt.customer_code
+        //		AND vd.company_code = dlt.company_code
+        //	WHERE 1 = 1
+        //		AND rm1.route_type = 'D'
+        //		AND rm2.route_type = 'D'
+        //		AND dlt.customer_type = 'D' {FromDate}
+        //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+        //	GROUP BY dlt.sp_code
+        //		,trunc(dlt.update_date)
+        //		,bs_date(TO_CHAR(dlt.update_date))
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+        //		,dlt.customer_code
+        //		,vd.area_name
+        //		,'-'
+        //		,'-'
+        //		,vd.group_name
+        //		,dlt.latitude
+        //		,dlt.longitude
+        //		,
+        //		--DRE.ROUTE_CODE,
+        //		TRIM(dlt.remarks)
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			)
+        //		,drd.assign_date
+        //		,drd.emp_code
+        //		,
+        //		--DRD.ROUTE_CODE,           
+        //		'D'
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,TRIM(hes1.employee_edesc)
+        //		,TRIM(hes2.employee_edesc)
+        //		,TRIM(scs.customer_edesc)
+        //		,nvl(dim.latitude, 0)
+        //		,nvl(dim.longitude, 0)
+        //	--TRIM(RM1.ROUTE_NAME),
+        //	--TRIM(RM2.ROUTE_NAME)
+
+        //	UNION ALL
+
+        //	--RESELLER
+        //	SELECT dlt.sp_code visited_by
+        //		,trunc(dlt.update_date) visit_date
+        //		,bs_date(TO_CHAR(dlt.update_date)) miti
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+        //		,dlt.customer_code
+        //		,vr.area_name
+        //		,vr.outlet_type
+        //		,vr.outlet_subtype
+        //		,vr.group_name
+        //		,dlt.latitude AS visit_lat
+        //		,dlt.longitude AS visit_long
+        //		,
+        //		--DRE.ROUTE_CODE VISIT_ROUTE_CODE,
+        //		TRIM(dlt.remarks) remarks
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			) visit_type
+        //		,drd.assign_date
+        //		,drd.emp_code AS assigned_to
+        //		,
+        //		--DRD.ROUTE_CODE AS ASSIGNED_ROUTE,           
+        //		'R' customer_type
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,TRIM(hes1.employee_edesc) visit_by
+        //		,TRIM(hes2.employee_edesc) assigned_employee
+        //		,TRIM(drm.reseller_name) customer_name
+        //		,nvl(drm.latitude, 0) cust_lat
+        //		,nvl(drm.longitude, 0) cust_long
+        //	--TRIM(RM1.ROUTE_NAME) VISITED_ROUTE,
+        //	--TRIM(RM2.ROUTE_NAME) ASSIGNED_ROUTE_NAME
+        //	FROM dist_location_track dlt
+        //	LEFT JOIN dist_route_entity dre ON dre.entity_code = dlt.customer_code --AND DRE.COMPANY_CODE = DLT.COMPANY_CODE
+        //	LEFT JOIN dist_route_detail drd ON TRIM(drd.emp_code) = TRIM(dlt.sp_code)
+        //		AND trunc(drd.assign_date) = trunc(dlt.update_date) --AND DRD.ASSIGN_DATE BETWEEN TO_DATE('2021-Nov-23','YYYY-MM-DD') AND TO_DATE('2021-Nov-23','YYYY-MM-DD')
+        //	INNER JOIN dist_reseller_master drm ON drm.reseller_code = dlt.customer_code --AND DRM.COMPANY_CODE = DLT.COMPANY_CODE
+        //	INNER JOIN dist_login_user dlu1 ON TRIM(dlu1.sp_code) = TRIM(dlt.sp_code)
+        //		AND dlu1.company_code = dlt.company_code
+        //		AND dlu1.active = 'Y'
+        //	INNER JOIN hr_employee_setup hes1 ON TRIM(hes1.employee_code) = TRIM(dlt.sp_code)
+        //		AND hes1.company_code = dlu1.company_code
+        //	-- ACTUAL COMPANY OF THE ASSIGNED EMPLOYEE
+        //	LEFT JOIN dist_login_user dlu2 ON TRIM(dlu2.sp_code) = TRIM(drd.emp_code)
+        //		AND dlu2.active = 'Y'
+        //	LEFT JOIN hr_employee_setup hes2 ON TRIM(hes2.employee_code) = TRIM(drd.emp_code)
+        //		AND hes2.company_code = dlu2.company_code
+        //	LEFT JOIN dist_route_master rm1 ON rm1.route_code = dre.route_code
+        //		AND rm1.company_code = dre.company_code
+        //	LEFT JOIN dist_route_master rm2 ON rm2.route_code = drd.route_code
+        //		AND rm2.company_code = drd.company_code
+        //	LEFT JOIN V_RETAIL_DETAIL vr ON vr.reseller_code = dlt.customer_code
+        //		AND vr.company_code = dlt.company_code
+        //	WHERE 1 = 1
+        //		AND drm.is_closed = 'N'
+        //		AND rm1.route_type = 'D'
+        //		AND rm2.route_type = 'D'
+        //		AND dlt.customer_type = 'R' {FromDate}
+        //		AND DLT.COMPANY_CODE IN ({companyCode}) {BranchFilterDLT} {customerFilter} {employeeFilterDLT}
+        //	GROUP BY dlt.sp_code
+        //		,trunc(dlt.update_date)
+        //		,bs_date(TO_CHAR(dlt.update_date))
+        //		,TO_DATE(TO_CHAR(dlt.update_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+        //		,dlt.customer_code
+        //		,vr.area_name
+        //		,vr.outlet_type
+        //		,vr.outlet_subtype
+        //		,vr.group_name
+        //		,dlt.latitude
+        //		,dlt.longitude
+        //		,
+        //		--DRE.ROUTE_CODE,
+        //		TRIM(dlt.remarks)
+        //		,(
+        //			CASE 
+        //				WHEN dlt.is_visited IS NULL
+        //					THEN 'PENDING VISIT'
+        //				ELSE CASE 
+        //						WHEN dlt.is_visited = 'Y'
+        //							THEN 'VISIT'
+        //						ELSE 'CANCELLED'
+        //						END
+        //				END
+        //			)
+        //		,drd.assign_date
+        //		,drd.emp_code
+        //		,
+        //		--DRD.ROUTE_CODE,           
+        //		'R'
+        //		,dlt.company_code
+        //		,dlt.branch_code
+        //		,TRIM(hes1.employee_edesc)
+        //		,TRIM(hes2.employee_edesc)
+        //		,TRIM(drm.reseller_name)
+        //		,nvl(drm.latitude, 0)
+        //		,nvl(drm.longitude, 0)
+        //	--TRIM(RM1.ROUTE_NAME),
+        //	--TRIM(RM2.ROUTE_NAME)    
+
+        //	UNION ALL
+
+        //	--Extra
+        //	SELECT dea.sp_code visited_by
+        //		,trunc(dea.visit_date) visit_date
+        //		,bs_date(TO_CHAR(dea.visit_date)) miti
+        //		,TO_DATE(TO_CHAR(dea.visit_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM') visit_time
+        //		,'-' customer_code
+        //		,'-' area_name
+        //		,'-' outlet_type
+        //		,'-' outlet_subtype
+        //		,'-' group_name
+        //		,dea.latitude AS visit_lat
+        //		,dea.longitude AS visit_long
+        //		,
+        //		--'-' VISIT_ROUTE_CODE,
+        //		TRIM(dea.remarks) remarks
+        //		,'EXTRA' visit_type
+        //		,dea.visit_date assign_date
+        //		,'-' assigned_to
+        //		,
+        //		--'-' ASSIGNED_ROUTE,
+        //		'-' customer_type
+        //		,'-' company_code
+        //		,'-' branch_code
+        //		,hes.employee_edesc visit_by
+        //		,'-' assigned_employee
+        //		,'-' customer_name
+        //		,'-' customer_lat
+        //		,'-' customer_long
+        //	--'-' VISITED_ROUTE,
+        //	--'-' ASSIGNED_ROUTE_NAME
+        //	FROM dist_extra_activity dea
+        //	INNER JOIN hr_employee_setup hes ON hes.employee_code = dea.sp_code
+        //		AND hes.company_code = dea.company_code
+        //	WHERE 1 = 1
+        //		AND DEA.COMPANY_CODE IN ({companyCode}) {BranchFilterDEA} {employeeFilterDEA}
+        //		AND TRUNC(DEA.VISIT_DATE) BETWEEN TO_DATE('{model.FromDate}', 'YYYY-MM-DD')
+        //			AND TO_DATE('{model.ToDate}', 'YYYY-MM-DD')
+        //	GROUP BY dea.sp_code
+        //		,dea.visit_date
+        //		,bs_date(TO_CHAR(dea.visit_date))
+        //		,trunc(dea.visit_date)
+        //		,TO_DATE(TO_CHAR(dea.visit_date, 'DD-MON-RRRR HH:MI AM'), 'DD-MON-RRRR HH:MI AM')
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //		,dea.latitude
+        //		,dea.longitude
+        //		,
+        //		--'-',
+        //		TRIM(dea.remarks)
+        //		,'EXTRA'
+        //		,dea.visit_date
+        //		,bs_date(TO_CHAR(dea.visit_date))
+        //		,'-'
+        //		,
+        //		--'-',
+        //		'-'
+        //		,'-'
+        //		,'-'
+        //		,hes.employee_edesc
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //		,'-'
+        //	)
+        //--'-',
+        //--'-'
+        //ORDER BY visit_time DESC
+        //	,customer_name ASC";
+
+        //            query = string.Format(query, companyCode, BranchFilterDLT, BranchFilterDEA, customerFilter, employeeFilterDLT, FromDate);
+
+        //            var data = _objectEntity.SqlQuery<VisitSummaryViewModel>(query).ToList();
+
+        //            var imageQry = $@"SELECT IMAGE_CODE, IMAGE_NAME, IMAGE_TITLE, IMAGE_DESC, CATEGORYID, SP_CODE, ENTITY_CODE, TYPE,  trim(UPLOAD_DATE) UPLOAD_DATEString,UPLOAD_DATE, LATITUDE, LONGITUDE, COMPANY_CODE  FROM DIST_VISIT_IMAGE WHERE trunc(UPLOAD_DATE) BETWEEN TO_DATE('{model.FromDate}','YYYY-MM-DD') AND TO_DATE('{model.ToDate}','YYYY-MM-DD')";
+        //            var imageResult = _objectEntity.SqlQuery<VisitImageModel>(imageQry).ToList();
+
+        //            foreach (var item in data)
+        //            {
+        //                var hasImage = imageResult.Where(x => x.SP_CODE == item.VISITED_BY && x.ENTITY_CODE == item.CUSTOMER_CODE && Convert.ToDateTime(x.UPLOAD_DATEString) == item.Visit_Date).ToList();
+        //                if (hasImage.Count > 0) item.HAS_IMAGE = true;
+        //            }
+
+        //            return data;
+
+        //        }
 
         public List<VisitSummaryViewModel> GetVisitSummaryBrandingReport(ReportFiltersModel model, User userInfo)
         {
@@ -6859,12 +7831,16 @@ where L.SP_CODE=U.SP_CODE and  L.sp_code in ('{ string.Join("','", model.SalesPe
             companyCode = companyCode == "" ? userInfo.company_code : companyCode;
             var generalFilter = "";
             var tabularFilter = "";
-
             if (!string.IsNullOrWhiteSpace(surveyCode))
             {
-                generalFilter = $" AND B.QA_CODE IN (SELECT QA_CODE FROM DIST_QA_MASTER WHERE SET_CODE IN (SELECT SET_ID FROM DIST_QA_SURVEY_MAP WHERE SET_TYPE = 'G' AND SURVEY_ID IN ({surveyCode})))";
+                generalFilter = $" AND dqm.QA_CODE IN (SELECT QA_CODE FROM DIST_QA_MASTER WHERE SET_CODE IN (SELECT SET_ID FROM DIST_QA_SURVEY_MAP WHERE SET_TYPE = 'G' AND SURVEY_ID IN ({surveyCode})))";
                 tabularFilter = $" WHERE AAA.CELL_ID IN (SELECT CELL_ID FROM DIST_QA_TAB_CELL WHERE TABLE_ID IN (SELECT SET_ID FROM DIST_QA_SURVEY_MAP WHERE SET_TYPE = 'T' AND SURVEY_ID IN ({surveyCode})))";
             }
+            //if (!string.IsNullOrWhiteSpace(surveyCode))
+            //{
+            //    generalFilter = $" AND B.QA_CODE IN (SELECT QA_CODE FROM DIST_QA_MASTER WHERE SET_CODE IN (SELECT SET_ID FROM DIST_QA_SURVEY_MAP WHERE SET_TYPE = 'G' AND SURVEY_ID IN ({surveyCode})))";
+            //    tabularFilter = $" WHERE AAA.CELL_ID IN (SELECT CELL_ID FROM DIST_QA_TAB_CELL WHERE TABLE_ID IN (SELECT SET_ID FROM DIST_QA_SURVEY_MAP WHERE SET_TYPE = 'T' AND SURVEY_ID IN ({surveyCode})))";
+            //}
 
             var Query = $@"SELECT B.QUESTION,A.ENTITY_CODE CUSTOMER_CODE,A.CREATED_DATE,A.ANSWER,
                                 0 TABLE_ID,0 CELL_ID,0 CELL_NO,0 ROW_NO,''CELL_TYPE,'' CELL_LABEL,0 ANSWER_ID,'Simple' TYPE 
@@ -6891,6 +7867,13 @@ where L.SP_CODE=U.SP_CODE and  L.sp_code in ('{ string.Join("','", model.SalesPe
                                         WHERE O.COMPANY_CODE IN ({companyCode}) AND M.ENTITY_CODE='{CustomerCode}' AND M.ENTITY_TYPE='{CustomerType}') BBB 
                                         ON (AAA.TABLE_ID=BBB.TABLE_ID AND AAA.CREATED_DATE=BBB.CREATED_DATE AND AAA.CELL_ID=BBB.CELL_ID)
                                         {tabularFilter}";
+            //var Query = $@"SELECT dqm.question, dqa.entity_code customer_code, dqm.created_date, dqa.sp_code, dqa.answer, 
+            //        0 table_id, 0 cell_id, 0 cell_no, 0 row_no, '' cell_type, '' cell_label, 0 answer_id, 'Simple' type FROM dist_qa_master dqm
+            //        LEFT JOIN dist_qa_set dqs ON dqs.set_code = dqm.set_code AND dqs.company_code = dqm.company_code
+            //        LEFT JOIN dist_qa_survey_map dqsm ON dqsm.set_id = dqm.set_code
+            //        LEFT JOIN dist_qa_set_salesperson_map dqssm ON dqsm.survey_id = dqssm.survey_code AND dqm.company_code = dqssm.company_code
+            //        LEFT JOIN dist_qa_answer dqa ON dqm.qa_code = dqa.qa_code AND dqa.sp_code = dqssm.sp_code AND dqm.company_code = dqa.company_code
+            //        WHERE dqa.entity_code = '{CustomerCode}' and dqa.entity_type='{CustomerType}' and  AND dqa.company_code in '{companyCode}' {generalFilter}";
             var tempData = _objectEntity.SqlQuery<QuestionaireModel>(Query).ToList();
             var questionList = tempData.Where(x => x.Type == "Tabular").Select(x => x.Question).Distinct().ToList();
             List<QuestionaireModel> finalDataList = tempData.Where(x => x.Type == "Simple").ToList();
@@ -6957,6 +7940,17 @@ where L.SP_CODE=U.SP_CODE and  L.sp_code in ('{ string.Join("','", model.SalesPe
                 WHERE COMPANY_CODE = '{userInfo.company_code}' and deleted_flag='N' 
                 ORDER BY UPPER(AREA_NAME) ASC";
             var List = _objectEntity.SqlQuery<DistAreaModel>(query).ToList();
+            return List;
+        }
+        public List<CustomerIModel> GetCustomersByArea(string areaCodes, User userInfo)
+        {
+            var condition = string.Empty;
+            if (areaCodes != "" && areaCodes != null)
+                condition = $@" AND DDM.AREA_CODE in ({areaCodes})";
+
+            string query = $@"SELECT SCS.CUSTOMER_CODE,SCS.CUSTOMER_EDESC,DDM.DISTRIBUTOR_CODE,DDM.AREA_CODE FROM SA_CUSTOMER_SETUP SCS ,DIST_DISTRIBUTOR_MASTER DDM WHERE SCS.COMPANY_CODE=DDM.COMPANY_CODE AND SCS.CUSTOMER_CODE=DDM.DISTRIBUTOR_CODE AND 
+                    SCS.COMPANY_CODE='{userInfo.company_code}' AND SCS.GROUP_SKU_FLAG='I' AND SCS.DELETED_FLAG='N' {condition} ORDER BY UPPER(SCS.CUSTOMER_EDESC) ASC";
+            var List = _objectEntity.SqlQuery<CustomerIModel>(query).ToList();
             return List;
         }
         public List<DistAreaModel> GetIndividualGroup(User userInfo, string SingleAreaCode)
@@ -7304,7 +8298,7 @@ where L.SP_CODE=U.SP_CODE and  L.sp_code in ('{ string.Join("','", model.SalesPe
                 filter += string.Format(@" AND C.BRANCH_CODE IN ('{0}')", string.Join("','", reportFilters.BranchFilter).ToString());
             }
             if (!string.IsNullOrEmpty(reportFilters.FromDate))
-                filter = filter + " AND C.CREATED_DATE>=TO_DATE('" + reportFilters.FromDate + "', 'YYYY-MM-DD') and c.CREATED_DATE <= TO_DATE('" + reportFilters.ToDate + "', 'YYYY-MM-DD')";
+                filter = filter + " AND trunc(C.CREATED_DATE)>=TO_DATE('" + reportFilters.FromDate + "', 'YYYY-MM-DD') and trunc(c.CREATED_DATE) <= TO_DATE('" + reportFilters.ToDate + "', 'YYYY-MM-DD')";
 
             if (!string.IsNullOrWhiteSpace(userInfo.sp_codes))
             {
@@ -7315,30 +8309,37 @@ where L.SP_CODE=U.SP_CODE and  L.sp_code in ('{ string.Join("','", model.SalesPe
             //CONDITIONS FITLER END HERE
             //****************************
 
-            var query = $@"SELECT SP_CODE, SALESPERSON_NAME, ENTITY_CODE, ENTITY_TYPE, ENTITY_NAME, BILL_NO, PAYMENT_MODE, CHEQUE_NO, BANK_NAME, AMOUNT, REMARKS, CHEQUE_CLEARANCE_DATE, CHEQUE_DEPOSIT_BANK, DELETED_FLAG, CREATED_DATE,MITI
+            var query = $@"SELECT SP_CODE, SALESPERSON_NAME, ENTITY_CODE, ENTITY_TYPE, ENTITY_NAME, BILL_NO, PAYMENT_MODE, CHEQUE_NO, BANK_NAME, AMOUNT, REMARKS, CHEQUE_CLEARANCE_DATE,cheque_image,signature_image,cash_image, CHEQUE_DEPOSIT_BANK, DELETED_FLAG, CREATED_DATE,MITI
                     FROM (
                         SELECT C.SP_CODE, ES.EMPLOYEE_EDESC AS SALESPERSON_NAME, C.ENTITY_CODE, 'Distributor'  ENTITY_TYPE, CS.CUSTOMER_EDESC AS ENTITY_NAME, C.BILL_NO, C.PAYMENT_MODE, C.CHEQUE_NO, C.BANK_NAME,BS_DATE(TO_CHAR(C.CREATED_DATE)) AS MITI,
-                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG, TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE 
+                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG, MAX(CASE WHEN dvi.CATEGORYID = 7 THEN dvi.image_name END) AS cheque_image,MAX(CASE WHEN dvi.CATEGORYID = 8 THEN dvi.image_name END) AS signature_image,MAX(CASE WHEN dvi.CATEGORYID = 9 THEN dvi.image_name END) AS cash_image,TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE 
                         FROM DIST_COLLECTION C 
                         LEFT JOIN SA_CUSTOMER_SETUP CS ON CS.CUSTOMER_CODE = C.ENTITY_CODE AND CS.COMPANY_CODE = C.COMPANY_CODE AND CS.GROUP_SKU_FLAG = 'I' AND CS.DELETED_FLAG = 'N' 
                         LEFT JOIN HR_EMPLOYEE_SETUP ES ON ES.EMPLOYEE_CODE = C.SP_CODE and c.company_code=es.company_code and c.company_code=cs.company_code   AND ES.GROUP_SKU_FLAG = 'I' AND ES.DELETED_FLAG = 'N' 
-                        WHERE C.ENTITY_TYPE = 'D' AND C.COMPANY_CODE IN({companyCode }) {filter}
+                        LEFT JOIN dist_visit_image dvi ON dvi.sp_code = c.sp_code AND c.id = dvi.id AND dvi.entity_code = c.entity_code AND c.company_code = dvi.company_code AND dvi.CATEGORYID IN (7, 8, 9)
+                        WHERE C.ENTITY_TYPE = 'D' AND C.COMPANY_CODE IN({companyCode }) {filter} GROUP BY c.sp_code,es.employee_edesc, c.entity_code, cs.customer_edesc,c.bill_no,c.payment_mode,c.cheque_no,c.bank_name,
+                        bs_date(to_char(c.created_date)),c.amount,c.remarks,c.cheque_clearance_date,c.cheque_deposit_bank,c.deleted_flag,to_char(c.created_date, 'YYYY-MM-DD')
                         UNION 
                         SELECT C.SP_CODE, ES.EMPLOYEE_EDESC AS SALESPERSON_NAME, C.ENTITY_CODE, 'Reseller'  ENTITY_TYPE, RM.RESELLER_NAME AS ENTITY_NAME, C.BILL_NO, C.PAYMENT_MODE, C.CHEQUE_NO, C.BANK_NAME,BS_DATE(TO_CHAR(C.CREATED_DATE)) AS MITI,
-                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG, TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE
+                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG,MAX(CASE WHEN dvi.CATEGORYID = 7 THEN dvi.image_name END) AS cheque_image,MAX(CASE WHEN dvi.CATEGORYID = 8 THEN dvi.image_name END) AS signature_image,MAX(CASE WHEN dvi.CATEGORYID = 9 THEN dvi.image_name END) AS cash_image,
+                        TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE
                         FROM DIST_COLLECTION C
                         LEFT JOIN DIST_RESELLER_MASTER RM ON RM.RESELLER_CODE = C.ENTITY_CODE 
                         LEFT JOIN HR_EMPLOYEE_SETUP ES ON ES.EMPLOYEE_CODE = C.SP_CODE and c.company_code=es.company_code and c.company_code=es.company_code   AND ES.GROUP_SKU_FLAG = 'I' AND ES.DELETED_FLAG = 'N' 
-                        WHERE C.ENTITY_TYPE = 'R' AND C.COMPANY_CODE IN({companyCode}) AND RM.IS_CLOSED = 'N' {filter}
+                        LEFT JOIN dist_visit_image dvi ON dvi.sp_code = c.sp_code AND c.id = dvi.id AND dvi.entity_code = c.entity_code AND c.company_code = dvi.company_code AND dvi.CATEGORYID IN (7, 8, 9)
+                        WHERE C.ENTITY_TYPE = 'R' AND C.COMPANY_CODE IN({companyCode}) AND RM.IS_CLOSED = 'N' {filter}    GROUP BY c.sp_code,es.employee_edesc, c.entity_code,rm.reseller_name,c.bill_no,c.payment_mode,c.cheque_no,c.bank_name,
+                        bs_date(to_char(c.created_date)),c.amount,c.remarks,c.cheque_clearance_date,c.cheque_deposit_bank,c.deleted_flag,to_char(c.created_date, 'YYYY-MM-DD')
                         UNION ALL
                            SELECT C.SP_CODE, ES.EMPLOYEE_EDESC AS SALESPERSON_NAME, C.ENTITY_CODE, 'Dealer'  ENTITY_TYPE, PS.PARTY_TYPE_EDESC AS ENTITY_NAME, C.BILL_NO, C.PAYMENT_MODE, C.CHEQUE_NO, C.BANK_NAME,BS_DATE(TO_CHAR(C.CREATED_DATE)) AS MITI,
-                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG, TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE
+                        C.AMOUNT, C.REMARKS, C.CHEQUE_CLEARANCE_DATE, C.CHEQUE_DEPOSIT_BANK, C.DELETED_FLAG,MAX(CASE WHEN dvi.CATEGORYID = 7 THEN dvi.image_name END) AS cheque_image,MAX(CASE WHEN dvi.CATEGORYID = 8 THEN dvi.image_name END) AS signature_image,MAX(CASE WHEN dvi.CATEGORYID = 9 THEN dvi.image_name END) AS cash_image,
+                        TO_CHAR(C.CREATED_DATE,'YYYY-MM-DD') AS CREATED_DATE
                         FROM DIST_COLLECTION C 
                         LEFT JOIN DIST_DEALER_MASTER RM ON RM.DEALER_CODE = C.ENTITY_CODE 
                         LEFT JOIN IP_PARTY_TYPE_CODE PS ON PS.PARTY_TYPE_CODE = C.ENTITY_CODE AND PS.DELETED_FLAG = 'N' 
                         LEFT JOIN HR_EMPLOYEE_SETUP ES ON ES.EMPLOYEE_CODE = C.SP_CODE and c.company_code=es.company_code and c.company_code=es.company_code   AND ES.GROUP_SKU_FLAG = 'I' AND ES.DELETED_FLAG = 'N' 
-                        WHERE C.ENTITY_TYPE = 'P'
-                        AND C.COMPANY_CODE IN({companyCode}) {filter})";
+                        LEFT JOIN dist_visit_image dvi ON dvi.sp_code = c.sp_code AND c.id = dvi.id AND dvi.entity_code = c.entity_code AND c.company_code = dvi.company_code AND dvi.CATEGORYID IN (7, 8, 9)
+                        WHERE C.ENTITY_TYPE = 'P' AND C.COMPANY_CODE IN({companyCode}) {filter} GROUP BY c.sp_code,es.employee_edesc, c.entity_code,ps.party_type_edesc,c.bill_no,c.payment_mode,c.cheque_no,c.bank_name,
+                        bs_date(to_char(c.created_date)),c.amount,c.remarks,c.cheque_clearance_date,c.cheque_deposit_bank,c.deleted_flag,to_char(c.created_date, 'YYYY-MM-DD'))";
             var data = _objectEntity.SqlQuery<CollectionModel>(query).ToList();
             return data;
         }
@@ -11098,7 +12099,6 @@ SELECT PPO.SP_CODE, PPO.EMPLOYEE_EDESC, PPO.ENTITY_CODE, PPO.ENTITY_NAME, PPO.LA
             var result = _objectEntity.SqlQuery<PurchaseOrderReportModel>(query).ToList();
             return result;
         }
-
         public List<PurchaseOrderReportModel> GetResellerPurchaseOrderList(ReportFiltersModel model, string requestStatus, User userInfo)
         {
             var flagFilter = string.Empty;
@@ -11245,6 +12245,153 @@ SELECT PPO.SP_CODE, PPO.EMPLOYEE_EDESC, PPO.ENTITY_CODE, PPO.ENTITY_NAME, PPO.LA
             var result = _objectEntity.SqlQuery<PurchaseOrderReportModel>(query).ToList();
             return result;
         }
+
+        //public List<PurchaseOrderReportModel> GetResellerPurchaseOrderList(ReportFiltersModel model, string requestStatus, User userInfo)
+        //{
+        //    var flagFilter = string.Empty;
+        //    var custFilter = string.Empty;
+        //    var salesPersonFilter = string.Empty;
+        //    if (model.CustomerFilter.Count() > 0)
+        //    {
+        //        custFilter = @"select  DISTINCT(customer_code) from sa_customer_setup where (";
+        //        //IF CUSTOMER_SKU_FLAG = G
+        //        foreach (var item in model.CustomerFilter)
+        //        {
+        //            custFilter += "master_customer_code like  (Select DISTINCT(MASTER_CUSTOMER_CODE) || '%'  from SA_CUSTOMER_SETUP WHERE CUSTOMER_CODE = '" + item + "' AND GROUP_SKU_FLAG = 'G' AND DELETED_FLAG= 'N' AND COMPANY_CODE IN(" + userInfo.company_code + ")) OR ";
+        //        }
+        //        custFilter = custFilter.Substring(0, custFilter.Length - 3);
+        //        //IF CUSTOMER_SKU_FLAG = I                
+        //        custFilter += " or (customer_code in (" + string.Join(",", model.CustomerFilter) + ") and group_sku_flag = 'I' AND DELETED_FLAG = 'N' AND COMPANY_CODE IN(" + userInfo.company_code + "))) ";
+
+
+        //        custFilter = " and CS.customer_code IN(" + custFilter + ")";
+        //    }
+        //    if (model.ItemBrandFilter.Count > 0)
+        //        salesPersonFilter = $" AND ES.EMPLOYEE_CODE IN  ('{ string.Join("','", model.ItemBrandFilter).ToString()}')";
+        //    else if (!string.IsNullOrWhiteSpace(userInfo.sp_codes))
+        //    {
+        //        salesPersonFilter = $" AND ES.EMPLOYEE_CODE IN ({userInfo.sp_codes})";
+        //    }
+
+        //    if (requestStatus == "Approved")
+        //        flagFilter = @" AND DPO1.approved_flag = 'Y'
+        //                       AND DPO1.REJECT_FLAG = 'N'";
+        //    else if (requestStatus == "Rejected")
+        //        flagFilter = @" AND DPO1.REJECT_FLAG = 'Y'
+        //                        AND DPO1.approved_flag = 'N'";
+        //    else if (requestStatus == "All")
+        //    {
+        //        flagFilter = "";
+        //    }
+        //    else if (requestStatus == "Active")
+        //    {
+        //        flagFilter = @" AND DPO1.REJECT_FLAG = 'N'
+        //                        AND DPO1.APPROVED_FLAG = 'N'";
+        //    }
+
+
+        //    var BranchFilter = string.Empty;
+        //    if (model.BranchFilter.Count > 0)
+        //    {
+        //        BranchFilter = string.Format(@" AND DPO1.BRANCH_CODE IN  ('{0}')", string.Join("','", model.BranchFilter).ToString());
+
+        //    }
+
+        //    string customerFilter = "";
+        //    if (userInfo.LoginType == "Distributor")
+        //    {
+        //        customerFilter = $" AND DPO1.CUSTOMER_CODE = '{userInfo.DistributerNo}'";
+        //    }
+        //    string query = $@"SELECT DPO1.ORDER_NO,DPO1.ORDER_DATE,BS_DATE(TO_CHAR(DPO1.ORDER_DATE)) MITI, DPO1.CUSTOMER_CODE,DPO1.BILLING_NAME CUSTOMER_EDESC, RM.RESELLER_NAME, 'R' ORDER_ENTITY,
+        //                             DPO1.PARTY_TYPE_CODE,
+        //                             (CASE WHEN DPO1.PARTY_TYPE_CODE IS NULL
+        //                                THEN FN_FETCH_DESC (DPO1.COMPANY_CODE,'IP_PARTY_TYPE_CODE',CS.PARTY_TYPE_CODE)
+        //                                ELSE FN_FETCH_DESC (DPO1.COMPANY_CODE,'IP_PARTY_TYPE_CODE',DPO1.PARTY_TYPE_CODE)
+        //                              END
+        //                             ) PARTY_TYPE_EDESC,
+        //                             (CASE DPO1.DISPATCH_FROM
+        //                                WHEN 'D' THEN 'Distributor'
+        //                                WHEN 'W' THEN 'Wholeseller'
+        //                                ELSE NULL
+        //                              END) DISPATCH_FROM,
+        //                             DPO1.CREATED_BY, DPO1.CREATED_DATE, DPO1.DELETED_FLAG,
+        //                             DPO1.COMPANY_CODE, DPO1.BRANCH_CODE,
+        //                             DPO1.APPROVED_FLAG, DPO1.DISPATCH_FLAG, DPO1.ACKNOWLEDGE_FLAG, DPO1.REJECT_FLAG,
+        //                             ES.EMPLOYEE_EDESC,
+        //                             PS.PO_PARTY_TYPE,
+        //                             PS.PO_CONVERSION_FACTOR,
+        //                             PS.PO_BILLING_NAME,
+        //                             PS.SO_CREDIT_LIMIT_CHK SO_CREDIT_LIMIT_FLAG,
+        //                             CS.CREDIT_LIMIT,
+        //                             --VSL.BALANCE,
+        //                              NVL(DPO2.TOTAL_QUANTITY,0) QUANTITY,
+        //                             DPO2.TOTAL_AMOUNT GrantTotalAmount,
+        //                             NVL(DPO2.TOTAL_APPROVE_QTY,0) GRAND_APPROVE_QUENTITY,
+        //                             NVL(DPO2.TOTAL_APPROVE_AMT,0) TOTAL_APPROVE_AMT,DPO1.REMARKS_REVIEW,
+        //                             (SELECT RESELLER_NAME FROM DIST_RESELLER_MASTER WHERE RESELLER_CODE=DPO1.WHOLESELLER_CODE AND IS_CLOSED = 'N') WHOLESELLER_EDESC
+        //                    FROM DIST_IP_SSR_PURCHASE_ORDER DPO1
+        //                    INNER JOIN DIST_RESELLER_MASTER RM ON RM.RESELLER_CODE = DPO1.RESELLER_CODE
+        //                    INNER JOIN IP_ITEM_MASTER_SETUP IMS ON IMS.ITEM_CODE = DPO1.ITEM_CODE AND IMS.COMPANY_CODE = DPO1.COMPANY_CODE AND IMS.CATEGORY_CODE in (select CATEGORY_CODE from IP_CATEGORY_CODE WHERE CATEGORY_TYPE IN ('FG','TF') AND COMPANY_CODE='{userInfo.company_code}') AND IMS.GROUP_SKU_FLAG = 'I'
+        //                    LEFT JOIN SA_CUSTOMER_SETUP CS ON CS.CUSTOMER_CODE = DPO1.CUSTOMER_CODE AND CS.COMPANY_CODE = DPO1.COMPANY_CODE
+        //                    INNER JOIN DIST_LOGIN_USER LU ON LU.USERID = DPO1.CREATED_BY AND LU.ACTIVE = 'Y'
+        //                    INNER JOIN HR_EMPLOYEE_SETUP ES ON ES.EMPLOYEE_CODE = LU.SP_CODE AND ES.COMPANY_CODE = LU.COMPANY_CODE
+        //                    LEFT JOIN IP_ITEM_UNIT_SETUP IUS ON IUS.ITEM_CODE = DPO1.ITEM_CODE AND IUS.COMPANY_CODE = DPO1.COMPANY_CODE
+        //                    INNER JOIN DIST_PREFERENCE_SETUP PS ON PS.COMPANY_CODE = DPO1.COMPANY_CODE
+        //                    --LEFT JOIN (SELECT V.SUB_CODE, NVL((SUM (V.DR_AMOUNT) - SUM (V.CR_AMOUNT)),0) BALANCE
+        //                    --  FROM V$VIRTUAL_SUB_LEDGER V
+        //                    --  WHERE 1 = 1
+        //                    --  AND V.COMPANY_CODE IN ('01')
+        //                    --  AND V.SUB_LEDGER_FLAG = 'C'
+        //                    -- GROUP BY V.SUB_CODE) VSL ON TRIM(VSL.SUB_CODE) = TRIM(CS.LINK_SUB_CODE)
+        //                    INNER JOIN (SELECT POT.ORDER_NO, SUM(POT.NET_QUANTITY) TOTAL_QUANTITY, SUM(POT.NET_PRICE) TOTAL_AMOUNT, SUM(POT.APPROVE_QTY) TOTAL_APPROVE_QTY, SUM(POT.APPROVE_AMT) TOTAL_APPROVE_AMT
+        //                                FROM (SELECT A.ORDER_NO, A.ITEM_CODE, A.MU_CODE, A.QUANTITY, A.TOTAL_PRICE NET_PRICE, A.APPROVE_QTY, A.APPROVE_AMT, C.MU_CODE AS CONVERSION_UNIT, C.CONVERSION_FACTOR,
+        //                                (CASE
+        //                                  WHEN (C.MU_CODE IS NULL AND C.CONVERSION_FACTOR IS NULL)
+        //                                  THEN A.QUANTITY
+        //                                  ELSE (CASE WHEN A.MU_CODE = C.MU_CODE THEN A.QUANTITY ELSE (A.QUANTITY * C.CONVERSION_FACTOR) END)
+        //                                END) NET_QUANTITY
+        //                                FROM DIST_IP_SSR_PURCHASE_ORDER A
+        //                                LEFT JOIN IP_ITEM_UNIT_SETUP C ON C.ITEM_CODE = A.ITEM_CODE AND C.COMPANY_CODE = A.COMPANY_CODE
+        //                                WHERE 1=1 {customerFilter}
+        //                                --ORDER BY A.ORDER_NO DESC, A.ITEM_CODE
+        //                    ) POT
+        //                   GROUP BY POT.ORDER_NO) DPO2 ON DPO2.ORDER_NO = DPO1.ORDER_NO
+        //                    WHERE 1 = 1
+        //                      AND TRUNC(DPO1.ORDER_DATE) >= TO_DATE('{model.FromDate}','YYYY-MM-DD') AND TRUNC(DPO1.ORDER_DATE) <= TO_DATE('{model.ToDate}','YYYY-MM-DD')
+        //                      AND DPO1.DELETED_FLAG = 'N' AND RM.IS_CLOSED = 'N' {custFilter} {salesPersonFilter}
+        //                   {flagFilter}
+        //                      AND DPO1.COMPANY_CODE IN ('{userInfo.company_code}') {BranchFilter}
+        //                    GROUP BY DPO1.ORDER_NO, DPO1.ORDER_DATE,BS_DATE(TO_CHAR(DPO1.ORDER_DATE)), DPO1.CUSTOMER_CODE, DPO1.BILLING_NAME, RM.RESELLER_NAME, 'R',
+        //                             DPO1.PARTY_TYPE_CODE,
+        //                             (CASE WHEN DPO1.PARTY_TYPE_CODE IS NULL
+        //                                THEN FN_FETCH_DESC (DPO1.COMPANY_CODE,'IP_PARTY_TYPE_CODE',CS.PARTY_TYPE_CODE)
+        //                                ELSE FN_FETCH_DESC (DPO1.COMPANY_CODE,'IP_PARTY_TYPE_CODE',DPO1.PARTY_TYPE_CODE)
+        //                              END
+        //                             ),
+        //                              (CASE DPO1.DISPATCH_FROM
+        //                                WHEN 'D' THEN 'Distributor'
+        //                                WHEN 'W' THEN 'Wholeseller'
+        //                                ELSE NULL
+        //                              END),
+        //                             DPO1.CREATED_BY, DPO1.CREATED_DATE, DPO1.DELETED_FLAG,
+        //                             DPO1.COMPANY_CODE, DPO1.BRANCH_CODE,
+        //                             DPO1.APPROVED_FLAG, DPO1.DISPATCH_FLAG, DPO1.ACKNOWLEDGE_FLAG, DPO1.REJECT_FLAG,
+        //                             ES.EMPLOYEE_EDESC,
+        //                             PS.PO_PARTY_TYPE,
+        //                             PS.PO_CONVERSION_FACTOR,
+        //                             PS.PO_BILLING_NAME,
+        //                             PS.SO_CREDIT_LIMIT_CHK,
+        //                             CS.CREDIT_LIMIT,
+        //                             --VSL.BALANCE,
+        //                             DPO2.TOTAL_QUANTITY,
+        //                             DPO2.TOTAL_AMOUNT,
+        //                             DPO2.TOTAL_APPROVE_QTY,
+        //                             DPO2.TOTAL_APPROVE_AMT,DPO1.REMARKS_REVIEW,
+        //                             DPO1.WHOLESELLER_CODE
+        //                    ORDER BY DPO1.ORDER_NO DESC";
+        //    var result = _objectEntity.SqlQuery<PurchaseOrderReportModel>(query).ToList();
+        //    return result;
+        //}
 
         public List<SalesPersonPoModel> GetSalesPersonList(ReportFiltersModel model, string requestStatus, User userInfo)
         {
@@ -11640,7 +12787,7 @@ ORDER BY ES.EMPLOYEE_EDESC,{GroupDate2} UPPER(TRIM (IMS.ITEM_EDESC))";
                                AND DLU.GROUPID = DGM.GROUPID(+)
                                AND DLU.ACTIVE = 'Y'
                                AND TRACK_TYPE = 'EOD'
-                               AND LT.COMPANY_CODE IN ({userInfo.company_code}) {filter}
+                               AND LT.COMPANY_CODE IN ('{userInfo.company_code}') {filter}
                               AND TRUNC(EU.CREATED_DATE) >=TO_DATE('{model.FromDate}','YYYY-MM-DD') AND TRUNC(EU.CREATED_DATE) <=TO_DATE('{model.ToDate}','YYYY-MM-DD')
                         GROUP BY  LT.SP_CODE,TRUNC (EU.CREATED_DATE) ,ES.EMPLOYEE_EDESC,EPERMANENT_ADDRESS1, GROUP_EDESC,DLU.CONTACT_NO,EU.REMARKS,EU.PO_DCOUNT,EU.PO_RCOUNT
                                    ,EU.LATITUDE,EU.LONGITUDE
@@ -12230,10 +13377,10 @@ ORDER BY UPPER(PFMTBL.GROUP_EDESC), UPPER(PFMTBL.EMPLOYEE_EDESC)";
             //                 LU.EMAIL,GM.GROUP_EDESC,LT.ATN_LOCATION,LT.EOD_LOCATION,LT.ATTNCHECKOUT_TIME
             //ORDER BY LT.ATT_DATE DESC,FULL_NAME";
 
-            var query = $@"select ab.*,(select WM_CONCAT( distinct ROUTE_NAME) from DIST_TARGET_ENTITY  where sp_code=ab.sp_code AND TRUNC(ASSIGN_DATE)=TRUNC(att_date)) ROUTE_NAME from (select TA.SP_CODE,TA.ATT_DATE,TA.CHECKIN,TA.CHECKOUT,TA.ATTNCHECKIN_TIME,TA.ATTNCHECKOUT_TIME,C.FIRST_CALL,C.LAST_CALL,TA.FULL_NAME,TA.USER_NAME,TA.CONTACT_NO,TA.EMAIL,TA.GROUP_EDESC,TA.FILENAME,TA.ATN_LOCATION,TA.EOD_LOCATION
+            var query = $@"select ab.*,(select WM_CONCAT( distinct ROUTE_NAME) from DIST_TARGET_ENTITY  where sp_code=ab.sp_code AND TRUNC(ASSIGN_DATE)=TRUNC(att_date)) ROUTE_NAME from (select TA.SP_CODE,TA.ATT_DATE,TA.CHECKIN,TA.CHECKOUT,TA.ATTNCHECKIN_TIME,TA.ATTNCHECKOUT_TIME,C.FIRST_CALL,C.LAST_CALL,TA.FULL_NAME,TA.USER_NAME,TA.CONTACT_NO,TA.EMAIL,TA.GROUP_EDESC,ta.remarks,TA.FILENAME,TA.ATN_LOCATION,TA.EOD_LOCATION
  ,CASE TA.ATTNCHECKOUT_TIME WHEN TA.ATTNCHECKIN_TIME THEN NULL ELSE TA.ATTNCHECKOUT_TIME   END ATTNCHECKOUT from(SELECT LT.SP_CODE, LT.ATT_DATE, LT.CHECKIN, LT.CHECKOUT, LT.ATTNCHECKIN_TIME, LT.ATTNCHECKOUT_TIME,
                         LU.FULL_NAME, LU.USER_NAME, LU.CONTACT_NO, LU.EMAIL,
-                        GM.GROUP_EDESC, wm_concat(PI.FILENAME)  FILENAME,
+                        GM.GROUP_EDESC,pi.description as remarks, wm_concat(PI.FILENAME)  FILENAME,
                         CASE LT.ATN_LOCATION
                             WHEN ',' THEN NULL
                             ELSE LT.ATN_LOCATION
@@ -12281,7 +13428,7 @@ SELECT A.SP_CODE, A.ATT_DATE, A.CHECKIN, B.CHECKOUT, A.COMPANY_CODE, A.LATITUDE 
                           AND LT.COMPANY_CODE IN('{companyCode}')
                       {SalesPersonFilter}
                       AND LT.ATT_DATE >=TO_DATE('{model.FromDate}','YYYY-MM-DD') AND LT.ATT_DATE <=TO_DATE('{model.ToDate}','YYYY-MM-DD')
-            GROUP BY  LT.SP_CODE, LT.ATT_DATE, LT.CHECKIN, LT.CHECKOUT,
+            GROUP BY  LT.SP_CODE, LT.ATT_DATE, LT.CHECKIN, LT.CHECKOUT,pi.description,
                              LU.FULL_NAME, LU.USER_NAME, LU.CONTACT_NO,
                              LU.EMAIL, GM.GROUP_EDESC, LT.ATN_LOCATION, LT.EOD_LOCATION, LT.ATTNCHECKIN_TIME, LT.ATTNCHECKOUT_TIME
             ORDER BY LT.ATT_DATE DESC, FULL_NAME) ta   left outer JOIN

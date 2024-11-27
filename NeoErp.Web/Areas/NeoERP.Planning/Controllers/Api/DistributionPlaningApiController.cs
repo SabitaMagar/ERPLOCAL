@@ -163,11 +163,18 @@ namespace NeoERP.Planning.Controllers.Api
             return employees;
         }
         [HttpGet]
-        public List<EmployeeModels> GetGroupEmployees()
+        public List<EmployeeModels> GetSNGEmployees(string filter, string empGroup)
         {
-            var employees = this._iDistributionPlaning.GetGroupEmployees();
+            var employees = this._iDistributionPlaning.getSNGEmployees(filter, empGroup);
             return employees;
         }
+        [HttpGet]
+        public List<CustomerSNGroup> GetGroupEmployees(string filter)
+        {
+            var employees = this._iDistributionPlaning.GetGroupEmployees(filter);
+            return employees;
+        }
+
         [HttpGet]
         public List<EmployeeModels> GetBrandingEmployees(string filter, string empGroup)
         {
@@ -253,10 +260,10 @@ namespace NeoERP.Planning.Controllers.Api
             return Request.CreateResponse(HttpStatusCode.OK, actionresult);
         }
         [HttpGet]
-        public HttpResponseMessage GetItemGroup()
+        public HttpResponseMessage GetItemGroup(string filter)
         {           try            
             {
-                List<ItemGroupModel> itemGroup = this._iDistributionPlaning.GetItemGroup();
+                List<ItemGroupModel> itemGroup = this._iDistributionPlaning.GetItemGroup(filter);
                 return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
             }
             catch
@@ -265,17 +272,135 @@ namespace NeoERP.Planning.Controllers.Api
             }
         }
         [HttpGet]
-        public HttpResponseMessage GetItemLists(string itmGroup)
+        public HttpResponseMessage GetCustomerGroup(string filter)
         {
             try
             {
-                List<ItemGroupModel> itemGroup = this._iDistributionPlaning.GetItemLists(itmGroup);
+                List<CustomerGroup> itemGroup = this._iDistributionPlaning.GetCustomerGroup(filter);
                 return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
             }
             catch
             {
                 return Request.CreateResponse(HttpStatusCode.OK, "");
             }
+        }
+        [HttpGet]
+        public HttpResponseMessage GetCustomerSNGGroup(string filter)
+        {
+            try
+            {
+                List<CustomerSNGroup> itemGroup = this._iDistributionPlaning.GetCustomerSNGGroup(filter);
+                return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
+            }
+            catch
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, "");
+            }
+        }
+        [HttpGet]
+        public HttpResponseMessage GetItemLists(string filter,string itmGroup)
+        {
+            try
+            {
+                List<ItemGroupModel> itemGroup = this._iDistributionPlaning.GetItemLists(filter,itmGroup);
+                return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
+            }
+            catch
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, "");
+            }
+        }
+        [HttpGet]
+        public HttpResponseMessage GetCustomerLists(string filter,string cusGroup)
+        {
+            try
+            {
+                List<CustomerGroupModel> itemGroup = this._iDistributionPlaning.GetCustomerLists(filter,cusGroup);
+                return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
+            }
+            catch
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, "");
+            }
+        }
+        [HttpGet]
+        public HttpResponseMessage GetCustomerSNGLists(string filter, string cusGroup)
+        {
+            try
+            {
+                List<CustomerGroupModel> itemGroup = this._iDistributionPlaning.GetCustomerSNGLists(filter, cusGroup);
+                return Request.CreateResponse(HttpStatusCode.OK, itemGroup);
+            }
+            catch
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, "");
+            }
+        }
+        [HttpGet]
+        public List<HolidayModel> HolidayDetails(string fromDate,string toDate)
+        {
+            var holidays = this._iDistributionPlaning.GetHolidayDetails(fromDate,toDate);
+            return holidays;
+        }
+        public HttpResponseMessage SaveTargetData(ProfileModel model)
+        {
+            try {
+                string actionresult;
+                if (model.TargetId == 0)
+                {
+                     actionresult = this._iDistributionPlaning.saveTargetData(model);
+                    if (actionresult == "success")
+                    {
+                        return Request.CreateResponse(HttpStatusCode.OK, "Targets created successfully!");
+                    }
+                    else
+                    {
+                        return Request.CreateResponse(HttpStatusCode.InternalServerError, "Failed to create targets!");
+                    }
+                }
+                else
+                {
+                     actionresult = this._iDistributionPlaning.updateTargetData(model);
+                    if (actionresult == "success")
+                    {
+                        return Request.CreateResponse(HttpStatusCode.OK, "Targets updated successfully!");
+                    }
+                    else
+                    {
+                        return Request.CreateResponse(HttpStatusCode.InternalServerError, "Failed to create targets!");
+                    }
+                }
+
+            } catch
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, "Failed to create targets!");
+            }
+
+        }
+        [HttpGet]
+        public List<TARGET_PLAN> GetTargetList()
+        {
+            return _iDistributionPlaning.getAllTargets();
+
+        }
+
+        [HttpPost]
+        public HttpResponseMessage UpdateTarget(string targetId)
+        {
+            var message = this._iDistributionPlaning.UpdateTarget(targetId);
+            if (message == "success")
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, new { MESSAGE = "Target deleted Successfully", STATUS_CODE = (int)HttpStatusCode.OK });
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, new { MESSAGE = "Something Wrong !! Try again Later", STATUS_CODE = (int)HttpStatusCode.BadRequest });
+            }
+        }
+        [HttpGet]
+        public TARGET_DETAILS getDataView(string targetId)
+        {
+            return this._iDistributionPlaning.GetTargetData(targetId);
         }
     }
 }

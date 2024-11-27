@@ -83,6 +83,7 @@ namespace NeoErp.Distribution.Service.Service
         {
             var SourceFilter = "";
             var statusQ = "";
+            var condition = "";
             if (Source == "W")
                 SourceFilter = " AND RM.SOURCE = 'WEB'";
             else if (Source == "M")
@@ -91,7 +92,12 @@ namespace NeoErp.Distribution.Service.Service
             if (status == "inactive") statusQ = " AND RM.ACTIVE !='Y'";
             companyCode = companyCode == "" ? userInfo.company_code : companyCode;
 
-            var Query = @"SELECT RM.RESELLER_CODE,
+            if (!string.IsNullOrEmpty(model.FromDate) && !string.IsNullOrEmpty(model.ToDate))
+            {
+                condition = $" AND TRUNC(RM.CREATED_DATE) BETWEEN  TO_CHAR(TO_DATE('{model.FromDate}', 'YYYY-MON-DD'), 'DD-MON-YYYY') AND TO_CHAR(TO_DATE('{model.ToDate}', 'YYYY-MON-DD'), 'DD-MON-YYYY')";
+            }
+
+            var Query = $@"SELECT RM.RESELLER_CODE,
               RM.RESELLER_NAME,
               RM.DISTRIBUTOR_CODE,
               RM.REG_OFFICE_ADDRESS AS ADDRESS,
@@ -115,15 +121,14 @@ namespace NeoErp.Distribution.Service.Service
               END ISCLOSED,
               RM.REMARKS,
               RM.CREATED_BY_NAME,
+              RM.CREATED_DATE,
               AM.AREA_CODE,
               AM.AREA_NAME
             FROM DIST_RESELLER_MASTER RM
             LEFT JOIN DIST_AREA_MASTER AM ON AM.AREA_CODE = RM.AREA_CODE AND AM.COMPANY_CODE = RM.COMPANY_CODE
-            WHERE RM.COMPANY_CODE = '{0}'AND RM.DELETED_FLAG ='N' {1} {2}
+            WHERE RM.COMPANY_CODE = '{companyCode}'AND RM.DELETED_FLAG ='N' {SourceFilter} {statusQ} {condition} order by rm.created_date desc
             --ORDER BY UPPER(RM.RESELLER_NAME) ASC";
-
-
-            Query = string.Format(Query, companyCode, SourceFilter, statusQ);
+            //Query = string.Format(Query, companyCode, SourceFilter, statusQ);
             var data = _objectEntity.SqlQuery<ResellerListModel>(Query).ToList();
             return data;
         }
@@ -1537,20 +1542,20 @@ namespace NeoErp.Distribution.Service.Service
 
         public List<UserSetupTreeModel> GetUserSetupTreeList(User UserInfo)
         {
-            string Query = $@"SELECT GROUPID CODE, NULL MASTER_CODE, GROUP_EDESC NAME,'' PASSWORD,''  FULLNAME,'' EMPLOYEE_CODE,'' EMPLOYEE_EDESC,NULL ROLE_CODE,'' CONTACT_NO,'' ROLE_NAME,'' ATTENDENCE,'' MOBILE,'' EMAIL,'' AREA_CODE,'' AREA_NAME,
-                            --''ITEM_CODE,
+            string Query = $@"SELECT GROUPID CODE, NULL MASTER_CODE, GROUP_EDESC NAME,'' PASSWORD,''  FULLNAME,'' EMPLOYEE_CODE,'' EMPLOYEE_EDESC,NULL ROLE_CODE,'' CONTACT_NO,'' ROLE_NAME,'' ATTENDENCE,'' MOBILE,'' EMAIL,'' AREA_CODE,'' AREA_NAME,'' CUSTOMER_CODE,
+                            ''ITEM_CODE,
                             GROUPID,'Y' IS_GROUP, '' ACTIVE ,''BRANDING,'' SUPER_USER
                                 FROM DIST_GROUP_MASTER
                                 WHERE DELETED_FLAG = 'N' AND COMPANY_CODE IN('{UserInfo.company_code}')
                             UNION ALL
                               SELECT LU.USERID CODE,(CASE WHEN PARENT_USERID IS NULL THEN LU.GROUPID ELSE PARENT_USERID END) MASTER_CODE,
                                      USER_NAME NAME,PASS_WORD PASSWORD,FULL_NAME FULLNAME,LU.SP_CODE EMPLOYEE_CODE,ES.EMPLOYEE_EDESC,RU.ROLE_CODE,LU.CONTACT_NO,RM.ROLE_NAME,LU.ATTENDANCE ATTENDENCE,
-                                     LU.IS_MOBILE MOBILE,LU.EMAIL,wm_concat (UA.AREA_CODE) AREA_CODE,wm_concat (AM.AREA_NAME) AREA_NAME,
-                                    --wm_concat(UIM.ITEM_CODE) ITEM_CODE,
+                                     LU.IS_MOBILE MOBILE,LU.EMAIL,wm_concat (distinct UA.AREA_CODE) AREA_CODE,wm_concat (distinct AM.AREA_NAME) AREA_NAME,wm_concat(distinct ua.customer_code) customer_code,
+                                    wm_concat(distinct UIM.ITEM_CODE) ITEM_CODE,
                                 LU.GROUPID,'N' IS_GROUP,LU.ACTIVE,LU.BRANDING,LU.SUPER_USER
                             FROM DIST_LOGIN_USER LU,
                                      HR_EMPLOYEE_SETUP ES,DIST_ROLE_USER RU,DIST_ROLE_MASTER_SETUP RM,DIST_USER_AREAS UA,DIST_AREA_MASTER AM
-                                    --,DIST_USER_ITEM_MAPPING UIM
+                                    ,DIST_USER_ITEM_MAPPING UIM
                                      WHERE 1 = 1
                                      AND LU.COMPANY_CODE = ES.COMPANY_CODE(+)
                                      AND LU.SP_CODE = ES.EMPLOYEE_CODE(+)
@@ -1562,10 +1567,10 @@ namespace NeoErp.Distribution.Service.Service
                                      AND UA.AREA_CODE = AM.AREA_CODE(+)
                                     -- AND LU.COMPANY_CODE = AM.COMPANY_CODE(+)
                                      AND LU.COMPANY_CODE IN ('{UserInfo.company_code}')
-                                     --AND LU.ACTIVE = 'Y'
-                                     --AND LU.USERID = UIM.USER_ID(+)
-                                     --AND LU.SP_CODE = UIM.SP_CODE(+)
-                                     --AND LU.COMPANY_CODE = UIM.COMPANY_CODE(+)
+                                     AND LU.ACTIVE = 'Y'
+                                     AND LU.USERID = UIM.USER_ID(+)
+                                     AND LU.SP_CODE = UIM.SP_CODE(+)
+                                    AND LU.COMPANY_CODE = UIM.COMPANY_CODE--(+)
                                      AND lu.USERID <> 1
                             GROUP BY LU.USERID,USER_NAME,PASS_WORD,FULL_NAME,LU.SP_CODE,ES.EMPLOYEE_EDESC,RU.ROLE_CODE,LU.CONTACT_NO,RM.ROLE_NAME,LU.ATTENDANCE,LU.IS_MOBILE,LU.EMAIL,
                                      PARENT_USERID,LU.GROUPID,LU.ACTIVE,LU.BRANDING,LU.SUPER_USER";
@@ -1626,9 +1631,12 @@ namespace NeoErp.Distribution.Service.Service
 
                     foreach (var area in model.AREA)
                     {
-                        Query = $@"INSERT INTO DIST_USER_AREAS (SP_CODE,AREA_CODE,USER_ID,CREATED_BY,CREATED_DATE,COMPANY_CODE)
-                                VALUES ('{model.EMPLOYEE_CODE}','{area}','{model.CODE}','{userInfo.login_code}',TRUNC(SYSDATE),'{userInfo.company_code}')";
-                        _objectEntity.ExecuteSqlCommand(Query);
+                        foreach(var customer in model.CUSTOMER)
+                        {
+                            Query = $@"INSERT INTO DIST_USER_AREAS (SP_CODE,AREA_CODE,USER_ID,CREATED_BY,CREATED_DATE,COMPANY_CODE,CUSTOMER_CODE)
+                                VALUES ('{model.EMPLOYEE_CODE}','{area}','{model.CODE}','{userInfo.login_code}',TRUNC(SYSDATE),'{userInfo.company_code}','{customer}')";
+                            _objectEntity.ExecuteSqlCommand(Query);
+                        }
                     }
                     foreach (var item in model.ITEMS)
                     {
@@ -1682,9 +1690,12 @@ namespace NeoErp.Distribution.Service.Service
                 _objectEntity.ExecuteSqlCommand(Query);
                 foreach (var area in model.AREA)
                 {
-                    Query = $@"INSERT INTO DIST_USER_AREAS (SP_CODE,AREA_CODE,USER_ID,CREATED_BY,CREATED_DATE,COMPANY_CODE)
-                                VALUES ('{model.EMPLOYEE_CODE}','{area}','{model.CODE}','{userInfo.login_code}',TRUNC(SYSDATE),'{userInfo.company_code}')";
+                    foreach (var customer in model.CUSTOMER)
+                    { 
+                        Query = $@"INSERT INTO DIST_USER_AREAS (SP_CODE,AREA_CODE,USER_ID,CREATED_BY,CREATED_DATE,COMPANY_CODE,CUSTOMER_CODE)
+                                VALUES ('{model.EMPLOYEE_CODE}','{area}','{model.CODE}','{userInfo.login_code}',TRUNC(SYSDATE),'{userInfo.company_code}','{customer}')";
                     _objectEntity.ExecuteSqlCommand(Query);
+                    }
                 }
 
                 Query = $@"DELETE FROM DIST_USER_ITEM_MAPPING WHERE USER_ID='{model.CODE}' AND SP_CODE = '{model.EMPLOYEE_CODE}'";

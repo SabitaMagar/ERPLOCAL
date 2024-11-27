@@ -45,4 +45,15 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string COMPANY_CODE { get; set; }
         public string BRANCH_CODE { get; set; }
     }
+    public class DiscountModel
+    {
+        public string CUSTOMER_CODE { get; set; }
+        public string ITEM_CODE { get; set; }
+        public string MU_CODE { get; set; }
+        public decimal DISCOUNT_RATE { get; set; }
+        public decimal DISCOUNT_PERCENT { get; set; }
+        public string FORM_CODE { get; set; }
+        public string SYNERGY_FLAG { get; set; }
+
+    }
 }

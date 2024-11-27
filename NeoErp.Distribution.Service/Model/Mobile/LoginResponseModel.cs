@@ -92,6 +92,10 @@ namespace NeoErp.Distribution.Service.Model.Mobile
         public string MO_DISABLE_PLAYSTORE { get; set; }
         public string MO_SAVE_DATA { get; set; }
         public string SQL_OPEN_ADDOUTLET { get; set; }
+        public string SO_SYN_DISCOUNT { get; set; }
+        public string SO_CUSTOM_DISCOUNT { get; set; }
+        public string SO_SALES_ORDER { get; set; }
+        public string SO_RESELLER_DISCOUNT { get; set; }
         public string TRACK_ACTUAL_LOCATION { get; set; }
     }
     public class TempCompanyModel
